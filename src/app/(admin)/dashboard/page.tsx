@@ -223,7 +223,7 @@ export default function AdminDashboardPage() {
                 <RechartsTooltip 
                   contentStyle={{ borderRadius: '8px', border: '1px solid #e4e4e7', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
                   itemStyle={{ color: '#18181b', fontWeight: 600 }}
-                  formatter={(value: number) => [`₪${value}`, 'Revenue']}
+                  formatter={(value: any) => [`₪${value}`, 'Revenue']}
                 />
                 <Area type="monotone" dataKey="revenue" stroke="#3b82f6" strokeWidth={3} fillOpacity={1} fill="url(#colorRevenue)" />
               </AreaChart>
@@ -269,7 +269,7 @@ export default function AdminDashboardPage() {
                   cursor={{ fill: '#f4f4f5' }}
                   contentStyle={{ borderRadius: '8px', border: '1px solid #e4e4e7', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
                   itemStyle={{ color: '#18181b', fontWeight: 600 }}
-                  formatter={(value: number) => [value, 'Searches']}
+                  formatter={(value: any) => [value, 'Searches']}
                 />
                 <Bar dataKey="searches" fill="#a855f7" radius={[4, 4, 0, 0]} barSize={40} />
               </BarChart>
