@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { Search, MapPin, Calendar, BedDouble, Users, ArrowRightLeft, Home, Navigation, ChevronDown, Bath } from "lucide-react";
 
 export default function SearchWidget() {
@@ -203,10 +204,10 @@ export default function SearchWidget() {
 
         {/* Search Button (Dynamically placed based on active tab) */}
         <div className={activeTab === "swap" ? "lg:col-span-3" : "lg:col-span-12 flex justify-end"}>
-          <button className={`flex items-center justify-center gap-2 py-3 bg-[#4c55a4] hover:bg-[#3d4484] text-white font-bold rounded-xl shadow-md transition-colors ${activeTab === 'rent' ? 'w-full md:w-auto md:px-12' : 'w-full'}`}>
+          <Link href="/search" className={`flex items-center justify-center gap-2 py-3 bg-[#4c55a4] hover:bg-[#3d4484] text-white font-bold rounded-xl shadow-md transition-colors ${activeTab === 'rent' ? 'w-full md:w-auto md:px-12' : 'w-full'}`}>
             <Search className="w-5 h-5" />
             Search Apartments
-          </button>
+          </Link>
         </div>
 
       </div>

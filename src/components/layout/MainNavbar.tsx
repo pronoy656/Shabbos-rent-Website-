@@ -23,7 +23,7 @@ export default function MainNavbar() {
         {/* Desktop Navigation */}
         <nav className="hidden lg:flex items-center gap-8">
           <Link href="#" className="text-sm font-semibold text-zinc-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition-colors">How It Works</Link>
-          <Link href="#" className="text-sm font-semibold text-zinc-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Search Apartments</Link>
+          <Link href="/search" className="text-sm font-semibold text-zinc-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Search Apartments</Link>
           <Link href="#" className="text-sm font-semibold text-zinc-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Swap Apartments</Link>
           <Link href="#" className="text-sm font-semibold text-zinc-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition-colors">My Weekends</Link>
           <Link href="#" className="text-sm font-semibold text-zinc-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition-colors">About Us</Link>
