@@ -1,7 +1,16 @@
+"use client";
+
+import { useState } from "react";
 import MainNavbar from "@/components/layout/MainNavbar";
 import FilterSidebar from "@/components/search/FilterSidebar";
 import ApartmentCard, { ApartmentData } from "@/components/search/ApartmentCard";
-import { SlidersHorizontal, Search } from "lucide-react";
+import { SlidersHorizontal, Search, ChevronDown } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 // Mock Data for Apartments
 const apartments: ApartmentData[] = [
@@ -92,6 +101,9 @@ const apartments: ApartmentData[] = [
 ];
 
 export default function SearchPage() {
+  const [sortBy, setSortBy] = useState("Recommended");
+  const sortOptions = ["Recommended", "Price: Low to High", "Price: High to Low", "Highest Rated"];
+
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 font-sans">
       <MainNavbar />
@@ -121,14 +133,25 @@ export default function SearchPage() {
                 <SlidersHorizontal className="w-4 h-4" />
                 Filters
               </button>
-              <div className="hidden md:flex items-center gap-2">
+              <div className="hidden md:flex items-center gap-2 px-3 py-2 border border-zinc-200 dark:border-zinc-700 rounded-xl bg-white dark:bg-zinc-900 shadow-sm">
                 <span className="text-sm font-medium text-zinc-500 dark:text-zinc-400">Sort by:</span>
-                <select className="bg-transparent text-sm font-bold text-zinc-900 dark:text-white focus:outline-none cursor-pointer">
-                  <option>Recommended</option>
-                  <option>Price: Low to High</option>
-                  <option>Price: High to Low</option>
-                  <option>Highest Rated</option>
-                </select>
+                <DropdownMenu>
+                  <DropdownMenuTrigger className="flex items-center gap-1.5 text-sm font-bold text-zinc-900 dark:text-white hover:text-[#4c55a4] dark:hover:text-[#4c55a4] focus:outline-none transition-colors">
+                    {sortBy}
+                    <ChevronDown className="h-4 w-4 text-zinc-500" />
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-[180px] rounded-xl border-zinc-200 dark:border-zinc-800 p-1.5 shadow-xl">
+                    {sortOptions.map((option) => (
+                      <DropdownMenuItem 
+                        key={option} 
+                        className={`cursor-pointer rounded-lg text-[13px] px-3 py-2 ${sortBy === option ? 'font-bold bg-zinc-50 dark:bg-zinc-900' : 'font-medium'}`}
+                        onClick={() => setSortBy(option)}
+                      >
+                        {option}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             </div>
           </div>
