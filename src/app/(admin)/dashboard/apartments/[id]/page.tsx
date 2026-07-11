@@ -25,12 +25,39 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
   const resolvedParams = use(params);
   const apartmentId = resolvedParams.id;
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [suspendModalOpen, setSuspendModalOpen] = useState(false);
+  const [isSuspended, setIsSuspended] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  const [availability, setAvailability] = useState([
+    { id: 1, weekend: "Ki Tavo", status: "Available" },
+    { id: 2, weekend: "Rosh Hashanah", status: "Unavailable" },
+  ]);
+  const [availabilityModal, setAvailabilityModal] = useState<{ open: boolean, type: 'Enable' | 'Disable', id: number | null }>({ open: false, type: 'Disable', id: null });
 
   const handleDelete = () => {
     setDeleteModalOpen(false);
     setToastMessage("Listing successfully deleted.");
     setTimeout(() => setToastMessage(null), 3000);
+  };
+
+  const handleSuspend = () => {
+    setSuspendModalOpen(false);
+    setIsSuspended(true);
+    setToastMessage("Apartment suspended.");
+    setTimeout(() => setToastMessage(null), 3000);
+  };
+
+  const handleAvailabilityAction = () => {
+    setAvailability(prev => prev.map(item => {
+      if (item.id === availabilityModal.id) {
+         return { ...item, status: availabilityModal.type === 'Enable' ? 'Available' : 'Unavailable' }
+      }
+      return item;
+    }));
+    setToastMessage(`Successfully ${availabilityModal.type.toLowerCase()}d availability.`);
+    setTimeout(() => setToastMessage(null), 3000);
+    setAvailabilityModal({ open: false, type: 'Disable', id: null });
   };
 
   return (
@@ -42,9 +69,15 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
             <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-white">
               Apartment {apartmentId}
             </h1>
-            <span className="inline-flex items-center rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-semibold text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400">
-              Active
-            </span>
+            {isSuspended ? (
+              <span className="inline-flex items-center rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-semibold text-red-700 dark:bg-red-500/10 dark:text-red-400">
+                Suspended
+              </span>
+            ) : (
+              <span className="inline-flex items-center rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-semibold text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400">
+                Active
+              </span>
+            )}
           </div>
           <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
             Jerusalem Family Apartment • Geula
@@ -55,10 +88,15 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
             <Edit className="mr-2 h-4 w-4" />
             Edit Listing
           </button>
-          <button className="inline-flex items-center justify-center rounded-md border border-red-200 bg-red-50 px-3 py-1.5 text-sm font-medium text-red-700 shadow-sm hover:bg-red-100 dark:border-red-900/30 dark:bg-red-950/30 dark:text-red-400 dark:hover:bg-red-900/50">
-            <Ban className="mr-2 h-4 w-4" />
-            Suspend
-          </button>
+          {!isSuspended && (
+            <button 
+              onClick={() => setSuspendModalOpen(true)}
+              className="inline-flex items-center justify-center rounded-md border border-red-200 bg-red-50 px-3 py-1.5 text-sm font-medium text-red-700 shadow-sm hover:bg-red-100 dark:border-red-900/30 dark:bg-red-950/30 dark:text-red-400 dark:hover:bg-red-900/50"
+            >
+              <Ban className="mr-2 h-4 w-4" />
+              Suspend
+            </button>
+          )}
         </div>
       </div>
 
@@ -176,34 +214,41 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
-              <tr className="hover:bg-zinc-50/50 dark:hover:bg-zinc-800/20 transition-colors">
-                <td className="px-5 py-4 font-bold text-zinc-900 dark:text-white">Ki Tavo</td>
-                <td className="px-5 py-4">
-                  <span className="inline-flex items-center rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-semibold text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400">
-                    Available
-                  </span>
-                </td>
-                <td className="px-5 py-4 text-right">
-                  <button className="inline-flex items-center justify-center rounded-full border border-red-200 bg-red-50 px-3 py-1 text-xs font-semibold text-red-600 hover:bg-red-100 dark:border-red-900/30 dark:bg-red-950/30 dark:text-red-400 dark:hover:bg-red-900/50 transition-colors">
-                    <X className="mr-1.5 h-3 w-3" />
-                    Disable
-                  </button>
-                </td>
-              </tr>
-              <tr className="hover:bg-zinc-50/50 dark:hover:bg-zinc-800/20 transition-colors">
-                <td className="px-5 py-4 font-bold text-zinc-900 dark:text-white">Rosh Hashanah</td>
-                <td className="px-5 py-4">
-                  <span className="inline-flex items-center rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-semibold text-red-700 dark:bg-red-500/10 dark:text-red-400">
-                    Unavailable
-                  </span>
-                </td>
-                <td className="px-5 py-4 text-right">
-                  <button className="inline-flex items-center justify-center rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-600 hover:bg-emerald-100 dark:border-emerald-900/30 dark:bg-emerald-950/30 dark:text-emerald-400 dark:hover:bg-emerald-900/50 transition-colors">
-                    <Check className="mr-1.5 h-3 w-3" />
-                    Enable
-                  </button>
-                </td>
-              </tr>
+              {availability.map((item) => (
+                <tr key={item.id} className="hover:bg-zinc-50/50 dark:hover:bg-zinc-800/20 transition-colors">
+                  <td className="px-5 py-4 font-bold text-zinc-900 dark:text-white">{item.weekend}</td>
+                  <td className="px-5 py-4">
+                    {item.status === "Available" ? (
+                      <span className="inline-flex items-center rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-semibold text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400">
+                        Available
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-semibold text-red-700 dark:bg-red-500/10 dark:text-red-400">
+                        Unavailable
+                      </span>
+                    )}
+                  </td>
+                  <td className="px-5 py-4 text-right">
+                    {item.status === "Available" ? (
+                      <button 
+                        onClick={() => setAvailabilityModal({ open: true, type: 'Disable', id: item.id })}
+                        className="inline-flex items-center justify-center rounded-full border border-red-200 bg-red-50 px-3 py-1 text-xs font-semibold text-red-600 hover:bg-red-100 dark:border-red-900/30 dark:bg-red-950/30 dark:text-red-400 dark:hover:bg-red-900/50 transition-colors"
+                      >
+                        <X className="mr-1.5 h-3 w-3" />
+                        Disable
+                      </button>
+                    ) : (
+                      <button 
+                        onClick={() => setAvailabilityModal({ open: true, type: 'Enable', id: item.id })}
+                        className="inline-flex items-center justify-center rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-600 hover:bg-emerald-100 dark:border-emerald-900/30 dark:bg-emerald-950/30 dark:text-emerald-400 dark:hover:bg-emerald-900/50 transition-colors"
+                      >
+                        <Check className="mr-1.5 h-3 w-3" />
+                        Enable
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>
@@ -297,6 +342,72 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
               <button 
                 onClick={handleDelete}
                 className="flex-1 px-4 py-2 text-sm font-semibold text-white bg-red-600 hover:bg-red-700 dark:bg-red-600 dark:hover:bg-red-700 rounded-lg transition-colors shadow-sm"
+              >
+                Confirm
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Suspend Confirmation Modal */}
+      {suspendModalOpen && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-zinc-900/40 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-xl w-full max-w-sm overflow-hidden border border-zinc-200 dark:border-zinc-800 animate-in zoom-in-95 duration-200 text-center">
+            <div className="pt-8 pb-6 px-6">
+              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-orange-100 dark:bg-orange-900/30 mb-4">
+                <Ban className="h-6 w-6 text-orange-600 dark:text-orange-400" />
+              </div>
+              <h3 className="text-lg font-bold text-zinc-900 dark:text-white mb-2">
+                Suspend Apartment?
+              </h3>
+              <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                Are you sure you want to suspend this apartment? It will no longer be visible to users.
+              </p>
+            </div>
+            <div className="flex items-center gap-3 p-4 bg-zinc-50 dark:bg-zinc-900/50 border-t border-zinc-100 dark:border-zinc-800">
+              <button 
+                onClick={() => setSuspendModalOpen(false)}
+                className="flex-1 px-4 py-2 text-sm font-semibold text-zinc-700 bg-white border border-zinc-200 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700 rounded-lg transition-colors"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={handleSuspend}
+                className="flex-1 px-4 py-2 text-sm font-semibold text-white bg-orange-600 hover:bg-orange-700 dark:bg-orange-600 dark:hover:bg-orange-700 rounded-lg transition-colors shadow-sm"
+              >
+                Suspend
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Availability Action Modal */}
+      {availabilityModal.open && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-zinc-900/40 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-xl w-full max-w-sm overflow-hidden border border-zinc-200 dark:border-zinc-800 animate-in zoom-in-95 duration-200 text-center">
+            <div className="pt-8 pb-6 px-6">
+              <div className={`mx-auto flex h-12 w-12 items-center justify-center rounded-full mb-4 ${availabilityModal.type === 'Enable' ? 'bg-emerald-100 dark:bg-emerald-900/30' : 'bg-red-100 dark:bg-red-900/30'}`}>
+                <AlertTriangle className={`h-6 w-6 ${availabilityModal.type === 'Enable' ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`} />
+              </div>
+              <h3 className="text-lg font-bold text-zinc-900 dark:text-white mb-2">
+                {availabilityModal.type} Availability?
+              </h3>
+              <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                Are you sure you want to {availabilityModal.type.toLowerCase()} this weekend's availability?
+              </p>
+            </div>
+            <div className="flex items-center gap-3 p-4 bg-zinc-50 dark:bg-zinc-900/50 border-t border-zinc-100 dark:border-zinc-800">
+              <button 
+                onClick={() => setAvailabilityModal({ open: false, type: 'Disable', id: null })}
+                className="flex-1 px-4 py-2 text-sm font-semibold text-zinc-700 bg-white border border-zinc-200 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700 rounded-lg transition-colors"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={handleAvailabilityAction}
+                className={`flex-1 px-4 py-2 text-sm font-semibold text-white rounded-lg transition-colors shadow-sm ${availabilityModal.type === 'Enable' ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-red-600 hover:bg-red-700'}`}
               >
                 Confirm
               </button>

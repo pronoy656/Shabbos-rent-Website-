@@ -1,6 +1,7 @@
 import MainNavbar from "@/components/layout/MainNavbar";
 import SearchWidget from "@/components/home/SearchWidget";
 import Features from "@/components/home/Features";
+import FAQSection from "@/components/home/FAQSection";
 import { ArrowRightLeft, Navigation, ShieldCheck } from "lucide-react";
 
 export default function HomePage() {
@@ -61,6 +62,7 @@ export default function HomePage() {
         <SearchWidget />
       </div>
 
+      <FAQSection />
     </div>
   );
 }
