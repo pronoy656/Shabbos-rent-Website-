@@ -1,25 +1,39 @@
 import Link from "next/link";
-import { MapPin, BedDouble, Bath, Users, Star, ArrowRightLeft, ShieldCheck } from "lucide-react";
+import { MapPin, BedDouble, Bath, Users, ShieldCheck, Heart } from "lucide-react";
+import { useState, useEffect } from "react";
+import { ApartmentData } from "@/types";
 
-export interface ApartmentData {
-  id: string;
-  title: string;
-  location: string;
-  image: string;
-  price: number;
-  rating: number;
-  reviews: number;
-  beds: number;
-  baths: number;
-  guests: number;
-  isSwapAvailable: boolean;
-  verified: boolean;
-}
+export default function ApartmentCard({ apartment, mode }: { apartment: ApartmentData, mode?: "swap" | "rent" }) {
+  const [isSaved, setIsSaved] = useState(false);
 
-export default function ApartmentCard({ apartment }: { apartment: ApartmentData }) {
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const savedApartments = JSON.parse(localStorage.getItem("savedApartments") || "[]");
+      setIsSaved(savedApartments.includes(apartment.id));
+    }
+  }, [apartment.id]);
+
+  const toggleSave = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    const savedApartments = JSON.parse(localStorage.getItem("savedApartments") || "[]");
+    let newSaved;
+    if (savedApartments.includes(apartment.id)) {
+      newSaved = savedApartments.filter((id: string) => id !== apartment.id);
+      setIsSaved(false);
+    } else {
+      newSaved = [...savedApartments, apartment.id];
+      setIsSaved(true);
+    }
+    localStorage.setItem("savedApartments", JSON.stringify(newSaved));
+    // Dispatch a custom event to notify other components if they are listening
+    window.dispatchEvent(new Event("savedApartmentsChanged"));
+  };
+
   return (
     <div className="group bg-white dark:bg-zinc-900 rounded-2xl overflow-hidden border border-zinc-200 dark:border-zinc-800 hover:shadow-lg transition-all duration-300">
-      <Link href={`/apartments/${apartment.id}`}>
+      <Link href={`/apartments/${apartment.id}${mode === 'swap' ? '?mode=swap' : ''}`}>
         {/* Image Container */}
         <div className="relative h-56 w-full overflow-hidden bg-zinc-100 dark:bg-zinc-800">
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -29,26 +43,24 @@ export default function ApartmentCard({ apartment }: { apartment: ApartmentData 
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
           />
           
-          {/* Top Badges */}
-          <div className="absolute top-3 left-3 flex flex-col gap-2">
-            {apartment.isSwapAvailable && (
-              <div className="px-2.5 py-1 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-sm rounded-md shadow-sm border border-zinc-200/50 dark:border-zinc-700/50 flex items-center gap-1.5 text-xs font-bold text-[#4c55a4]">
-                <ArrowRightLeft className="w-3.5 h-3.5" />
-                Swap Eligible
-              </div>
-            )}
-            {apartment.verified && (
-              <div className="px-2.5 py-1 bg-green-500/90 backdrop-blur-sm rounded-md shadow-sm flex items-center gap-1.5 text-xs font-bold text-white">
-                <ShieldCheck className="w-3.5 h-3.5" />
-                Verified
-              </div>
-            )}
-          </div>
-          
-          {/* Rating Badge */}
-          <div className="absolute top-3 right-3 px-2 py-1 bg-white/90 dark:bg-zinc-900/90 backdrop-blur-sm rounded-md shadow-sm flex items-center gap-1 text-xs font-bold text-zinc-800 dark:text-zinc-200">
-            <Star className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400" />
-            {apartment.rating} <span className="text-zinc-500 font-medium">({apartment.reviews})</span>
+          {/* Top Left Badges */}
+          {apartment.verified && (
+            <div className="absolute top-3 left-3 px-2.5 py-1 bg-green-500/90 backdrop-blur-sm rounded-md shadow-sm flex items-center gap-1.5 text-xs font-bold text-white z-10">
+              <ShieldCheck className="w-3.5 h-3.5" />
+              Verified
+            </div>
+          )}
+
+          {/* Top Right Actions */}
+          <div className="absolute top-3 right-3 z-10">
+            <button
+              onClick={toggleSave}
+              className="p-2 bg-white/90 dark:bg-zinc-900/90 backdrop-blur-md rounded-full shadow-sm hover:scale-110 transition-transform duration-200"
+            >
+              <Heart 
+                className={`w-5 h-5 transition-colors duration-200 ${isSaved ? "fill-red-500 text-red-500" : "text-zinc-600 dark:text-zinc-300"}`} 
+              />
+            </button>
           </div>
         </div>
 

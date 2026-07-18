@@ -128,3 +128,16 @@
     @apply font-sans;
   }
 }
+
+@keyframes vibrate {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  5% { transform: translateY(-6px) rotate(-12deg); }
+  10% { transform: translateY(-6px) rotate(12deg); }
+  15% { transform: translateY(-6px) rotate(-12deg); }
+  20% { transform: translateY(-6px) rotate(12deg); }
+  25% { transform: translateY(0) rotate(0deg); }
+}
+
+@utility animate-vibrate {
+  animation: vibrate 3s ease-in-out infinite;
+}

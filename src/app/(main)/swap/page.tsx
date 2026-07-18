@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import MainNavbar from "@/components/layout/MainNavbar";
-import ApartmentCard, { ApartmentData } from "@/components/search/ApartmentCard";
+import ApartmentCard from "@/components/search/ApartmentCard";
+import { ApartmentData } from "@/types";
 import { ArrowRightLeft, Search, PlusCircle, Sparkles } from "lucide-react";
 import Link from "next/link";
 

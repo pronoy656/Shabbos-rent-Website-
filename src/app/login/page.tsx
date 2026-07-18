@@ -12,16 +12,24 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleLogin = (role: "user" | "admin", isFreshUser?: boolean) => {
     setIsLoading(true);
     
-    // Mock login logic
+    // Mock login logic - set role in localStorage
+    localStorage.setItem("userRole", role);
+    if (role === "user") {
+        if (isFreshUser) {
+            localStorage.setItem("hasUserListing", "false");
+        } else {
+            localStorage.setItem("hasUserListing", "true");
+        }
+    }
+    
     setTimeout(() => {
-      if (email.toLowerCase() === "admin@shabbosrent.com") {
+      if (role === "admin") {
         router.push("/dashboard");
       } else {
-        router.push("/");
+        router.push("/user-dashboard");
       }
     }, 1200);
   };
@@ -90,7 +98,7 @@ export default function LoginPage() {
           </div>
 
           <div className="mt-8">
-            <form onSubmit={handleLogin} className="space-y-5">
+            <div className="space-y-5">
               
               <div className="space-y-1.5">
                 <label className="text-sm font-semibold text-zinc-900 dark:text-zinc-200">Email address</label>
@@ -138,27 +146,35 @@ export default function LoginPage() {
                 </div>
               </div>
 
-              <button
-                type="submit"
-                disabled={isLoading}
-                className="group relative flex w-full justify-center items-center gap-2 rounded-xl bg-zinc-900 dark:bg-white px-4 py-3.5 text-sm font-bold text-white dark:text-zinc-900 transition-all hover:bg-zinc-800 dark:hover:bg-zinc-100 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-zinc-900/10 disabled:opacity-70 disabled:cursor-not-allowed shadow-md shadow-zinc-900/10 mt-2"
-              >
-                {isLoading ? (
-                  <>
-                    <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    Signing in...
-                  </>
-                ) : (
-                  <>
-                    Sign In to Account
-                    <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-                  </>
-                )}
-              </button>
-            </form>
+              <div className="flex flex-col gap-3 mt-4">
+                <div className="flex gap-3">
+                  <button
+                    type="button"
+                    disabled={isLoading}
+                    onClick={() => handleLogin("user", false)}
+                    className="group relative flex flex-1 justify-center items-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-sm font-bold text-white transition-all hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-600/20 disabled:opacity-70 disabled:cursor-not-allowed shadow-md shadow-blue-600/20"
+                  >
+                    {isLoading ? "Wait..." : "User 1 (Has Listing)"}
+                  </button>
+                  <button
+                    type="button"
+                    disabled={isLoading}
+                    onClick={() => handleLogin("user", true)}
+                    className="group relative flex flex-1 justify-center items-center gap-2 rounded-xl bg-emerald-600 px-4 py-3 text-sm font-bold text-white transition-all hover:bg-emerald-700 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-emerald-600/20 disabled:opacity-70 disabled:cursor-not-allowed shadow-md shadow-emerald-600/20"
+                  >
+                    {isLoading ? "Wait..." : "User 2 (Fresh)"}
+                  </button>
+                </div>
+                <button
+                  type="button"
+                  disabled={isLoading}
+                  onClick={() => handleLogin("admin")}
+                  className="group relative flex w-full justify-center items-center gap-2 rounded-xl bg-zinc-900 dark:bg-white px-4 py-3 text-sm font-bold text-white dark:text-zinc-900 transition-all hover:bg-zinc-800 dark:hover:bg-zinc-100 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-zinc-900/10 disabled:opacity-70 disabled:cursor-not-allowed shadow-md shadow-zinc-900/10"
+                >
+                  {isLoading ? "Wait..." : "Admin Account"}
+                </button>
+              </div>
+            </div>
 
             <div className="mt-8">
               <div className="relative">

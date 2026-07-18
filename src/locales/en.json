@@ -1,0 +1,51 @@
+{
+  "nav": {
+    "home": "Home",
+    "apartments": "Apartments",
+    "search": "Search",
+    "about": "About",
+    "contact": "Contact",
+    "add_apartment": "Add Your Apartment"
+  },
+  "hero": {
+    "title1": "Find. Stay. Enjoy",
+    "title2": "Your Perfect",
+    "title3": "Shabbos.",
+    "subtitle": "Experience the ultimate convenience for Shabbos and Yom Tov. Seamlessly Swap apartments or find the perfect rental with our unique Walking Distance search.",
+    "badge_rent": "Rent or Swap",
+    "badge_walking": "Walking Distance Search",
+    "badge_verified": "100% Verified Users"
+  },
+  "search": {
+    "location": "Location",
+    "location_placeholder": "Where are you going?",
+    "check_in": "Check In",
+    "check_out": "Check Out",
+    "guests": "Guests",
+    "search_button": "Search"
+  },
+  "contact": {
+    "title": "Get in Touch",
+    "subtitle": "Have questions, feedback, or need support? Our team is here to help you out.",
+    "details_title": "Contact Details",
+    "available": "Available 24/6",
+    "details_desc": "Get in touch with us directly. We usually respond within a few hours during business days.",
+    "office": "Our Office",
+    "phone": "Phone Number",
+    "email": "Email Address",
+    "connect": "Connect With Us",
+    "send_message": "Send us a Message",
+    "form_desc": "Fill out the form below and we'll get back to you within 24 hours.",
+    "full_name": "Full Name",
+    "subject": "Subject",
+    "message": "Message",
+    "send_btn": "Send Message"
+  },
+  "swap_modal": {
+    "title": "Enable Swap",
+    "required": "Required",
+    "desc": "To use the Swap feature, you need to turn ON your Swap toggle in the dashboard. A Swap match will only occur when both you and the home owners you want to swap with have Swap turned ON, after which a swap is possible.",
+    "cancel": "Cancel",
+    "turn_on": "Turn ON Swap"
+  }
+}

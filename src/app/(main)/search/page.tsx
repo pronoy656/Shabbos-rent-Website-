@@ -1,10 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import MainNavbar from "@/components/layout/MainNavbar";
 import FilterSidebar from "@/components/search/FilterSidebar";
-import ApartmentCard, { ApartmentData } from "@/components/search/ApartmentCard";
-import { SlidersHorizontal, Search, ChevronDown } from "lucide-react";
+import ApartmentCard from "@/components/search/ApartmentCard";
+import { ApartmentData } from "@/types";
+import { SlidersHorizontal, Search, ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -13,7 +15,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 // Mock Data for Apartments
-const apartments: ApartmentData[] = [
+const baseApartments: ApartmentData[] = [
   {
     id: "1",
     title: "Luxury Penthouse with Kosher Kitchen",
@@ -100,9 +102,54 @@ const apartments: ApartmentData[] = [
   },
 ];
 
-export default function SearchPage() {
+// Generate 18 mock apartments to test pagination with 12 items per page
+const apartments: ApartmentData[] = Array.from({ length: 3 }).flatMap((_, i) => 
+  baseApartments.map(apt => ({
+    ...apt,
+    id: `${apt.id}-${i}`,
+  }))
+);
+
+function SearchContent() {
+  const [dummyVisible, setDummyVisible] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const hasListing = localStorage.getItem("hasUserListing") === "true";
+      const isVisible = localStorage.getItem("isApartmentVisible") !== "false";
+      setDummyVisible(hasListing && isVisible);
+    }
+  }, []);
   const [sortBy, setSortBy] = useState("Recommended");
+  const [currentPage, setCurrentPage] = useState(1);
   const sortOptions = ["Recommended", "Price: Low to High", "Price: High to Low", "Highest Rated"];
+  
+  const searchParams = useSearchParams();
+  const cityParam = searchParams.get("city");
+  const typeParam = searchParams.get("type");
+
+  const formattedCity = cityParam 
+    ? cityParam.split("-").map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" ")
+    : "";
+
+  const allApartments = dummyVisible 
+    ? [
+        { id: "dummy", title: "Bright luxury apartment in city center", location: "City Center, Jerusalem", image: "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&q=80&w=800", price: 1500, rating: 5.0, reviews: 0, beds: 4, baths: 2, guests: 8, isSwapAvailable: true, verified: false },
+        ...apartments
+      ]
+    : apartments;
+
+  let filteredApartments = cityParam
+    ? allApartments.filter(apt => apt.location.toLowerCase().includes(cityParam.replace("-", " ").toLowerCase()))
+    : allApartments;
+
+  if (typeParam === "swap") {
+    filteredApartments = filteredApartments.filter(apt => apt.isSwapAvailable);
+  }
+  
+  const ITEMS_PER_PAGE = 12;
+  const totalPages = Math.ceil(filteredApartments.length / ITEMS_PER_PAGE) || 1;
+  const currentApartments = filteredApartments.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
 
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 font-sans">
@@ -113,8 +160,12 @@ export default function SearchPage() {
         <div className="container mx-auto px-4">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
             <div className="flex-1 max-w-xl">
-              <h1 className="text-3xl font-extrabold text-zinc-900 dark:text-white mb-2">Search Results</h1>
-              <p className="text-zinc-600 dark:text-zinc-400 font-medium mb-4">Over 2,400 places to stay in Jerusalem for Shabbos</p>
+              <h1 className="text-3xl font-extrabold text-zinc-900 dark:text-white mb-2 capitalize">
+                {typeParam === "swap" ? "Swap Matches" : "Search Results"} {formattedCity ? `in ${formattedCity}` : ""}
+              </h1>
+              <p className="text-zinc-600 dark:text-zinc-400 font-medium mb-4">
+                {filteredApartments.length} {typeParam === "swap" ? "properties available for swap" : "places to stay"} {formattedCity ? `in ${formattedCity} ` : ""}for Shabbos
+              </p>
               
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -169,23 +220,91 @@ export default function SearchPage() {
 
           {/* Right Main Area (Apartment Cards) */}
           <div className="lg:col-span-9">
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-              {apartments.map((apt) => (
-                <ApartmentCard key={apt.id} apartment={apt} />
-              ))}
-            </div>
-            
-            {/* Pagination / Load More */}
-            <div className="mt-12 flex justify-center">
-              <button className="px-8 py-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl font-bold text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800 shadow-sm transition-colors">
-                Load More Apartments
-              </button>
-            </div>
+            {filteredApartments.length === 0 ? (
+              <div className="flex flex-col items-center pt-12 pb-16 px-4 text-center bg-white dark:bg-zinc-900 rounded-[32px] border border-zinc-200 dark:border-zinc-800 shadow-sm h-full min-h-[350px]">
+                <div className="flex items-center justify-center w-32 h-32 mb-8 rounded-full bg-indigo-50/40 dark:bg-indigo-900/10">
+                  <div className="flex items-center justify-center w-24 h-24 rounded-full bg-indigo-100/60 dark:bg-indigo-900/30">
+                    <div className="flex items-center justify-center w-16 h-16 rounded-full bg-white dark:bg-zinc-800 shadow-md border border-zinc-100 dark:border-zinc-700">
+                      <Search className="w-7 h-7 text-[#4c55a4] dark:text-indigo-400" />
+                    </div>
+                  </div>
+                </div>
+                <h3 className="text-3xl font-extrabold text-zinc-900 dark:text-white mb-3 tracking-tight">
+                  No apartments found
+                </h3>
+                <p className="text-zinc-500 dark:text-zinc-400 font-medium max-w-md mx-auto mb-10 leading-relaxed text-[15px]">
+                  We couldn't find any apartments matching your search {formattedCity ? 
+                    <span className="font-bold text-zinc-800 dark:text-zinc-300">for "{formattedCity}"</span> : 
+                    "criteria"
+                  }. Try adjusting your filters or searching for a different destination.
+                </p>
+                <a 
+                  href="/search"
+                  className="inline-flex items-center gap-2 px-8 py-3.5 bg-gradient-to-r from-[#4c55a4] to-[#606aba] hover:from-[#3b438b] hover:to-[#4c55a4] text-white font-bold rounded-xl transition-colors shadow-md shadow-[#4c55a4]/20"
+                >
+                  View All Apartments
+                </a>
+              </div>
+            ) : (
+              <>
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                  {currentApartments.map((apt) => (
+                    <ApartmentCard key={apt.id} apartment={apt} />
+                  ))}
+                </div>
+                
+                {/* Pagination Controls */}
+                {totalPages > 1 && (
+                  <div className="mt-12 flex items-center justify-center gap-2">
+                    <button 
+                      onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                      disabled={currentPage === 1}
+                      className="p-2 border border-zinc-200 dark:border-zinc-800 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-zinc-600 dark:text-zinc-400"
+                    >
+                      <ChevronLeft className="w-5 h-5" />
+                    </button>
+                    
+                    {Array.from({ length: totalPages }).map((_, idx) => {
+                      const page = idx + 1;
+                      return (
+                        <button
+                          key={page}
+                          onClick={() => setCurrentPage(page)}
+                          className={`w-10 h-10 rounded-lg font-bold transition-colors ${
+                            currentPage === page 
+                              ? 'bg-[#4c55a4] text-white' 
+                              : 'bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800'
+                          }`}
+                        >
+                          {page}
+                        </button>
+                      );
+                    })}
+
+                    <button 
+                      onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                      disabled={currentPage === totalPages}
+                      className="p-2 border border-zinc-200 dark:border-zinc-800 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-zinc-600 dark:text-zinc-400"
+                    >
+                      <ChevronRight className="w-5 h-5" />
+                    </button>
+                  </div>
+                )}
+              </>
+            )}
           </div>
 
         </div>
       </div>
 
     </div>
+  );
+}
+
+export default function SearchPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 flex items-center justify-center">Loading...</div>}>
+      <SearchContent />
+    </Suspense>
   );
 }

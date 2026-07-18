@@ -11,34 +11,36 @@ export default function FilterSidebar() {
       <div className="space-y-4 mb-6">
         <h3 className="text-sm font-bold text-zinc-900 dark:text-white uppercase tracking-wider">Location</h3>
         
-        <div className="space-y-1.5">
-          <label className="text-xs font-semibold text-zinc-600 dark:text-zinc-400">City</label>
-          <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <MapPin className="h-4 w-4 text-zinc-400" />
-            </div>
-            <select className="w-full pl-9 pr-8 py-2 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-sm font-medium text-zinc-700 dark:text-zinc-300 appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500">
-              <option value="jerusalem">Jerusalem</option>
-              <option value="tel-aviv">Tel Aviv</option>
-            </select>
-            <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-              <ChevronDown className="h-4 w-4 text-zinc-400" />
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-zinc-600 dark:text-zinc-400">City</label>
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <MapPin className="h-4 w-4 text-zinc-400" />
+              </div>
+              <select className="w-full pl-9 pr-8 py-2 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-sm font-medium text-zinc-700 dark:text-zinc-300 appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <option value="jerusalem">Jerusalem</option>
+                <option value="tel-aviv">Tel Aviv</option>
+              </select>
+              <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                <ChevronDown className="h-4 w-4 text-zinc-400" />
+              </div>
             </div>
           </div>
-        </div>
 
-        <div className="space-y-1.5">
-          <label className="text-xs font-semibold text-zinc-600 dark:text-zinc-400">Neighborhood</label>
-          <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Navigation className="h-4 w-4 text-zinc-400" />
-            </div>
-            <select className="w-full pl-9 pr-8 py-2 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-sm font-medium text-zinc-700 dark:text-zinc-300 appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500">
-              <option value="rehavia">Rehavia</option>
-              <option value="geula">Geula</option>
-            </select>
-            <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-              <ChevronDown className="h-4 w-4 text-zinc-400" />
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-zinc-600 dark:text-zinc-400">Neighborhood</label>
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <Navigation className="h-4 w-4 text-zinc-400" />
+              </div>
+              <select className="w-full pl-9 pr-8 py-2 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-sm font-medium text-zinc-700 dark:text-zinc-300 appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <option value="rehavia">Rehavia</option>
+                <option value="geula">Geula</option>
+              </select>
+              <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                <ChevronDown className="h-4 w-4 text-zinc-400" />
+              </div>
             </div>
           </div>
         </div>
@@ -117,7 +119,7 @@ export default function FilterSidebar() {
       {/* Property Type */}
       <div className="space-y-4 mb-6">
         <h3 className="text-sm font-bold text-zinc-900 dark:text-white uppercase tracking-wider">Property Type</h3>
-        <div className="space-y-2">
+        <div className="grid grid-cols-2 gap-2">
           {["Apartment", "Villa", "Penthouse", "Studio"].map((type) => (
             <label key={type} className="flex items-center gap-3 cursor-pointer group">
               <div className="relative flex items-center justify-center">
@@ -137,7 +139,7 @@ export default function FilterSidebar() {
       {/* Amenities */}
       <div className="space-y-4 mb-6">
         <h3 className="text-sm font-bold text-zinc-900 dark:text-white uppercase tracking-wider">Amenities</h3>
-        <div className="space-y-2">
+        <div className="grid grid-cols-2 gap-2 gap-x-3">
           {["Kosher Kitchen", "Shabbos Elevator", "Balcony", "Parking", "Wheelchair Accessible"].map((amenity) => (
             <label key={amenity} className="flex items-center gap-3 cursor-pointer group">
               <div className="relative flex items-center justify-center">
@@ -154,7 +156,7 @@ export default function FilterSidebar() {
         </div>
       </div>
 
-      <button className="w-full py-3 bg-zinc-900 hover:bg-black dark:bg-white dark:hover:bg-zinc-100 dark:text-zinc-900 text-white font-bold rounded-xl shadow-md transition-colors">
+      <button className="w-full py-3 bg-[#4c55a4] hover:bg-[#3d4484] text-white font-bold rounded-xl shadow-md shadow-[#4c55a4]/20 transition-all">
         Apply Filters
       </button>
 

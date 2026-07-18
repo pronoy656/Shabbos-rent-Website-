@@ -1,0 +1,122 @@
+import { ApartmentData, Amenity, AvailableDate } from "@/types";
+import { Wifi, Tv, Snowflake, Car, WashingMachine, Coffee, Monitor, ChefHat, Tent } from "lucide-react";
+
+export const mockBaseApartments: ApartmentData[] = [
+  {
+    id: "1",
+    title: "Luxury Penthouse with Kosher Kitchen",
+    location: "Rehavia, Jerusalem",
+    image: "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&q=80",
+    price: 3500,
+    rating: 4.9,
+    reviews: 124,
+    beds: 4,
+    baths: 3,
+    guests: 8,
+    isSwapAvailable: true,
+    verified: true,
+  },
+  {
+    id: "2",
+    title: "Cozy Family Apartment near Kotel",
+    location: "Jewish Quarter, Jerusalem",
+    image: "https://images.unsplash.com/photo-1502672260266-1c1e5088e756?w=800&q=80",
+    price: 1800,
+    rating: 4.7,
+    reviews: 89,
+    beds: 3,
+    baths: 2,
+    guests: 6,
+    isSwapAvailable: false,
+    verified: true,
+  },
+  {
+    id: "3",
+    title: "Modern Villa with Private Garden",
+    location: "Baka, Jerusalem",
+    image: "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800&q=80",
+    price: 5200,
+    rating: 5.0,
+    reviews: 42,
+    beds: 5,
+    baths: 4,
+    guests: 10,
+    isSwapAvailable: true,
+    verified: false,
+  },
+  {
+    id: "4",
+    title: "Charming Studio in the City Center",
+    location: "Nachlaot, Jerusalem",
+    image: "https://images.unsplash.com/photo-1493809842364-78817add7ffb?w=800&q=80",
+    price: 900,
+    rating: 4.5,
+    reviews: 210,
+    beds: 1,
+    baths: 1,
+    guests: 2,
+    isSwapAvailable: false,
+    verified: true,
+  },
+  {
+    id: "5",
+    title: "Spacious Duplex near Great Synagogue",
+    location: "Talbiya, Jerusalem",
+    image: "https://images.unsplash.com/photo-1512918728675-ed5a9ecdebfd?w=800&q=80",
+    price: 2900,
+    rating: 4.8,
+    reviews: 65,
+    beds: 4,
+    baths: 2,
+    guests: 8,
+    isSwapAvailable: true,
+    verified: true,
+  },
+  {
+    id: "6",
+    title: "Boutique Apartment with Balcony",
+    location: "German Colony, Jerusalem",
+    image: "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800&q=80",
+    price: 2100,
+    rating: 4.6,
+    reviews: 112,
+    beds: 2,
+    baths: 1,
+    guests: 4,
+    isSwapAvailable: false,
+    verified: false,
+  },
+];
+
+export const mockApartments: ApartmentData[] = Array.from({ length: 3 }).flatMap((_, i) => 
+  mockBaseApartments.map(apt => ({
+    ...apt,
+    id: `${apt.id}-${i}`,
+  }))
+);
+
+export const mockGalleryImages = [
+  "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=1200&q=80",
+  "https://images.unsplash.com/photo-1502672260266-1c1e5088e756?w=800&q=80",
+  "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800&q=80",
+  "https://images.unsplash.com/photo-1493809842364-78817add7ffb?w=800&q=80",
+  "https://images.unsplash.com/photo-1512918728675-ed5a9ecdebfd?w=800&q=80"
+];
+
+export const mockAvailableDates: AvailableDate[] = [
+  { id: 1, date: "Oct 13 - 15", day: "Fri - Sun", reason: "Shabbos Parshat Bereishit" },
+  { id: 2, date: "Oct 27 - 29", day: "Fri - Sun", reason: "Shabbos Parshat Lech Lecha" },
+  { id: 3, date: "Nov 24 - 26", day: "Fri - Sun", reason: "Special Weekend" },
+];
+
+export const mockAmenities: Amenity[] = [
+  { icon: Wifi, label: "Fast WiFi" },
+  { icon: Tv, label: "Smart TV" },
+  { icon: Snowflake, label: "Air Conditioning" },
+  { icon: Car, label: "Free Parking" },
+  { icon: WashingMachine, label: "Washer & Dryer" },
+  { icon: Coffee, label: "Coffee Maker" },
+  { icon: Monitor, label: "Dedicated Workspace" },
+  { icon: ChefHat, label: "Kosher Kitchen" },
+  { icon: Tent, label: "Sukkah Balcony" },
+];

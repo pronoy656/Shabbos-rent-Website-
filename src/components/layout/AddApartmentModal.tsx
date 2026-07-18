@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { X, CheckCircle2, Home, Search, MessageCircle, CreditCard } from "lucide-react";
 import Link from "next/link";
 
@@ -10,8 +10,14 @@ interface AddApartmentModalProps {
 }
 
 export default function AddApartmentModal({ isOpen, onClose }: AddApartmentModalProps) {
-  // Mock login state for the UI demonstration
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  // Check global mock auth state when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      setIsLoggedIn(localStorage.getItem("userRole") !== null);
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -89,7 +95,11 @@ export default function AddApartmentModal({ isOpen, onClose }: AddApartmentModal
             {!isLoggedIn ? (
               <div className="space-y-3">
                 <button 
-                  onClick={() => setIsLoggedIn(true)} // Mocking sign in
+                  onClick={() => {
+                    localStorage.setItem("userRole", "user");
+                    setIsLoggedIn(true);
+                  }}
+
                   className="w-full flex items-center justify-center gap-3 px-4 py-3.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-800 rounded-xl text-zinc-900 dark:text-white font-bold transition-all shadow-sm"
                 >
                   <svg className="w-5 h-5" viewBox="0 0 24 24">
@@ -119,7 +129,7 @@ export default function AddApartmentModal({ isOpen, onClose }: AddApartmentModal
               </div>
             ) : (
               <Link 
-                href="/list"
+                href="/user-dashboard"
                 onClick={onClose}
                 className="w-full flex items-center justify-center gap-2 px-4 py-3.5 bg-[#4c55a4] hover:bg-[#3d4484] text-white rounded-xl font-bold transition-all shadow-md shadow-[#4c55a4]/20"
               >
