@@ -49,18 +49,18 @@ export default function AboutPage() {
               </div>
 
               {/* Right Image */}
-              <div className="lg:w-[55%] relative w-full lg:-mr-10 xl:-mr-20 mt-10 lg:mt-0">
-                {/* The angled image container */}
+              <div className="lg:w-[55%] relative w-full lg:-mr-10 xl:-mr-20 mt-10 lg:mt-0 pl-10 pr-4">
+                {/* The angled and rounded image container */}
                 <div 
-                  className="relative h-[400px] md:h-[500px] lg:h-[550px] w-full"
-                  style={{ clipPath: "polygon(15% 0, 100% 0, 100% 100%, 0% 100%)" }}
+                  className="relative h-[400px] md:h-[500px] lg:h-[550px] w-full overflow-hidden rounded-[40px] shadow-2xl"
+                  style={{ transform: "skewX(-10deg)" }}
                 >
                   <img 
                     src="https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=1200&q=80" 
                     alt="Logistics" 
-                    className="w-full h-full object-cover"
+                    className="w-[120%] max-w-none h-full object-cover"
+                    style={{ transform: "skewX(10deg) translateX(-10%)" }}
                   />
-                  {/* Dark gradient overlay similar to the image's lighting */}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
                 </div>
                 
