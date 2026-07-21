@@ -1,6 +1,7 @@
 "use client";
 
 import { ExternalLink, Sparkles, BadgeCheck } from "lucide-react";
+import { useLanguage } from "@/context/LanguageContext";
 
 const ads = [
   {
@@ -42,6 +43,7 @@ const ads = [
 ];
 
 export default function AdSection() {
+  const { t } = useLanguage();
   return (
     <div className="container mx-auto px-4 mt-8 pb-12">
       {/* Header */}
@@ -49,11 +51,11 @@ export default function AdSection() {
         <div className="flex items-center gap-2">
           <Sparkles className="w-4 h-4 text-amber-400" />
           <span className="text-xs font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest">
-            Sponsored Listings
+            {t("features.sponsored_listings")}
           </span>
         </div>
         <a href="/search" className="text-xs text-[#4c55a4] hover:underline font-semibold">
-          View all listings →
+          {t("features.view_all_listings")}
         </a>
       </div>
 
@@ -85,7 +87,7 @@ export default function AdSection() {
             {/* Sponsored label */}
             <div className="absolute top-3 right-3 flex items-center gap-1 px-2 py-1 bg-black/40 backdrop-blur-sm rounded-full">
               {ad.verified && <BadgeCheck className="w-3 h-3 text-blue-400" />}
-              <span className="text-[10px] font-bold text-white/80 uppercase tracking-wider">Ad</span>
+              <span className="text-[10px] font-bold text-white/80 uppercase tracking-wider">{t("features.ad")}</span>
             </div>
 
             {/* Content */}
@@ -96,7 +98,7 @@ export default function AdSection() {
               </h3>
               <p className="text-xs text-white/70 leading-relaxed mb-4 line-clamp-1">{ad.sub}</p>
               <span className={`inline-flex items-center gap-1.5 self-start px-4 py-2 rounded-xl text-xs font-bold text-white bg-gradient-to-r ${ad.accent} shadow-md group-hover:shadow-lg transition-all`}>
-                {ad.cta} <ExternalLink className="w-3 h-3" />
+                {t("features.view_listing")} <ExternalLink className="w-3 h-3" />
               </span>
             </div>
           </a>

@@ -31,14 +31,14 @@ function CustomSelect({ icon: Icon, value, onChange, options, placeholder }: Cus
   return (
     <div className="relative w-full">
       <DropdownMenu>
-        <DropdownMenuTrigger className="w-full relative flex items-center bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl py-3 focus:outline-none focus:ring-2 focus:ring-[#4c55a4] transition-all">
-          <div className="ps-3.5 flex items-center pointer-events-none">
+        <DropdownMenuTrigger className="w-full relative flex items-center bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl h-[48px] px-3 focus:outline-none focus:ring-2 focus:ring-[#4c55a4] transition-all">
+          <div className="flex items-center pointer-events-none shrink-0">
             <Icon className="h-4 w-4 text-zinc-400" />
           </div>
-          <span className={`flex-1 text-start ps-2.5 text-sm ${value ? 'font-medium text-zinc-700 dark:text-zinc-300' : 'text-zinc-500'}`}>
+          <span className={`flex-1 text-start px-2.5 text-sm truncate ${value ? 'font-medium text-zinc-700 dark:text-zinc-300' : 'text-zinc-500'}`}>
             {selectedOption ? selectedOption.label : placeholder}
           </span>
-          <div className="pe-3.5 flex items-center pointer-events-none">
+          <div className="flex items-center pointer-events-none shrink-0">
             <ChevronDown className="h-4 w-4 text-zinc-400" />
           </div>
         </DropdownMenuTrigger>
@@ -99,7 +99,7 @@ export default function SearchWidget({ onSwapSearch }: SearchWidgetProps) {
           }`}
         >
           <Home className="w-4 h-4" />
-          Rent
+          {t("search_widget.rent")}
         </button>
         <button
           onClick={() => {
@@ -116,7 +116,7 @@ export default function SearchWidget({ onSwapSearch }: SearchWidgetProps) {
           }`}
         >
           <ArrowRightLeft className="w-4 h-4" />
-          Swap
+          {t("search_widget.swap")}
         </button>
       </div>
 
@@ -125,82 +125,82 @@ export default function SearchWidget({ onSwapSearch }: SearchWidgetProps) {
         
         {/* Where (City) */}
         <div className="lg:col-span-2 space-y-1.5">
-          <label className="text-xs font-bold text-zinc-900 dark:text-white">City</label>
+          <label className="text-xs font-bold text-zinc-900 dark:text-white">{t("search_widget.city")}</label>
           <CustomSelect
             icon={MapPin}
             value={city}
             onChange={setCity}
-            placeholder="Select City"
+            placeholder={t("search_widget.select_city")}
             options={[
-              { value: "jerusalem", label: "Jerusalem" },
-              { value: "tel-aviv", label: "Tel Aviv" },
-              { value: "tzfat", label: "Tzfat" },
+              { value: "jerusalem", label: t("search_widget.jerusalem") },
+              { value: "tel-aviv", label: t("search_widget.tel_aviv") },
+              { value: "tzfat", label: t("search_widget.tzfat") },
             ]}
           />
         </div>
 
         {/* Neighborhood */}
         <div className="lg:col-span-3 space-y-1.5">
-          <label className="text-xs font-bold text-zinc-900 dark:text-white">Neighborhood</label>
+          <label className="text-xs font-bold text-zinc-900 dark:text-white">{t("search_widget.neighborhood")}</label>
           <CustomSelect
             icon={Navigation}
             value={neighborhood}
             onChange={setNeighborhood}
-            placeholder="Select Neighborhood"
+            placeholder={t("search_widget.select_neighborhood")}
             options={[
-              { value: "rehavia", label: "Rehavia" },
-              { value: "geula", label: "Geula" },
-              { value: "bakat", label: "Baka" },
+              { value: "rehavia", label: t("search_widget.rehavia") },
+              { value: "geula", label: t("search_widget.geula") },
+              { value: "bakat", label: t("search_widget.baka") },
             ]}
           />
         </div>
 
         {/* Walking Time */}
         <div className="lg:col-span-2 space-y-1.5">
-          <label className="text-xs font-bold text-zinc-900 dark:text-white">Walking Time</label>
+          <label className="text-xs font-bold text-zinc-900 dark:text-white">{t("search_widget.walking_time")}</label>
           <CustomSelect
             icon={MapPin}
             value={walkingTime}
             onChange={setWalkingTime}
-            placeholder="Select Walking Time"
+            placeholder={t("search_widget.select_walking_time")}
             options={[
-              { value: "5", label: "5 mins" },
-              { value: "10", label: "10 mins" },
-              { value: "15", label: "15 mins" },
-              { value: "20", label: "20 mins" },
+              { value: "5", label: t("search_widget.mins_5") },
+              { value: "10", label: t("search_widget.mins_10") },
+              { value: "15", label: t("search_widget.mins_15") },
+              { value: "20", label: t("search_widget.mins_20") },
             ]}
           />
         </div>
 
         {/* Weekend */}
         <div className="lg:col-span-3 space-y-1.5">
-          <label className="text-xs font-bold text-zinc-900 dark:text-white">Weekend</label>
+          <label className="text-xs font-bold text-zinc-900 dark:text-white">{t("search_widget.weekend")}</label>
           <CustomSelect
             icon={Calendar}
             value={weekend}
             onChange={setWeekend}
-            placeholder="Select Weekend"
+            placeholder={t("search_widget.select_weekend")}
             options={[
-              { value: "next", label: "This Weekend" },
-              { value: "following", label: "Next Weekend" },
+              { value: "next", label: t("search_widget.this_weekend") },
+              { value: "following", label: t("search_widget.next_weekend") },
             ]}
           />
         </div>
 
         {/* Rooms */}
         <div className="lg:col-span-2 space-y-1.5">
-          <label className="text-xs font-bold text-zinc-900 dark:text-white">Rooms</label>
+          <label className="text-xs font-bold text-zinc-900 dark:text-white">{t("search_widget.rooms")}</label>
           <CustomSelect
             icon={BedDouble}
             value={rooms}
             onChange={setRooms}
-            placeholder="Select Rooms"
+            placeholder={t("search_widget.select_rooms")}
             options={[
-              { value: "any", label: "Any" },
-              { value: "1", label: "1+" },
-              { value: "2", label: "2+" },
-              { value: "3", label: "3+" },
-              { value: "4", label: "4+" },
+              { value: "any", label: t("search_widget.any") },
+              { value: "1", label: t("search_widget.plus_1") },
+              { value: "2", label: t("search_widget.plus_2") },
+              { value: "3", label: t("search_widget.plus_3") },
+              { value: "4", label: t("search_widget.plus_4") },
             ]}
           />
         </div>
@@ -211,54 +211,54 @@ export default function SearchWidget({ onSwapSearch }: SearchWidgetProps) {
         
         {/* Bathrooms */}
         <div className="lg:col-span-3 space-y-1.5">
-          <label className="text-xs font-bold text-zinc-900 dark:text-white">Bathrooms</label>
+          <label className="text-xs font-bold text-zinc-900 dark:text-white">{t("search_widget.bathrooms")}</label>
           <CustomSelect
             icon={Bath}
             value={bathrooms}
             onChange={setBathrooms}
-            placeholder="Select Bathrooms"
+            placeholder={t("search_widget.select_bathrooms")}
             options={[
-              { value: "any", label: "Any" },
-              { value: "1", label: "1+" },
-              { value: "2", label: "2+" },
-              { value: "3", label: "3+" },
+              { value: "any", label: t("search_widget.any") },
+              { value: "1", label: t("search_widget.plus_1") },
+              { value: "2", label: t("search_widget.plus_2") },
+              { value: "3", label: t("search_widget.plus_3") },
             ]}
           />
         </div>
 
         {/* Beds */}
         <div className="lg:col-span-3 space-y-1.5">
-          <label className="text-xs font-bold text-zinc-900 dark:text-white">Beds</label>
+          <label className="text-xs font-bold text-zinc-900 dark:text-white">{t("search_widget.beds")}</label>
           <CustomSelect
             icon={BedDouble}
             value={beds}
             onChange={setBeds}
-            placeholder="Select Beds"
+            placeholder={t("search_widget.select_beds")}
             options={[
-              { value: "any", label: "Any" },
-              { value: "1", label: "1+" },
-              { value: "2", label: "2+" },
-              { value: "4", label: "4+" },
-              { value: "6", label: "6+" },
+              { value: "any", label: t("search_widget.any") },
+              { value: "1", label: t("search_widget.plus_1") },
+              { value: "2", label: t("search_widget.plus_2") },
+              { value: "4", label: t("search_widget.plus_4") },
+              { value: "6", label: t("search_widget.plus_6") },
             ]}
           />
         </div>
 
         {/* Guests */}
         <div className="lg:col-span-3 space-y-1.5">
-          <label className="text-xs font-bold text-zinc-900 dark:text-white">Guests / Seats</label>
+          <label className="text-xs font-bold text-zinc-900 dark:text-white">{t("search_widget.guests")}</label>
           <CustomSelect
             icon={Users}
             value={guests}
             onChange={setGuests}
-            placeholder="Select Guests"
+            placeholder={t("search_widget.select_guests")}
             options={[
-              { value: "any", label: "Any" },
-              { value: "2", label: "2+" },
-              { value: "4", label: "4+" },
-              { value: "6", label: "6+" },
-              { value: "8", label: "8+" },
-              { value: "10", label: "10+" },
+              { value: "any", label: t("search_widget.any") },
+              { value: "2", label: t("search_widget.plus_2") },
+              { value: "4", label: t("search_widget.plus_4") },
+              { value: "6", label: t("search_widget.plus_6") },
+              { value: "8", label: t("search_widget.plus_8") },
+              { value: "10", label: t("search_widget.plus_10") },
             ]}
           />
         </div>
@@ -271,20 +271,20 @@ export default function SearchWidget({ onSwapSearch }: SearchWidgetProps) {
                 setHasSearchedSwap(true);
                 onSwapSearch?.(true);
               }}
-              className="flex items-center justify-center gap-2 py-3 w-full bg-[#4c55a4] hover:bg-[#3d4484] text-white font-bold rounded-xl shadow-md transition-colors"
+              className="flex items-center justify-center gap-2 h-[48px] w-full bg-[#4c55a4] hover:bg-[#3d4484] text-white font-bold rounded-xl shadow-md transition-colors"
             >
-              <Search className="w-5 h-5" />
-              Search Apartments
+              <Search className="w-5 h-5 shrink-0" />
+              <span>{t("search_widget.search_apartments")}</span>
             </button>
           ) : (
             <Link 
               href={`/search?${new URLSearchParams({
                 ...(city ? { city } : {}),
               }).toString()}`} 
-              className="flex items-center justify-center gap-2 py-3 w-full bg-[#4c55a4] hover:bg-[#3d4484] text-white font-bold rounded-xl shadow-md transition-colors"
+              className="flex items-center justify-center gap-2 h-[48px] w-full bg-[#4c55a4] hover:bg-[#3d4484] text-white font-bold rounded-xl shadow-md transition-colors"
             >
-              <Search className="w-5 h-5" />
-              Search Apartments
+              <Search className="w-5 h-5 shrink-0" />
+              <span>{t("search_widget.search_apartments")}</span>
             </Link>
           )}
         </div>
@@ -298,9 +298,9 @@ export default function SearchWidget({ onSwapSearch }: SearchWidgetProps) {
         <div className="container mx-auto mt-12 mb-20 animate-in fade-in slide-in-from-bottom-4 duration-500">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-4">
              <div>
-               <h3 className="text-3xl font-extrabold text-zinc-900 dark:text-white mb-2">Swap Matches</h3>
+               <h3 className="text-3xl font-extrabold text-zinc-900 dark:text-white mb-2">{t("search_widget.swap_matches")}</h3>
                <p className="text-lg font-medium text-zinc-500">
-                  9 properties found
+                  9 {t("search_widget.properties_found")}
                </p>
              </div>
              
@@ -309,7 +309,7 @@ export default function SearchWidget({ onSwapSearch }: SearchWidgetProps) {
                className="flex items-center justify-center gap-2 px-6 py-2.5 bg-zinc-900 hover:bg-zinc-800 dark:bg-white dark:hover:bg-zinc-200 text-white dark:text-zinc-900 font-bold rounded-xl shadow-md transition-colors"
              >
                 <MapPin className="w-4 h-4" />
-                {showMap ? "Hide map" : "Show on map"}
+                {showMap ? t("search_widget.hide_map") : t("search_widget.show_on_map")}
              </button>
           </div>
           

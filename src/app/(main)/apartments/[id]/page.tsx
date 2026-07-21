@@ -10,6 +10,7 @@ import {
   ShieldCheck, CalendarCheck, Wifi, Tent, Monitor, ChefHat, X, Mail,
   Coffee, Tv, Snowflake, Car, WashingMachine, Phone, MessageCircle, Copy, ChevronDown, Home, Footprints, Check
 } from "lucide-react";
+import { useLanguage } from "@/context/LanguageContext";
 
 // Mock Data
 const galleryImages = [
@@ -37,6 +38,7 @@ const similarApartments: ApartmentData[] = [
 
 export default function ApartmentDetailsPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
+  const { t } = useLanguage();
   const [activeImage, setActiveImage] = useState(galleryImages[0]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDatesModalOpen, setIsDatesModalOpen] = useState(false);
@@ -91,10 +93,10 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
              <div>
                <div className="flex items-center gap-2 mb-2">
                  <span className="px-2.5 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 font-bold text-xs rounded-md border border-blue-200 dark:border-blue-800/50">
-                   Apartment #{id}
+                   {t("apartment_details.apartment_id")}{id}
                  </span>
                  <span className="px-2.5 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 font-bold text-xs rounded-md border border-green-200 dark:border-green-800/50 flex items-center gap-1">
-                   <ShieldCheck className="w-3.5 h-3.5" /> Verified Listing
+                   <ShieldCheck className="w-3.5 h-3.5" /> {t("apartment_details.verified_listing")}
                  </span>
                </div>
                <h1 className="text-3xl md:text-4xl font-extrabold text-zinc-900 dark:text-white mb-2">
@@ -143,7 +145,7 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
             {/* Details Section */}
             <div className="bg-white dark:bg-zinc-900 rounded-3xl p-6 md:p-8 border border-zinc-200 dark:border-zinc-800 shadow-sm">
                 <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
-                  <h2 className="text-2xl font-bold text-zinc-900 dark:text-white">About this home</h2>
+                  <h2 className="text-2xl font-bold text-zinc-900 dark:text-white">{t("apartment_details.about_home")}</h2>
                   {!isSwapMode && <span className="text-3xl font-black text-zinc-900 dark:text-white">₪4500</span>}
                 </div>
                 
@@ -152,15 +154,15 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
                   <div className="flex flex-wrap items-center gap-6">
                     <div className="flex items-center gap-2 text-zinc-700 dark:text-zinc-300 font-medium">
                       <BedDouble className="w-5 h-5 text-[#4c55a4] dark:text-[#6b75c8]" />
-                      4 Beds
+                      4 {t("apartment_details.beds")}
                     </div>
                     <div className="flex items-center gap-2 text-zinc-700 dark:text-zinc-300 font-medium">
                       <Bath className="w-5 h-5 text-[#4c55a4] dark:text-[#6b75c8]" />
-                      3 Baths
+                      3 {t("apartment_details.baths")}
                     </div>
                     <div className="flex items-center gap-2 text-zinc-700 dark:text-zinc-300 font-medium">
                       <Users className="w-5 h-5 text-[#4c55a4] dark:text-[#6b75c8]" />
-                      Up to 8 Guests
+                      {t("apartment_details.up_to")} 8 {t("apartment_details.guests")}
                     </div>
                   </div>
                   <div className="flex-shrink-0 flex flex-col sm:flex-row items-center gap-3">
@@ -172,14 +174,14 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
                           : "bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 border-red-200 dark:border-red-500/20 cursor-not-allowed"
                       }`}
                     >
-                       {availableDates.length > 0 ? "Available for upcoming shabat" : "Unavailable for upcoming shabat"}
+                       {availableDates.length > 0 ? t("apartment_details.available_upcoming") : t("apartment_details.unavailable_upcoming")}
                     </button>
                     {!isSwapMode && (
                       <button 
                         onClick={() => setIsModalOpen(true)}
                         className="w-full sm:w-auto px-6 py-2.5 bg-[#4c55a4] hover:bg-[#3d4484] text-white rounded-xl font-bold transition-all shadow-md shadow-[#4c55a4]/20 text-sm"
                       >
-                         I am interested
+                         {t("apartment_details.interested")}
                       </button>
                     )}
                     {isSwapMode && (
@@ -187,7 +189,7 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
                         onClick={() => setIsSwapModalOpen(true)}
                         className="w-full sm:w-auto px-6 py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl font-bold transition-all shadow-md shadow-amber-500/20 text-sm flex items-center justify-center gap-2"
                       >
-                         <ArrowRightLeft className="w-4 h-4" /> Swap Now
+                         <ArrowRightLeft className="w-4 h-4" /> {t("apartment_details.swap_now")}
                       </button>
                     )}
                   </div>
@@ -197,7 +199,7 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
                    Experience the perfect Shabbos in this beautifully appointed apartment. Centrally located with easy access to shuls and kosher dining. The apartment features a fully equipped kosher kitchen with double sinks, a spacious dining area that comfortably seats your whole family, and comfortable beds with premium linens.
                 </p>
 
-                <h3 className="text-xl font-bold mb-4 text-zinc-900 dark:text-white">What this place offers</h3>
+                <h3 className="text-xl font-bold mb-4 text-zinc-900 dark:text-white">{t("apartment_details.what_offers")}</h3>
                 <ul className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {displayedAmenities.map((amenity, idx) => (
                     <li key={idx} className="flex items-center gap-3 text-zinc-700 dark:text-zinc-300 font-medium">
@@ -211,7 +213,7 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
                       onClick={() => setShowAllAmenities(true)}
                       className="w-full sm:w-auto px-6 py-2.5 border border-zinc-200 dark:border-zinc-700 hover:border-[#4c55a4] hover:bg-blue-50 dark:hover:bg-[#4c55a4]/10 text-zinc-900 dark:text-white rounded-xl font-bold transition-all text-sm"
                     >
-                      + {amenitiesList.length - 6} more
+                      + {amenitiesList.length - 6} {t("apartment_details.more")}
                     </button>
                   )}
                   {availableDates.length > 0 && (
@@ -219,7 +221,7 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
                       onClick={() => setIsDatesModalOpen(true)}
                       className="w-full sm:w-auto px-6 py-2.5 bg-zinc-900 dark:bg-white hover:bg-zinc-800 dark:hover:bg-zinc-200 text-white dark:text-zinc-900 rounded-xl font-bold transition-all shadow-md text-sm"
                     >
-                      See all available dates
+                      {t("apartment_details.see_all_dates")}
                     </button>
                   )}
                 </div>
@@ -230,8 +232,8 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
             {/* Contact Landlord Section */}
             <div className="bg-[#4c55a4]/5 dark:bg-[#4c55a4]/10 rounded-3xl p-6 md:p-8 border border-[#4c55a4]/20 dark:border-[#4c55a4]/30 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-6">
                 <div>
-                   <h2 className="text-2xl font-bold text-zinc-900 dark:text-white mb-2">Like this apartment?</h2>
-                   <p className="text-zinc-600 dark:text-zinc-400">Get in touch directly with the property owner.</p>
+                   <h2 className="text-2xl font-bold text-zinc-900 dark:text-white mb-2">{t("apartment_details.like_apartment")}</h2>
+                   <p className="text-zinc-600 dark:text-zinc-400">{t("apartment_details.get_in_touch")}</p>
                 </div>
                 {!isNumberRevealed ? (
                   <button 
@@ -241,7 +243,7 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
                      }}
                      className="px-8 py-3.5 bg-white dark:bg-zinc-900 text-[#4c55a4] hover:bg-zinc-50 dark:hover:bg-zinc-800 border border-[#4c55a4]/20 dark:border-[#4c55a4]/30 rounded-xl font-bold transition-all shadow-sm shadow-[#4c55a4]/5 flex items-center justify-center gap-2 whitespace-nowrap"
                   >
-                     Contact Landlord
+                     {t("apartment_details.contact_landlord")}
                   </button>
                 ) : (
                   <div className="flex flex-col items-center sm:items-end">
@@ -258,7 +260,7 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
                        </span>
                     </button>
                     <p className="text-sm text-zinc-500 mt-3 font-medium flex items-center gap-1.5">
-                       Click to view options <ArrowRightLeft className="w-3.5 h-3.5 rotate-90 sm:rotate-0" />
+                       {t("apartment_details.click_view_options")} <ArrowRightLeft className="w-3.5 h-3.5 rotate-90 sm:rotate-0" />
                     </p>
                   </div>
                 )}
@@ -266,7 +268,7 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
 
             {/* Map Section */}
             <div className="bg-white dark:bg-zinc-900 rounded-3xl p-6 md:p-8 border border-zinc-200 dark:border-zinc-800 shadow-sm">
-                <h2 className="text-2xl font-bold mb-2 text-zinc-900 dark:text-white">Location on map</h2>
+                <h2 className="text-2xl font-bold mb-2 text-zinc-900 dark:text-white">{t("apartment_details.location_map")}</h2>
                 <p className="text-zinc-500 dark:text-zinc-400 mb-6">Rehavia, Jerusalem (Approx. 10 mins walk to city center)</p>
                 <div className="w-full h-[350px] bg-zinc-200 dark:bg-zinc-800 rounded-2xl overflow-hidden relative border border-zinc-200 dark:border-zinc-700">
                     <iframe 
@@ -290,7 +292,7 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
       <div className="border-t border-zinc-200 dark:border-zinc-800 mt-8 pt-16 bg-[#fafafa] dark:bg-zinc-950">
         <div className="container mx-auto px-4">
           <h2 className="text-3xl font-black text-zinc-900 dark:text-white tracking-tight mb-8">
-            Similar Luxury Stays
+            {t("apartment_details.similar_stays")}
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {similarApartments.map(apt => (
@@ -307,7 +309,7 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
             {/* Modal Header */}
             <div className="px-6 py-5 border-b border-zinc-100 dark:border-zinc-800 flex items-center justify-between">
               <h3 className="font-bold text-xl text-zinc-900 dark:text-white flex items-center gap-2">
-                <Mail className="w-5 h-5 text-[#4c55a4]" /> Contact Property
+                <Mail className="w-5 h-5 text-[#4c55a4]" /> {t("apartment_details.contact_property")}
               </h3>
               <button 
                 onClick={() => setIsModalOpen(false)}
@@ -325,30 +327,30 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
               
               <form onSubmit={handleContactSubmit} className="space-y-4">
                 <div>
-                  <label className="block text-sm font-bold text-zinc-700 dark:text-zinc-300 mb-1.5">Full Name</label>
+                  <label className="block text-sm font-bold text-zinc-700 dark:text-zinc-300 mb-1.5">{t("apartment_details.full_name")}</label>
                   <input required type="text" placeholder="John Doe" className="w-full px-4 py-3 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#4c55a4]/50 transition-all" />
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-bold text-zinc-700 dark:text-zinc-300 mb-1.5">Email Address</label>
+                  <label className="block text-sm font-bold text-zinc-700 dark:text-zinc-300 mb-1.5">{t("apartment_details.email_address")}</label>
                   <input required type="email" placeholder="john@example.com" className="w-full px-4 py-3 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#4c55a4]/50 transition-all" />
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-bold text-zinc-700 dark:text-zinc-300 mb-1.5">Phone Number</label>
+                  <label className="block text-sm font-bold text-zinc-700 dark:text-zinc-300 mb-1.5">{t("apartment_details.phone_number")}</label>
                   <input required type="tel" placeholder="+1 (555) 000-0000" className="w-full px-4 py-3 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#4c55a4]/50 transition-all" />
                 </div>
 
                 {availableDates.length > 0 && (
                   <div className="relative z-20">
-                    <label className="block text-sm font-bold text-zinc-700 dark:text-zinc-300 mb-1.5">Which Shabbos?</label>
+                    <label className="block text-sm font-bold text-zinc-700 dark:text-zinc-300 mb-1.5">{t("apartment_details.which_shabbos")}</label>
                     <div className="relative">
                       <div 
                         onClick={() => setIsDateDropdownOpen(!isDateDropdownOpen)}
                         className={`w-full px-4 py-3 rounded-xl border ${isDateDropdownOpen ? 'border-[#4c55a4] ring-2 ring-[#4c55a4]/20' : 'border-zinc-300 dark:border-zinc-700'} bg-white dark:bg-zinc-950 text-zinc-900 dark:text-white cursor-pointer transition-all flex items-center justify-between`}
                       >
                         <span className={selectedDate ? "font-bold" : "text-zinc-500"}>
-                          {selectedDate ? availableDates.find(d => d.id.toString() === selectedDate)?.date + " • " + availableDates.find(d => d.id.toString() === selectedDate)?.reason : "Select an available date..."}
+                          {selectedDate ? availableDates.find(d => d.id.toString() === selectedDate)?.date + " • " + availableDates.find(d => d.id.toString() === selectedDate)?.reason : t("apartment_details.select_date")}
                         </span>
                         <ChevronDown className={`w-5 h-5 text-zinc-400 transition-transform duration-300 ${isDateDropdownOpen ? "rotate-180" : ""}`} />
                       </div>
@@ -375,13 +377,13 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
                 )}
                 
                 <div>
-                  <label className="block text-sm font-bold text-zinc-700 dark:text-zinc-300 mb-1.5">Message</label>
+                  <label className="block text-sm font-bold text-zinc-700 dark:text-zinc-300 mb-1.5">{t("apartment_details.message")}</label>
                   <textarea required rows={4} placeholder="Hello, I am interested in this property for..." className="w-full px-4 py-3 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#4c55a4]/50 transition-all resize-none"></textarea>
                 </div>
                 
                 <div className="pt-2">
                   <button type="submit" className="w-full py-3.5 bg-[#4c55a4] hover:bg-[#3d4484] text-white rounded-xl font-bold transition-all shadow-md shadow-[#4c55a4]/20 flex items-center justify-center gap-2">
-                    Send Message
+                    {t("apartment_details.send_message")}
                   </button>
                 </div>
               </form>
@@ -398,10 +400,10 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
             <div className="px-6 py-5 border-b border-zinc-100 dark:border-zinc-800 flex items-start justify-between">
               <div>
                 <h3 className="font-bold text-xl text-zinc-900 dark:text-white flex items-center gap-2">
-                  <CalendarCheck className="w-5 h-5 text-[#4c55a4]" /> Available Dates
+                  <CalendarCheck className="w-5 h-5 text-[#4c55a4]" /> {t("apartment_details.available_dates")}
                 </h3>
                 <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1 ml-7 truncate max-w-[280px] sm:max-w-[320px]">
-                  Upcoming available dates for this property.
+                  {t("apartment_details.upcoming_dates")}
                 </p>
               </div>
               <button 
@@ -437,7 +439,7 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
             {/* Modal Header */}
             <div className="px-6 py-5 border-b border-zinc-100 dark:border-zinc-800 flex items-center justify-between">
               <h3 className="font-bold text-xl text-zinc-900 dark:text-white flex items-center gap-2">
-                <Phone className="w-5 h-5 text-[#4c55a4]" /> Contact Landlord
+                <Phone className="w-5 h-5 text-[#4c55a4]" /> {t("apartment_details.contact_landlord")}
               </h3>
               <button 
                 onClick={() => setIsLandlordModalOpen(false)}
@@ -451,9 +453,9 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
             <div className="p-6">
                {landlordModalState === "initial" && (
                  <div className="py-4">
-                    <h3 className="text-[28px] font-bold text-[#5c70a8] mb-4 leading-tight">Before you close... 🙏</h3>
+                    <h3 className="text-[28px] font-bold text-[#5c70a8] mb-4 leading-tight">{t("apartment_details.before_close")}</h3>
                     <p className="text-[#555a64] dark:text-zinc-400 mb-10 leading-relaxed text-[17px]">
-                       Please remind the host that you came through <span className="font-bold text-[#5c70a8]">Shabbos Rent</span>, so we can keep maintaining and upgrading the best possible site for you.
+                       {t("apartment_details.remind_host")} <span className="font-bold text-[#5c70a8]">{t("apartment_details.shabbos_rent")}</span>, {t("apartment_details.maintain_site")}
                     </p>
                     <button 
                       onClick={() => {
@@ -462,18 +464,18 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
                       }}
                       className="w-full py-4 bg-[#758bc6] hover:bg-[#5c70a8] text-white rounded-[14px] text-[19px] font-medium transition-all shadow-md shadow-[#758bc6]/20"
                     >
-                      Show the number
+                      {t("apartment_details.show_number")}
                     </button>
                  </div>
                )}
 
                {landlordModalState === "options" && (
                  <div className="py-2">
-                    <h4 className="text-center font-bold text-lg text-zinc-900 dark:text-white mb-4">Contact apartment owner</h4>
+                    <h4 className="text-center font-bold text-lg text-zinc-900 dark:text-white mb-4">{t("apartment_details.contact_owner")}</h4>
                     
                     <div className="bg-zinc-50 dark:bg-zinc-800/50 p-4 rounded-xl border border-zinc-200 dark:border-zinc-700 mb-6 flex items-center justify-between">
                        <div>
-                         <p className="text-sm text-zinc-500 font-bold uppercase tracking-wider mb-1">Apartment Code</p>
+                         <p className="text-sm text-zinc-500 font-bold uppercase tracking-wider mb-1">{t("apartment_details.apartment_code")}</p>
                          <p className="text-xl font-bold text-zinc-900 dark:text-white tracking-wide">APT-{id}</p>
                        </div>
                        <button onClick={() => navigator.clipboard.writeText(`APT-${id}`)} className="p-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg shadow-sm hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors" title="Copy Code">
@@ -486,7 +488,7 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
                          href="tel:+972501234567"
                          className="w-full py-4 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-900 dark:text-white rounded-xl font-bold transition-all flex items-center justify-center gap-2 text-lg"
                        >
-                         <Phone className="w-5 h-5" /> Call Hotline
+                         <Phone className="w-5 h-5" /> {t("apartment_details.call_hotline")}
                        </a>
                        <a 
                          href="https://wa.me/972501234567"
@@ -494,7 +496,7 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
                          rel="noopener noreferrer"
                          className="w-full py-4 bg-[#25D366] hover:bg-[#20bd5a] text-white rounded-xl font-bold transition-all shadow-md shadow-[#25D366]/20 flex items-center justify-center gap-2 text-lg"
                        >
-                         <MessageCircle className="w-5 h-5" /> WhatsApp
+                         <MessageCircle className="w-5 h-5" /> {t("apartment_details.whatsapp")}
                        </a>
                     </div>
                  </div>
@@ -511,7 +513,7 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
             <div className="px-6 py-5 border-b border-zinc-100 dark:border-zinc-800 flex items-center justify-between">
               <h3 className="font-bold text-xl text-zinc-900 dark:text-white flex items-center gap-2">
                 <ArrowRightLeft className="w-5 h-5 text-amber-500" /> 
-                {hasUserListing ? (swapModalState === "contact" ? "Contact Owner" : "Request Swap") : "Action Required"}
+                {hasUserListing ? (swapModalState === "contact" ? t("apartment_details.contact_owner") : t("apartment_details.swap_now")) : t("apartment_details.action_required")}
               </h3>
               <button 
                 onClick={() => {
@@ -530,21 +532,21 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
                   <div className="w-16 h-16 bg-red-100 dark:bg-red-900/30 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
                     <Home className="w-8 h-8" />
                   </div>
-                  <h4 className="text-xl font-bold text-zinc-900 dark:text-white mb-2">No Active Listing Found</h4>
+                  <h4 className="text-xl font-bold text-zinc-900 dark:text-white mb-2">{t("apartment_details.no_listing")}</h4>
                   <p className="text-zinc-600 dark:text-zinc-400 mb-8">
-                    You need to have an active apartment listing to participate in a swap. Please create a listing first.
+                    {t("apartment_details.need_listing")}
                   </p>
                   <Link 
                     href="/user-dashboard"
                     className="block w-full py-3.5 bg-[#4c55a4] hover:bg-[#3d4484] text-white rounded-xl font-bold transition-all shadow-md shadow-[#4c55a4]/20"
                   >
-                    Go to Dashboard & Create Listing
+                    {t("apartment_details.go_dashboard")}
                   </Link>
                 </div>
               ) : swapModalState === "initial" ? (
                 <div>
                   <p className="text-center text-zinc-600 dark:text-zinc-400 mb-6">
-                    You are requesting to swap your apartment with this one. Does this match look good?
+                    {t("apartment_details.request_swap_match")}
                   </p>
                   
                   <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-8 bg-zinc-50 dark:bg-zinc-800/50 p-4 rounded-2xl border border-zinc-200 dark:border-zinc-700">
@@ -555,7 +557,7 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img src="https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&q=80" alt="Your Listing" className="w-full h-full object-cover" />
                         <div className="absolute top-2 left-2 bg-white/90 dark:bg-zinc-900/90 backdrop-blur-sm px-2 py-1 rounded-lg text-xs font-bold text-zinc-900 dark:text-white shadow-sm">
-                          Your Listing
+                          {t("apartment_details.your_listing")}
                         </div>
                       </div>
                       <div className="p-3">
@@ -581,7 +583,7 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img src={activeImage} alt="Target Apartment" className="w-full h-full object-cover" />
                         <div className="absolute top-2 left-2 bg-amber-500 text-white px-2 py-1 rounded-lg text-xs font-bold shadow-sm">
-                          This Apartment
+                          {t("apartment_details.this_apartment")}
                         </div>
                       </div>
                       <div className="p-3">
@@ -602,7 +604,7 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
                     onClick={() => setSwapModalState("contact")}
                     className="w-full py-3.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl font-bold transition-all shadow-md shadow-amber-500/20"
                   >
-                    Confirm & Request Swap
+                    {t("apartment_details.confirm_request")}
                   </button>
                 </div>
               ) : (
@@ -611,13 +613,13 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
                     <div className="w-14 h-14 bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-full flex items-center justify-center mx-auto mb-3">
                       <ShieldCheck className="w-7 h-7" />
                     </div>
-                    <h4 className="font-bold text-xl text-zinc-900 dark:text-white mb-1">Swap Request Confirmed!</h4>
-                    <p className="text-sm text-zinc-500">Contact the owner to finalize the details.</p>
+                    <h4 className="font-bold text-xl text-zinc-900 dark:text-white mb-1">{t("apartment_details.swap_confirmed")}</h4>
+                    <p className="text-sm text-zinc-500">{t("apartment_details.contact_owner_finalize")}</p>
                   </div>
                   
                      <div className="bg-amber-50 dark:bg-amber-900/20 p-4 rounded-xl border border-amber-200 dark:border-amber-800/30 mb-6 flex items-center justify-between">
                         <div>
-                          <p className="text-sm text-amber-700 dark:text-amber-500 font-bold uppercase tracking-wider mb-1">Swap Code</p>
+                          <p className="text-sm text-amber-700 dark:text-amber-500 font-bold uppercase tracking-wider mb-1">{t("apartment_details.swap_code")}</p>
                           <p className="text-xl font-bold text-amber-900 dark:text-amber-300 tracking-wide">SWP-8472</p>
                         </div>
                         <button 
@@ -643,7 +645,7 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
                        href="tel:+972501234567"
                        className="w-full py-4 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-900 dark:text-white rounded-xl font-bold transition-all flex items-center justify-center gap-2 text-lg"
                      >
-                       <Phone className="w-5 h-5" /> Call Hotline
+                       <Phone className="w-5 h-5" /> {t("apartment_details.call_hotline")}
                      </a>
                      <a 
                        href="https://wa.me/972501234567"
@@ -651,7 +653,7 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
                        rel="noopener noreferrer"
                        className="w-full py-4 bg-[#25D366] hover:bg-[#20bd5a] text-white rounded-xl font-bold transition-all shadow-md shadow-[#25D366]/20 flex items-center justify-center gap-2 text-lg"
                      >
-                       <MessageCircle className="w-5 h-5" /> WhatsApp
+                       <MessageCircle className="w-5 h-5" /> {t("apartment_details.whatsapp")}
                      </a>
                   </div>
                 </div>

@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import ApartmentCard from "@/components/search/ApartmentCard";
 import { ApartmentData } from "@/types";
+import { useLanguage } from "@/context/LanguageContext";
 
 // Mock Data
 const telAvivApartments: ApartmentData[] = [
@@ -27,6 +28,7 @@ const tzfatApartments: ApartmentData[] = [
 ];
 
 export default function PremiumCities() {
+  const { t } = useLanguage();
   const [dummyVisible, setDummyVisible] = useState(false);
 
   useEffect(() => {
@@ -51,10 +53,10 @@ export default function PremiumCities() {
         {/* Header section (optional global title) */}
         <div className="mb-12 text-center max-w-2xl mx-auto">
           <h2 className="text-4xl font-black text-zinc-900 dark:text-white tracking-tight mb-4">
-            Explore Premium Destinations
+            {t("premium_cities.title")}
           </h2>
           <p className="text-lg text-zinc-500 dark:text-zinc-400 font-medium">
-            Find the perfect apartment for your Shabbos in Israel's most sought-after cities.
+            {t("premium_cities.subtitle")}
           </p>
         </div>
 
@@ -64,12 +66,12 @@ export default function PremiumCities() {
             <div>
               <div className="flex items-center gap-2 mb-2">
                 <span className="w-8 h-1 bg-[#4c55a4] rounded-full"></span>
-                <span className="text-sm font-bold tracking-widest uppercase text-[#4c55a4]">Premium City</span>
+                <span className="text-sm font-bold tracking-widest uppercase text-[#4c55a4]">{t("premium_cities.premium_city")}</span>
               </div>
-              <h3 className="text-3xl md:text-4xl font-black text-zinc-900 dark:text-white tracking-tight">Available for Tel Aviv</h3>
+              <h3 className="text-3xl md:text-4xl font-black text-zinc-900 dark:text-white tracking-tight">{t("premium_cities.available_tel_aviv")}</h3>
             </div>
             <a href="/search?city=tel-aviv" className="hidden md:inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white dark:bg-zinc-900 border border-indigo-200 dark:border-indigo-800 text-sm font-bold text-[#4c55a4] dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 transition-colors shadow-sm">
-              View all 24<span className="ml-[2px]">+</span>
+              {t("premium_cities.view_all")} 24<span className="ml-[2px]">+</span>
             </a>
           </div>
           
@@ -80,7 +82,7 @@ export default function PremiumCities() {
           </div>
 
           <a href="/search?city=tel-aviv" className="md:hidden mt-6 flex justify-center items-center gap-2 px-5 py-3 rounded-xl bg-white dark:bg-zinc-900 border border-indigo-200 dark:border-indigo-800 text-sm font-bold text-[#4c55a4] dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 transition-colors shadow-sm">
-            View all 24<span className="ml-[2px]">+</span> in Tel Aviv
+            {t("premium_cities.view_all")} 24<span className="ml-[2px]">+</span> {t("premium_cities.in_tel_aviv")}
           </a>
         </div>
 
@@ -90,12 +92,12 @@ export default function PremiumCities() {
             <div>
               <div className="flex items-center gap-2 mb-2">
                 <span className="w-8 h-1 bg-[#e8c547] rounded-full"></span>
-                <span className="text-sm font-bold tracking-widest uppercase text-[#e8c547]">Premium City</span>
+                <span className="text-sm font-bold tracking-widest uppercase text-[#e8c547]">{t("premium_cities.premium_city")}</span>
               </div>
-              <h3 className="text-3xl md:text-4xl font-black text-zinc-900 dark:text-white tracking-tight">Available for Jerusalem</h3>
+              <h3 className="text-3xl md:text-4xl font-black text-zinc-900 dark:text-white tracking-tight">{t("premium_cities.available_jerusalem")}</h3>
             </div>
             <a href="/search?city=jerusalem" className="hidden md:inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white dark:bg-zinc-900 border border-indigo-200 dark:border-indigo-800 text-sm font-bold text-[#4c55a4] dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 transition-colors shadow-sm">
-              View all 32<span className="ml-[2px]">+</span>
+              {t("premium_cities.view_all")} 32<span className="ml-[2px]">+</span>
             </a>
           </div>
           
@@ -106,7 +108,7 @@ export default function PremiumCities() {
           </div>
 
           <a href="/search?city=jerusalem" className="md:hidden mt-6 flex justify-center items-center gap-2 px-5 py-3 rounded-xl bg-white dark:bg-zinc-900 border border-indigo-200 dark:border-indigo-800 text-sm font-bold text-[#4c55a4] dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 transition-colors shadow-sm">
-            View all 32<span className="ml-[2px]">+</span> in Jerusalem
+            {t("premium_cities.view_all")} 32<span className="ml-[2px]">+</span> {t("premium_cities.in_jerusalem")}
           </a>
         </div>
 
@@ -116,12 +118,12 @@ export default function PremiumCities() {
             <div>
               <div className="flex items-center gap-2 mb-2">
                 <span className="w-8 h-1 bg-[#10b981] rounded-full"></span>
-                <span className="text-sm font-bold tracking-widest uppercase text-[#10b981]">Premium City</span>
+                <span className="text-sm font-bold tracking-widest uppercase text-[#10b981]">{t("premium_cities.premium_city")}</span>
               </div>
-              <h3 className="text-3xl md:text-4xl font-black text-zinc-900 dark:text-white tracking-tight">Available for Tzfat</h3>
+              <h3 className="text-3xl md:text-4xl font-black text-zinc-900 dark:text-white tracking-tight">{t("premium_cities.available_tzfat")}</h3>
             </div>
             <a href="/search?city=tzfat" className="hidden md:inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white dark:bg-zinc-900 border border-indigo-200 dark:border-indigo-800 text-sm font-bold text-[#4c55a4] dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 transition-colors shadow-sm">
-              View all 18<span className="ml-[2px]">+</span>
+              {t("premium_cities.view_all")} 18<span className="ml-[2px]">+</span>
             </a>
           </div>
           
@@ -132,7 +134,7 @@ export default function PremiumCities() {
           </div>
 
           <a href="/search?city=tzfat" className="md:hidden mt-6 flex justify-center items-center gap-2 px-5 py-3 rounded-xl bg-white dark:bg-zinc-900 border border-indigo-200 dark:border-indigo-800 text-sm font-bold text-[#4c55a4] dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 transition-colors shadow-sm">
-            View all 18<span className="ml-[2px]">+</span> in Tzfat
+            {t("premium_cities.view_all")} 18<span className="ml-[2px]">+</span> {t("premium_cities.in_tzfat")}
           </a>
         </div>
 

@@ -163,7 +163,7 @@ export default function MainNavbar() {
                   {isNotifDropdownOpen && (
                     <div className="absolute right-0 mt-2 w-80 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-xl shadow-zinc-900/10 dark:shadow-black/50 overflow-hidden animate-in fade-in zoom-in-95 duration-200 z-50">
                       <div className="p-4 border-b border-zinc-100 dark:border-zinc-800 flex items-center justify-between">
-                        <h3 className="font-bold text-zinc-900 dark:text-white">Notifications</h3>
+                        <h3 className="font-bold text-zinc-900 dark:text-white">{t("nav.notifications")}</h3>
                         <span className="text-xs font-bold bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 px-2 py-0.5 rounded-full">2 New</span>
                       </div>
                       <div className="max-h-80 overflow-y-auto">
@@ -201,7 +201,7 @@ export default function MainNavbar() {
                           }}
                           className="block w-full text-center text-sm font-bold text-[#4c55a4] hover:text-[#3d4484] dark:text-indigo-400 dark:hover:text-indigo-300"
                         >
-                          View All
+                          {t("nav.view_all")}
                         </Link>
                       </div>
                     </div>
@@ -228,13 +228,13 @@ export default function MainNavbar() {
                 {isDropdownOpen && (
                   <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-lg shadow-zinc-900/10 dark:shadow-black/50 py-2 animate-in fade-in zoom-in-95 duration-200 z-50">
                     <div className="px-4 py-2 border-b border-zinc-100 dark:border-zinc-800 mb-2">
-                      <p className="text-sm font-bold text-zinc-900 dark:text-white">User Account</p>
+                      <p className="text-sm font-bold text-zinc-900 dark:text-white">{t("nav.user_account")}</p>
                       <p className="text-xs text-zinc-500 truncate">user@shabbosrent.com</p>
                     </div>
                     {hasApartment && (
                       <>
                         <div className="px-4 py-2 flex items-center justify-between">
-                          <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Available Status</span>
+                          <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">{t("nav.available_status")}</span>
                           <label className="relative inline-flex items-center cursor-pointer" onClick={(e) => e.stopPropagation()}>
                             <input 
                               type="checkbox" 
@@ -258,7 +258,7 @@ export default function MainNavbar() {
                       className="flex items-center gap-3 px-4 py-2 text-sm font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors"
                     >
                       <LayoutDashboard className="w-4 h-4" />
-                      Dashboard
+                      {t("nav.dashboard")}
                     </Link>
                     <Link
                       href="/user-dashboard"
@@ -271,7 +271,7 @@ export default function MainNavbar() {
                       className="flex items-center gap-3 px-4 py-2 text-sm font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors"
                     >
                       <Settings className="w-4 h-4" />
-                      Settings
+                      {t("nav.settings")}
                     </Link>
                     <div className="h-px bg-zinc-100 dark:bg-zinc-800 my-2"></div>
                     <button
@@ -279,7 +279,7 @@ export default function MainNavbar() {
                       className="w-full flex items-center gap-3 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors"
                     >
                       <LogOut className="w-4 h-4" />
-                      Log out
+                      {t("nav.logout")}
                     </button>
                   </div>
                 )}
@@ -291,7 +291,7 @@ export default function MainNavbar() {
                 className="flex items-center gap-2 px-5 py-2.5 text-sm font-bold text-zinc-900 bg-white border border-zinc-200 rounded-xl hover:bg-zinc-50 hover:border-zinc-300 dark:bg-zinc-900 dark:border-zinc-800 dark:text-white dark:hover:bg-zinc-800 transition-all shadow-sm"
               >
                 <User className="w-4 h-4 text-zinc-500" />
-                Login
+                {t("nav.login")}
               </Link>
             )}
           </div>

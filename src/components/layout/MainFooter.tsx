@@ -1,7 +1,10 @@
 import Link from "next/link";
 import { Mail, Phone, MapPin } from "lucide-react";
+import { useLanguage } from "@/context/LanguageContext";
 
 export default function MainFooter() {
+  const { t } = useLanguage();
+
   return (
     <footer className="bg-[#0f111a] border-t border-zinc-800 pt-16 pb-8 font-sans">
       <div className="container mx-auto px-4">
@@ -20,7 +23,7 @@ export default function MainFooter() {
               </span>
             </Link>
             <p className="text-indigo-100 text-sm leading-relaxed max-w-xs">
-              Experience the ultimate convenience for Shabbos and Yom Tov. Seamlessly Swap apartments or find the perfect rental.
+              {t("footer.about")}
             </p>
             <div className="flex items-center gap-4 pt-2">
               <a href="#" className="w-10 h-10 rounded-full bg-[#4c55a4]/20 border border-[#4c55a4]/30 flex items-center justify-center text-indigo-200 hover:text-white hover:border-[#4c55a4] hover:bg-[#4c55a4] transition-all shadow-sm">
@@ -37,21 +40,21 @@ export default function MainFooter() {
 
           {/* Quick Links */}
           <div>
-            <h4 className="font-bold text-white mb-6 uppercase tracking-wider text-sm">Quick Links</h4>
+            <h4 className="font-bold text-white mb-6 uppercase tracking-wider text-sm">{t("footer.quick_links")}</h4>
             <ul className="space-y-3">
               <li>
                 <Link href="/search" className="text-indigo-200 hover:text-white text-sm font-medium transition-colors">
-                  Apartments
+                  {t("footer.apartments")}
                 </Link>
               </li>
               <li>
                 <Link href="/about" className="text-indigo-200 hover:text-white text-sm font-medium transition-colors">
-                  About Us
+                  {t("footer.about_us")}
                 </Link>
               </li>
               <li>
                 <Link href="/contact" className="text-indigo-200 hover:text-white text-sm font-medium transition-colors">
-                  Contact Us
+                  {t("footer.contact_us")}
                 </Link>
               </li>
             </ul>
@@ -59,26 +62,26 @@ export default function MainFooter() {
 
           {/* Support */}
           <div>
-            <h4 className="font-bold text-white mb-6 uppercase tracking-wider text-sm">Support</h4>
+            <h4 className="font-bold text-white mb-6 uppercase tracking-wider text-sm">{t("footer.support")}</h4>
             <ul className="space-y-3">
               <li>
                 <Link href="/faq" className="text-indigo-200 hover:text-white text-sm font-medium transition-colors">
-                  Help Center & FAQ
+                  {t("footer.help_center")}
                 </Link>
               </li>
               <li>
                 <Link href="/privacy" className="text-indigo-200 hover:text-white text-sm font-medium transition-colors">
-                  Privacy Policy
+                  {t("footer.privacy_policy")}
                 </Link>
               </li>
               <li>
                 <Link href="/terms" className="text-indigo-200 hover:text-white text-sm font-medium transition-colors">
-                  Terms of Service
+                  {t("footer.terms_of_service")}
                 </Link>
               </li>
               <li>
                 <Link href="/trust" className="text-indigo-200 hover:text-white text-sm font-medium transition-colors">
-                  Trust & Safety
+                  {t("footer.trust_safety")}
                 </Link>
               </li>
             </ul>
@@ -86,12 +89,12 @@ export default function MainFooter() {
 
           {/* Contact */}
           <div>
-            <h4 className="font-bold text-white mb-6 uppercase tracking-wider text-sm">Contact Us</h4>
+            <h4 className="font-bold text-white mb-6 uppercase tracking-wider text-sm">{t("footer.contact_us")}</h4>
             <ul className="space-y-4">
               <li className="flex items-start gap-3">
                 <MapPin className="w-5 h-5 text-[#8a94e8] mt-0.5" />
                 <span className="text-indigo-200 text-sm font-medium leading-relaxed">
-                  123 Shabbos Lane, <br />Jerusalem, Israel 90100
+                  {t("footer.address")}
                 </span>
               </li>
               <li className="flex items-center gap-3">
@@ -114,11 +117,11 @@ export default function MainFooter() {
         {/* Bottom Bar */}
         <div className="pt-8 border-t border-[#4c55a4]/20 flex flex-col md:flex-row items-center justify-between gap-4">
           <p className="text-indigo-200/80 text-sm font-medium">
-            &copy; {new Date().getFullYear()} ShabbosRent. All rights reserved.
+            &copy; {new Date().getFullYear()} {t("footer.all_rights")}
           </p>
           <div className="flex items-center gap-6">
-            <span className="text-indigo-200/80 hover:text-white transition-colors cursor-pointer text-sm">English (US)</span>
-            <span className="text-indigo-200/80 hover:text-white transition-colors cursor-pointer text-sm">₪ ILS</span>
+            <span className="text-indigo-200/80 hover:text-white transition-colors cursor-pointer text-sm">{t("footer.english")}</span>
+            <span className="text-indigo-200/80 hover:text-white transition-colors cursor-pointer text-sm">{t("footer.currency")}</span>
           </div>
         </div>
       </div>

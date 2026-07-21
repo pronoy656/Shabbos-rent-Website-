@@ -2,8 +2,10 @@ import Link from "next/link";
 import { MapPin, BedDouble, Bath, Users, ShieldCheck, Heart } from "lucide-react";
 import { useState, useEffect } from "react";
 import { ApartmentData } from "@/types";
+import { useLanguage } from "@/context/LanguageContext";
 
 export default function ApartmentCard({ apartment, mode }: { apartment: ApartmentData, mode?: "swap" | "rent" }) {
+  const { t } = useLanguage();
   const [isSaved, setIsSaved] = useState(false);
 
   useEffect(() => {
@@ -47,7 +49,7 @@ export default function ApartmentCard({ apartment, mode }: { apartment: Apartmen
           {apartment.verified && (
             <div className="absolute top-3 left-3 px-2.5 py-1 bg-green-500/90 backdrop-blur-sm rounded-md shadow-sm flex items-center gap-1.5 text-xs font-bold text-white z-10">
               <ShieldCheck className="w-3.5 h-3.5" />
-              Verified
+              {t("apartment_card.verified")}
             </div>
           )}
 
@@ -82,15 +84,15 @@ export default function ApartmentCard({ apartment, mode }: { apartment: Apartmen
           <div className="flex items-center gap-4 py-4 mt-2 border-y border-zinc-100 dark:border-zinc-800">
             <div className="flex items-center gap-1.5 text-sm text-zinc-600 dark:text-zinc-300 font-medium">
               <BedDouble className="w-4 h-4 text-zinc-400" />
-              {apartment.beds} Beds
+              {apartment.beds} {t("apartment_card.beds")}
             </div>
             <div className="flex items-center gap-1.5 text-sm text-zinc-600 dark:text-zinc-300 font-medium">
               <Bath className="w-4 h-4 text-zinc-400" />
-              {apartment.baths} Baths
+              {apartment.baths} {t("apartment_card.baths")}
             </div>
             <div className="flex items-center gap-1.5 text-sm text-zinc-600 dark:text-zinc-300 font-medium">
               <Users className="w-4 h-4 text-zinc-400" />
-              {apartment.guests} Guests
+              {apartment.guests} {t("apartment_card.guests")}
             </div>
           </div>
 
@@ -98,7 +100,7 @@ export default function ApartmentCard({ apartment, mode }: { apartment: Apartmen
           <div className="flex items-end justify-between pt-4">
             <div>
               <span className="text-xl font-black text-zinc-900 dark:text-white">₪{apartment.price}</span>
-              <span className="text-sm text-zinc-500 dark:text-zinc-400 font-medium"> / weekend</span>
+              <span className="text-sm text-zinc-500 dark:text-zinc-400 font-medium"> {t("apartment_card.per_weekend")}</span>
             </div>
           </div>
         </div>

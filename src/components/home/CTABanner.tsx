@@ -1,14 +1,17 @@
 import Link from "next/link";
 import { Home, ArrowRight, Star, Users, ShieldCheck, TrendingUp } from "lucide-react";
-
-const stats = [
-  { icon: Users, value: "2,400+", label: "Happy Families" },
-  { icon: Star, value: "4.9", label: "Average Rating" },
-  { icon: ShieldCheck, value: "100%", label: "Verified Owners" },
-  { icon: TrendingUp, value: "₪3,200", label: "Avg. Monthly Earn" },
-];
+import { useLanguage } from "@/context/LanguageContext";
 
 export default function CTABanner() {
+  const { t } = useLanguage();
+
+  const stats = [
+    { icon: Users, value: "2,400+", label: t("cta.stats.happy_families") },
+    { icon: Star, value: "4.9", label: t("cta.stats.avg_rating") },
+    { icon: ShieldCheck, value: "100%", label: t("cta.stats.verified_owners") },
+    { icon: TrendingUp, value: "₪3,200", label: t("cta.stats.avg_earn") },
+  ];
+
   return (
     <section className="py-16 bg-white dark:bg-zinc-950 font-sans">
       <div className="container mx-auto px-4">
@@ -41,19 +44,19 @@ export default function CTABanner() {
                 {/* Badge */}
                 <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-white/15 backdrop-blur-sm border border-white/20 rounded-full text-white/90 text-xs font-bold uppercase tracking-widest mb-6">
                   <Home className="w-3.5 h-3.5" />
-                  For Apartment Owners
+                  {t("cta.badge")}
                 </div>
 
                 <h2 className="text-3xl md:text-4xl lg:text-5xl font-extrabold text-white leading-tight tracking-tight mb-5">
-                  Turn Your Home Into a{" "}
+                  {t("cta.title1")}{" "}
                   <span className="relative inline-block">
-                    <span className="relative z-10">Shabbos Retreat</span>
+                    <span className="relative z-10">{t("cta.title2")}</span>
                     <span className="absolute bottom-1 left-0 w-full h-3 bg-white/20 rounded-full -z-0" />
                   </span>
                 </h2>
 
                 <p className="text-indigo-100 text-base md:text-lg leading-relaxed mb-8">
-                  Join thousands of hosts earning extra income by welcoming Jewish families for Shabbos and Yom Tov. Listing takes just 5 minutes.
+                  {t("cta.subtitle")}
                 </p>
 
                 <div className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start">
@@ -61,14 +64,14 @@ export default function CTABanner() {
                     href="/user-dashboard"
                     className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-white hover:bg-zinc-50 text-[#4c55a4] font-extrabold rounded-2xl transition-all shadow-xl shadow-black/20 hover:shadow-2xl hover:-translate-y-0.5 text-sm"
                   >
-                    List Your Apartment
+                    {t("cta.btn_list")}
                     <ArrowRight className="w-4 h-4" />
                   </Link>
                   <Link
                     href="/search"
                     className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-white/10 hover:bg-white/20 border border-white/20 text-white font-bold rounded-2xl transition-all text-sm backdrop-blur-sm"
                   >
-                    Browse Listings
+                    {t("cta.btn_browse")}
                   </Link>
                 </div>
               </div>

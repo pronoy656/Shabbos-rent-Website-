@@ -10,6 +10,7 @@ import ChangePasswordModal from "@/components/settings/ChangePasswordModal";
 import EditProfileModal from "@/components/settings/EditProfileModal";
 import ApartmentCard from "@/components/search/ApartmentCard";
 import { ApartmentData } from "@/types";
+import { useLanguage } from "@/context/LanguageContext";
 
 // Base Mock Data for all apartments
 const baseApartments: ApartmentData[] = [
@@ -115,6 +116,7 @@ const SHABBATOT = [
 ];
 
 export default function UserDashboardPage() {
+  const { t } = useLanguage();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState("add");
   const [isSwapEnabled, setIsSwapEnabled] = useState(true);
@@ -205,12 +207,12 @@ export default function UserDashboardPage() {
   };
 
   const navItems = [
-    { id: "add", label: "Add Your Apartment", icon: PlusCircle, color: "text-emerald-600" },
-    { id: "manage", label: "Manage My Apartment", icon: Building, color: "text-blue-600" },
-    { id: "swap", label: "Apartment Swap", icon: RefreshCw, color: "text-indigo-500" },
-    { id: "affiliate", label: "Affiliate Program", icon: Gift, color: "text-purple-500" },
-    { id: "notifications", label: "Notifications", icon: Bell, color: "text-pink-500" },
-    { id: "settings", label: "Settings", icon: Settings, color: "text-zinc-600 dark:text-zinc-400" },
+    { id: "add", label: t("dashboard.nav.add"), icon: PlusCircle, color: "text-emerald-600" },
+    { id: "manage", label: t("dashboard.nav.manage"), icon: Building, color: "text-blue-600" },
+    { id: "swap", label: t("dashboard.nav.swap"), icon: RefreshCw, color: "text-indigo-500" },
+    { id: "affiliate", label: t("dashboard.nav.affiliate"), icon: Gift, color: "text-purple-500" },
+    { id: "notifications", label: t("dashboard.nav.notifications"), icon: Bell, color: "text-pink-500" },
+    { id: "settings", label: t("dashboard.nav.settings"), icon: Settings, color: "text-zinc-600 dark:text-zinc-400" },
   ];
 
   function classNames(...classes: string[]) {
@@ -230,8 +232,8 @@ export default function UserDashboardPage() {
                 O
               </div>
               <div>
-                <h3 className="font-bold text-zinc-900 dark:text-white leading-tight">Owner Dashboard</h3>
-                <p className="text-xs text-zinc-500">Property Owner</p>
+                <h3 className="font-bold text-zinc-900 dark:text-white leading-tight">{t("dashboard.owner_dashboard")}</h3>
+                <p className="text-xs text-zinc-500">{t("dashboard.property_owner")}</p>
                 <p className="text-[10px] text-zinc-400 mt-0.5 truncate max-w-[150px]">owner@demo.com</p>
               </div>
             </div>
@@ -275,14 +277,14 @@ export default function UserDashboardPage() {
               className="group w-full flex items-center gap-4 px-3 py-3 rounded-lg transition-all my-1 text-left hover:bg-blue-50/50 dark:hover:bg-blue-900/20"
             >
               <Home className="w-5 h-5 shrink-0 text-sky-500" />
-              <span className="text-[15px] font-bold leading-tight text-zinc-900 dark:text-white">Home</span>
+              <span className="text-[15px] font-bold leading-tight text-zinc-900 dark:text-white">{t("dashboard.nav.home")}</span>
             </Link>
             <button
               onClick={handleLogout}
               className="flex w-full items-center gap-4 rounded-lg px-3 py-3 text-[15px] font-bold text-red-600 bg-red-50 dark:bg-red-950/30 hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors text-left"
             >
               <LogOut className="h-5 w-5 shrink-0" />
-              <span>Logout</span>
+              <span>{t("dashboard.nav.logout")}</span>
             </button>
           </div>
         </aside>
@@ -292,8 +294,8 @@ export default function UserDashboardPage() {
           <div className="w-full mx-auto">
             {activeTab === "add" && (
               <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-                <h1 className="text-3xl font-extrabold text-zinc-900 dark:text-white mb-2">Add Your Apartment</h1>
-                <p className="text-zinc-500 mb-8">List your property for short-term rentals and swaps.</p>
+                <h1 className="text-3xl font-extrabold text-zinc-900 dark:text-white mb-2">{t("dashboard.add.title")}</h1>
+                <p className="text-zinc-500 mb-8">{t("dashboard.add.desc")}</p>
                 
                 {hasListing ? (
                   <div className="bg-white dark:bg-zinc-900 rounded-3xl border border-zinc-200 dark:border-zinc-800 overflow-hidden shadow-sm w-full flex flex-col md:flex-row">
@@ -303,7 +305,7 @@ export default function UserDashboardPage() {
                         <span className="px-3 py-1.5 bg-white/90 dark:bg-zinc-900/90 backdrop-blur-md rounded-lg text-xs font-bold shadow-sm text-zinc-900 dark:text-white">Jerusalem</span>
                       </div>
                       <div className="absolute top-4 right-4">
-                        <span className="px-3 py-1.5 bg-amber-500/90 text-white backdrop-blur-md rounded-lg text-xs font-bold shadow-sm">Under Review</span>
+                        <span className="px-3 py-1.5 bg-amber-500/90 text-white backdrop-blur-md rounded-lg text-xs font-bold shadow-sm">{t("dashboard.add.under_review")}</span>
                       </div>
                     </div>
                     <div className="p-6 md:p-8 flex flex-col justify-between w-full">
@@ -315,7 +317,7 @@ export default function UserDashboardPage() {
                           </div>
                           <div className="sm:text-right shrink-0">
                             <span className="font-black text-2xl text-[#4c55a4] dark:text-indigo-400">₪1,500</span>
-                            <span className="block text-sm text-zinc-500 font-medium">/ night</span>
+                            <span className="block text-sm text-zinc-500 font-medium">{t("dashboard.add.night")}</span>
                           </div>
                         </div>
                         
@@ -326,20 +328,20 @@ export default function UserDashboardPage() {
                         <div className="flex flex-wrap items-center gap-4 py-4 border-y border-zinc-100 dark:border-zinc-800 mb-6">
                           <div className="flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300 font-bold bg-zinc-50 dark:bg-zinc-800/50 px-3 py-2 rounded-xl">
                             <BedDouble className="w-4 h-4 text-blue-500" />
-                            <span>4 Beds</span>
+                            <span>4 {t("dashboard.add.beds")}</span>
                           </div>
                           <div className="flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300 font-bold bg-zinc-50 dark:bg-zinc-800/50 px-3 py-2 rounded-xl">
                             <Bath className="w-4 h-4 text-emerald-500" />
-                            <span>2 Baths</span>
+                            <span>2 {t("dashboard.add.baths")}</span>
                           </div>
                           <div className="flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300 font-bold bg-zinc-50 dark:bg-zinc-800/50 px-3 py-2 rounded-xl">
                             <Users className="w-4 h-4 text-orange-500" />
-                            <span>8 Guests</span>
+                            <span>8 {t("dashboard.add.guests")}</span>
                           </div>
                         </div>
                         
                         <div className="mb-6">
-                          <h4 className="text-sm font-bold text-zinc-900 dark:text-white mb-2">Availability & Events:</h4>
+                          <h4 className="text-sm font-bold text-zinc-900 dark:text-white mb-2">{t("dashboard.add.availability_events")}</h4>
                           {(selectedShabbatot.length > 0 || createdListingDate) ? (
                             <div className="flex flex-wrap gap-3">
                               {createdListingDate && (
@@ -356,7 +358,7 @@ export default function UserDashboardPage() {
                               ))}
                             </div>
                           ) : (
-                            <p className="text-sm text-zinc-500 italic">No dates selected yet.</p>
+                            <p className="text-sm text-zinc-500 italic">{t("dashboard.add.no_dates")}</p>
                           )}
                         </div>
                       </div>
@@ -366,7 +368,7 @@ export default function UserDashboardPage() {
                           onClick={() => { setModalMode("edit"); setIsCreateModalOpen(true); }}
                           className="w-full sm:flex-1 py-3 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-900 dark:text-white rounded-xl font-bold transition-colors"
                         >
-                          Edit Listing
+                          {t("dashboard.add.edit_listing")}
                         </button>
                       </div>
                     </div>
@@ -377,13 +379,13 @@ export default function UserDashboardPage() {
                       <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900/20 rounded-full flex items-center justify-center mx-auto mb-4">
                         <PlusCircle className="w-8 h-8 text-blue-600 dark:text-blue-400" />
                       </div>
-                      <h3 className="text-xl font-bold text-zinc-900 dark:text-white mb-2">Start a new listing</h3>
-                      <p className="text-zinc-500 max-w-sm mx-auto mb-6">Enter the details of your apartment to start accepting bookings and swap requests.</p>
+                      <h3 className="text-xl font-bold text-zinc-900 dark:text-white mb-2">{t("dashboard.add.start_new")}</h3>
+                      <p className="text-zinc-500 max-w-sm mx-auto mb-6">{t("dashboard.add.enter_details")}</p>
                       <button 
                         onClick={() => { setModalMode("create"); setIsCreateModalOpen(true); }}
                         className="inline-block px-6 py-3 bg-[#4c55a4] hover:bg-[#3d4484] text-white rounded-xl font-bold transition-all shadow-md shadow-[#4c55a4]/20"
                       >
-                        Create Listing
+                        {t("dashboard.add.create_listing")}
                       </button>
                     </div>
                   </div>
@@ -393,8 +395,8 @@ export default function UserDashboardPage() {
 
             {activeTab === "manage" && (
               <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-                <h1 className="text-3xl font-extrabold text-zinc-900 dark:text-white mb-2">Manage My Apartment</h1>
-                <p className="text-zinc-500 mb-8">View and update your active listings.</p>
+                <h1 className="text-3xl font-extrabold text-zinc-900 dark:text-white mb-2">{t("dashboard.manage.title")}</h1>
+                <p className="text-zinc-500 mb-8">{t("dashboard.manage.desc")}</p>
                 
                 {hasListing ? (
                   <div className="flex flex-col">
@@ -404,31 +406,31 @@ export default function UserDashboardPage() {
                         onClick={() => setManageSubTab("my_listing")}
                         className={`px-6 py-2.5 rounded-xl font-bold text-sm transition-all duration-300 ${manageSubTab === "my_listing" ? "bg-white dark:bg-zinc-900 text-[#4c55a4] dark:text-indigo-400 shadow-sm" : "text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 hover:bg-zinc-200/50 dark:hover:bg-zinc-800"}`}
                       >
-                        My Listing
+                        {t("dashboard.manage.tabs.my_listing")}
                       </button>
                       <button 
                         onClick={() => setManageSubTab("interested_request")}
                         className={`px-6 py-2.5 rounded-xl font-bold text-sm transition-all duration-300 ${manageSubTab === "interested_request" ? "bg-white dark:bg-zinc-900 text-[#4c55a4] dark:text-indigo-400 shadow-sm" : "text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 hover:bg-zinc-200/50 dark:hover:bg-zinc-800"}`}
                       >
-                        Interested Request
+                        {t("dashboard.manage.tabs.interested")}
                       </button>
                       <button 
                         onClick={() => setManageSubTab("report_renter")}
                         className={`px-6 py-2.5 rounded-xl font-bold text-sm transition-all duration-300 ${manageSubTab === "report_renter" ? "bg-white dark:bg-zinc-900 text-[#4c55a4] dark:text-indigo-400 shadow-sm" : "text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 hover:bg-zinc-200/50 dark:hover:bg-zinc-800"}`}
                       >
-                        Report Renter
+                        {t("dashboard.manage.tabs.report_renter")}
                       </button>
                       <button 
                         onClick={() => setManageSubTab("report_history")}
                         className={`px-6 py-2.5 rounded-xl font-bold text-sm transition-all duration-300 ${manageSubTab === "report_history" ? "bg-white dark:bg-zinc-900 text-[#4c55a4] dark:text-indigo-400 shadow-sm" : "text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 hover:bg-zinc-200/50 dark:hover:bg-zinc-800"}`}
                       >
-                        Report History
+                        {t("dashboard.manage.tabs.report_history")}
                       </button>
                       <button 
                         onClick={() => setManageSubTab("apartment_calendar")}
                         className={`px-6 py-2.5 rounded-xl font-bold text-sm transition-all duration-300 ${manageSubTab === "apartment_calendar" ? "bg-white dark:bg-zinc-900 text-[#4c55a4] dark:text-indigo-400 shadow-sm" : "text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 hover:bg-zinc-200/50 dark:hover:bg-zinc-800"}`}
                       >
-                        Apartment Calendar
+                        {t("dashboard.manage.tabs.calendar")}
                       </button>
                     </div>
 
@@ -441,7 +443,7 @@ export default function UserDashboardPage() {
                               <span className="px-3 py-1.5 bg-white/90 dark:bg-zinc-900/90 backdrop-blur-md rounded-lg text-xs font-bold shadow-sm text-zinc-900 dark:text-white">Jerusalem</span>
                             </div>
                             <div className="absolute top-4 right-4">
-                              <span className="px-3 py-1.5 bg-green-500/90 text-white backdrop-blur-md rounded-lg text-xs font-bold shadow-sm">Active</span>
+                              <span className="px-3 py-1.5 bg-green-500/90 text-white backdrop-blur-md rounded-lg text-xs font-bold shadow-sm">{t("dashboard.manage.active")}</span>
                             </div>
                           </div>
                           <div className="p-6 md:p-8 flex flex-col justify-between w-full">
@@ -453,7 +455,7 @@ export default function UserDashboardPage() {
                                 </div>
                                 <div className="sm:text-right shrink-0">
                                   <span className="font-black text-2xl text-[#4c55a4] dark:text-indigo-400">₪1,500</span>
-                                  <span className="block text-sm text-zinc-500 font-medium">/ night</span>
+                                  <span className="block text-sm text-zinc-500 font-medium">{t("dashboard.add.night")}</span>
                                 </div>
                               </div>
                               
@@ -464,20 +466,20 @@ export default function UserDashboardPage() {
                               <div className="flex flex-wrap items-center gap-4 py-4 border-y border-zinc-100 dark:border-zinc-800 mb-6">
                                 <div className="flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300 font-bold bg-zinc-50 dark:bg-zinc-800/50 px-3 py-2 rounded-xl">
                                   <BedDouble className="w-4 h-4 text-blue-500" />
-                                  <span>4 Beds</span>
+                                  <span>4 {t("dashboard.add.beds")}</span>
                                 </div>
                                 <div className="flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300 font-bold bg-zinc-50 dark:bg-zinc-800/50 px-3 py-2 rounded-xl">
                                   <Bath className="w-4 h-4 text-emerald-500" />
-                                  <span>2 Baths</span>
+                                  <span>2 {t("dashboard.add.baths")}</span>
                                 </div>
                                 <div className="flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300 font-bold bg-zinc-50 dark:bg-zinc-800/50 px-3 py-2 rounded-xl">
                                   <Users className="w-4 h-4 text-orange-500" />
-                                  <span>8 Guests</span>
+                                  <span>8 {t("dashboard.add.guests")}</span>
                                 </div>
                               </div>
                               
                               <div className="mb-6">
-                                <h4 className="text-sm font-bold text-zinc-900 dark:text-white mb-2">Availability & Events:</h4>
+                                <h4 className="text-sm font-bold text-zinc-900 dark:text-white mb-2">{t("dashboard.add.availability_events")}</h4>
                                 {(selectedShabbatot.length > 0 || createdListingDate) ? (
                                   <div className="flex flex-wrap gap-3">
                                     {createdListingDate && (
@@ -494,7 +496,7 @@ export default function UserDashboardPage() {
                                     ))}
                                   </div>
                                 ) : (
-                                  <p className="text-sm text-zinc-500 italic">No dates selected yet.</p>
+                                  <p className="text-sm text-zinc-500 italic">{t("dashboard.add.no_dates")}</p>
                                 )}
                               </div>
                             </div>
@@ -503,13 +505,13 @@ export default function UserDashboardPage() {
                               <button 
                                 className="w-full sm:flex-1 py-3 bg-[#4c55a4] hover:bg-[#3d4484] text-white rounded-xl font-bold transition-all shadow-md shadow-[#4c55a4]/20"
                               >
-                                Confirm Booking
+                                {t("dashboard.manage.confirm_booking")}
                               </button>
                               <button 
                                 onClick={() => { setModalMode("edit"); setIsCreateModalOpen(true); }}
                                 className="w-full sm:flex-1 py-3 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-900 dark:text-white rounded-xl font-bold transition-colors"
                               >
-                                Edit Listing
+                                {t("dashboard.add.edit_listing")}
                               </button>
                             </div>
                           </div>
@@ -518,7 +520,7 @@ export default function UserDashboardPage() {
 
                       {manageSubTab === "interested_request" && (
                         <div className="bg-white dark:bg-zinc-900 rounded-3xl border border-zinc-200 dark:border-zinc-800 p-6 shadow-sm flex flex-col gap-4 w-full">
-                          <h3 className="text-xl font-bold text-zinc-900 dark:text-white mb-2">Interested Requests (2)</h3>
+                          <h3 className="text-xl font-bold text-zinc-900 dark:text-white mb-2">{t("dashboard.manage.interested_requests")} (2)</h3>
                           
                           <div className="flex items-center justify-between p-5 border border-zinc-200 dark:border-zinc-800 rounded-2xl bg-zinc-50/50 dark:bg-zinc-800/30 hover:border-blue-200 dark:hover:border-blue-900/50 transition-colors">
                             <div className="flex items-center gap-4">
@@ -529,7 +531,7 @@ export default function UserDashboardPage() {
                                 <h4 className="font-bold text-zinc-900 dark:text-white text-lg">David Cohen</h4>
                                 <p className="text-sm text-zinc-500 mb-1">david.c@example.com</p>
                                 <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-300">
-                                  Requested: Oct 24-25 Shabbos
+                                  {t("dashboard.manage.requested")} Oct 24-25 Shabbos
                                 </span>
                               </div>
                             </div>
@@ -537,7 +539,7 @@ export default function UserDashboardPage() {
                               <div className="bg-green-100 dark:bg-green-900/30 px-3 py-1 rounded-full mb-1">
                                 <p className="font-extrabold text-green-700 dark:text-green-400">₪1,450</p>
                               </div>
-                              <p className="text-xs text-zinc-500 font-medium">2 hours ago</p>
+                              <p className="text-xs text-zinc-500 font-medium">2 {t("dashboard.manage.hours_ago")}</p>
                             </div>
                           </div>
 
@@ -550,7 +552,7 @@ export default function UserDashboardPage() {
                                 <h4 className="font-bold text-zinc-900 dark:text-white text-lg">Sarah Levy</h4>
                                 <p className="text-sm text-zinc-500 mb-1">sarah.levy@example.com</p>
                                 <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-300">
-                                  Requested: Nov 1-2 Shabbos
+                                  {t("dashboard.manage.requested")} Nov 1-2 Shabbos
                                 </span>
                               </div>
                             </div>
@@ -558,7 +560,7 @@ export default function UserDashboardPage() {
                               <div className="bg-green-100 dark:bg-green-900/30 px-3 py-1 rounded-full mb-1">
                                 <p className="font-extrabold text-green-700 dark:text-green-400">₪1,500</p>
                               </div>
-                              <p className="text-xs text-zinc-500 font-medium">1 day ago</p>
+                              <p className="text-xs text-zinc-500 font-medium">1 {t("dashboard.manage.days_ago")}</p>
                             </div>
                           </div>
                           
@@ -570,10 +572,10 @@ export default function UserDashboardPage() {
                           <div className="w-20 h-20 bg-red-50 dark:bg-red-900/20 rounded-full flex items-center justify-center mb-6">
                             <Info className="w-10 h-10 text-red-500" />
                           </div>
-                          <h3 className="text-2xl font-bold text-zinc-900 dark:text-white mb-3">Report a Renter</h3>
-                          <p className="text-zinc-500 max-w-md text-lg mb-8">If you've had a negative experience with a renter, you can submit a report to our trust and safety team.</p>
+                          <h3 className="text-2xl font-bold text-zinc-900 dark:text-white mb-3">{t("dashboard.manage.report_renter_title")}</h3>
+                          <p className="text-zinc-500 max-w-md text-lg mb-8">{t("dashboard.manage.report_renter_desc")}</p>
                           <button className="px-8 py-3 bg-red-50 hover:bg-red-100 text-red-600 dark:bg-red-900/20 dark:hover:bg-red-900/40 dark:text-red-400 rounded-xl font-bold transition-colors shadow-sm text-lg">
-                            File a Report
+                            {t("dashboard.manage.file_report")}
                           </button>
                         </div>
                       )}
@@ -583,8 +585,8 @@ export default function UserDashboardPage() {
                           <div className="w-20 h-20 bg-zinc-100 dark:bg-zinc-800 rounded-full flex items-center justify-center mb-6">
                             <AlignLeft className="w-10 h-10 text-zinc-400" />
                           </div>
-                          <h3 className="text-2xl font-bold text-zinc-900 dark:text-white mb-3">No Report History</h3>
-                          <p className="text-zinc-500 max-w-md text-lg">You haven't filed any reports against renters. Past reports will be listed here.</p>
+                          <h3 className="text-2xl font-bold text-zinc-900 dark:text-white mb-3">{t("dashboard.manage.no_report_history")}</h3>
+                          <p className="text-zinc-500 max-w-md text-lg">{t("dashboard.manage.no_report_desc")}</p>
                         </div>
                       )}
 
@@ -598,15 +600,15 @@ export default function UserDashboardPage() {
                               </div>
                               <div>
                                 <h3 className="text-xl font-extrabold text-zinc-900 dark:text-white mb-1">
-                                  Apartment status: {isApartmentVisible ? "Visible" : "Hidden"}
+                                  {t("dashboard.manage.apartment_status")} {isApartmentVisible ? t("dashboard.manage.visible") : t("dashboard.manage.hidden")}
                                 </h3>
                                 <p className="text-[15px] text-zinc-500 max-w-xl leading-relaxed">
-                                  Temporarily hide the apartment from search results (does not delete it). Useful for maintenance periods or personal use.
+                                  {t("dashboard.manage.hide_desc")}
                                 </p>
                               </div>
                             </div>
                             <div className="flex items-center gap-4 shrink-0 mt-2">
-                              <span className="text-[15px] font-bold text-zinc-600 dark:text-zinc-400">{isApartmentVisible ? "Active" : "Hidden"}</span>
+                              <span className="text-[15px] font-bold text-zinc-600 dark:text-zinc-400">{isApartmentVisible ? t("dashboard.manage.active") : t("dashboard.manage.hidden")}</span>
                               <button 
                                 onClick={() => {
                                   const newVal = !isApartmentVisible;
@@ -625,8 +627,8 @@ export default function UserDashboardPage() {
                             <div className="mb-8 flex items-start gap-4">
                               <CalendarCheck className="w-7 h-7 text-[#4c55a4] shrink-0 mt-0.5" />
                               <div>
-                                <h3 className="text-xl font-extrabold text-zinc-900 dark:text-white mb-1">Manage availability by weekly Torah portions</h3>
-                                <p className="text-[15px] text-zinc-500">Mark the Shabatot when the apartment is available for rent. The list shows only upcoming Shabatot.</p>
+                                <h3 className="text-xl font-extrabold text-zinc-900 dark:text-white mb-1">{t("dashboard.manage.manage_availability")}</h3>
+                                <p className="text-[15px] text-zinc-500">{t("dashboard.manage.mark_shabatot")}</p>
                               </div>
                             </div>
 
@@ -653,7 +655,7 @@ export default function UserDashboardPage() {
                                   >
                                     {isUpcoming && (
                                       <span className="absolute top-4 left-4 bg-[#E0E7FF] dark:bg-indigo-900/50 text-[#4c55a4] dark:text-indigo-300 text-[10px] font-black px-2.5 py-1 rounded tracking-wider uppercase">
-                                        Upcoming Shabbat
+                                        {t("dashboard.manage.upcoming_shabbat")}
                                       </span>
                                     )}
                                     

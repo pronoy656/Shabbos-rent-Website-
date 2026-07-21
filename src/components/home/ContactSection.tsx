@@ -54,9 +54,8 @@ export default function ContactSection() {
                   </div>
                   <div>
                     <h4 className="font-bold text-white mb-1">{t("contact.office")}</h4>
-                    <p className="text-[13px] text-white/70 leading-relaxed">
-                      Jaffa Street 123,<br />
-                      Jerusalem, Israel
+                    <p className="text-[13px] text-white/70 leading-relaxed whitespace-pre-line">
+                      {t("contact.address")}
                     </p>
                   </div>
                 </div>
@@ -133,7 +132,7 @@ export default function ContactSection() {
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     className="w-full px-5 py-4 bg-zinc-50/50 dark:bg-zinc-950/50 border border-zinc-200 dark:border-zinc-800 rounded-2xl text-zinc-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-[#4c55a4]/10 focus:border-[#4c55a4] transition-all hover:bg-white dark:hover:bg-zinc-900 shadow-sm"
-                    placeholder="e.g. John Doe"
+                    placeholder={t("contact.placeholder_name")}
                   />
                 </div>
                 <div className="group">
@@ -144,7 +143,7 @@ export default function ContactSection() {
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     className="w-full px-5 py-4 bg-zinc-50/50 dark:bg-zinc-950/50 border border-zinc-200 dark:border-zinc-800 rounded-2xl text-zinc-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-[#4c55a4]/10 focus:border-[#4c55a4] transition-all hover:bg-white dark:hover:bg-zinc-900 shadow-sm"
-                    placeholder="john@example.com"
+                    placeholder={t("contact.placeholder_email")}
                   />
                 </div>
               </div>
@@ -157,7 +156,7 @@ export default function ContactSection() {
                   value={formData.subject}
                   onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
                   className="w-full px-5 py-4 bg-zinc-50/50 dark:bg-zinc-950/50 border border-zinc-200 dark:border-zinc-800 rounded-2xl text-zinc-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-[#4c55a4]/10 focus:border-[#4c55a4] transition-all hover:bg-white dark:hover:bg-zinc-900 shadow-sm"
-                  placeholder="How can we help you?"
+                  placeholder={t("contact.placeholder_subject")}
                 />
               </div>
 
@@ -168,7 +167,7 @@ export default function ContactSection() {
                   value={formData.message}
                   onChange={(e) => setFormData({ ...formData, message: e.target.value })}
                   className="w-full h-full min-h-[140px] px-5 py-4 bg-zinc-50/50 dark:bg-zinc-950/50 border border-zinc-200 dark:border-zinc-800 rounded-2xl text-zinc-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-[#4c55a4]/10 focus:border-[#4c55a4] transition-all hover:bg-white dark:hover:bg-zinc-900 shadow-sm resize-none"
-                  placeholder="Write your message here..."
+                  placeholder={t("contact.placeholder_message")}
                 />
               </div>
 

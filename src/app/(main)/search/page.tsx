@@ -13,6 +13,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useLanguage } from "@/context/LanguageContext";
 
 // Mock Data for Apartments
 const baseApartments: ApartmentData[] = [
@@ -111,7 +112,9 @@ const apartments: ApartmentData[] = Array.from({ length: 3 }).flatMap((_, i) =>
 );
 
 function SearchContent() {
+  const { t } = useLanguage();
   const [dummyVisible, setDummyVisible] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -120,9 +123,14 @@ function SearchContent() {
       setDummyVisible(hasListing && isVisible);
     }
   }, []);
-  const [sortBy, setSortBy] = useState("Recommended");
-  const [currentPage, setCurrentPage] = useState(1);
-  const sortOptions = ["Recommended", "Price: Low to High", "Price: High to Low", "Highest Rated"];
+
+  const sortOptions = [
+    t("search_page.sort_options.recommended"), 
+    t("search_page.sort_options.price_low_high"), 
+    t("search_page.sort_options.price_high_low"), 
+    t("search_page.sort_options.highest_rated")
+  ];
+  const [sortBy, setSortBy] = useState(sortOptions[0]);
   
   const searchParams = useSearchParams();
   const cityParam = searchParams.get("city");
@@ -161,10 +169,10 @@ function SearchContent() {
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
             <div className="flex-1 max-w-xl">
               <h1 className="text-3xl font-extrabold text-zinc-900 dark:text-white mb-2 capitalize">
-                {typeParam === "swap" ? "Swap Matches" : "Search Results"} {formattedCity ? `in ${formattedCity}` : ""}
+                {typeParam === "swap" ? t("search_page.swap_matches") : t("search_page.search_results")} {formattedCity ? `${t("search_page.in")} ${formattedCity}` : ""}
               </h1>
               <p className="text-zinc-600 dark:text-zinc-400 font-medium mb-4">
-                {filteredApartments.length} {typeParam === "swap" ? "properties available for swap" : "places to stay"} {formattedCity ? `in ${formattedCity} ` : ""}for Shabbos
+                {filteredApartments.length} {typeParam === "swap" ? t("search_page.properties_swap") : t("search_page.places_stay")} {formattedCity ? `${t("search_page.in")} ${formattedCity} ` : ""}{t("search_page.for_shabbos")}
               </p>
               
               <div className="relative">
@@ -173,7 +181,7 @@ function SearchContent() {
                 </div>
                 <input 
                   type="text" 
-                  placeholder="Search by keywords, locations, or apartment names..."
+                  placeholder={t("search_page.search_placeholder")}
                   className="w-full pl-10 pr-4 py-3 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-sm font-medium text-zinc-900 dark:text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-[#4c55a4] transition-all shadow-sm"
                 />
               </div>
@@ -182,10 +190,10 @@ function SearchContent() {
             <div className="flex items-center gap-3">
               <button className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl text-sm font-bold text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-colors md:hidden">
                 <SlidersHorizontal className="w-4 h-4" />
-                Filters
+                {t("search_page.filters")}
               </button>
               <div className="hidden md:flex items-center gap-2 px-3 py-2 border border-zinc-200 dark:border-zinc-700 rounded-xl bg-white dark:bg-zinc-900 shadow-sm">
-                <span className="text-sm font-medium text-zinc-500 dark:text-zinc-400">Sort by:</span>
+                <span className="text-sm font-medium text-zinc-500 dark:text-zinc-400">{t("search_page.sort_by")}</span>
                 <DropdownMenu>
                   <DropdownMenuTrigger className="flex items-center gap-1.5 text-sm font-bold text-zinc-900 dark:text-white hover:text-[#4c55a4] dark:hover:text-[#4c55a4] focus:outline-none transition-colors">
                     {sortBy}
@@ -230,19 +238,19 @@ function SearchContent() {
                   </div>
                 </div>
                 <h3 className="text-3xl font-extrabold text-zinc-900 dark:text-white mb-3 tracking-tight">
-                  No apartments found
+                  {t("search_page.no_apartments")}
                 </h3>
                 <p className="text-zinc-500 dark:text-zinc-400 font-medium max-w-md mx-auto mb-10 leading-relaxed text-[15px]">
-                  We couldn't find any apartments matching your search {formattedCity ? 
-                    <span className="font-bold text-zinc-800 dark:text-zinc-300">for "{formattedCity}"</span> : 
-                    "criteria"
-                  }. Try adjusting your filters or searching for a different destination.
+                  {t("search_page.no_apartments_desc1")} {formattedCity ? 
+                    <span className="font-bold text-zinc-800 dark:text-zinc-300">{t("search_page.for")} "{formattedCity}"</span> : 
+                    t("search_page.criteria")
+                  }. {t("search_page.no_apartments_desc2")}
                 </p>
                 <a 
                   href="/search"
                   className="inline-flex items-center gap-2 px-8 py-3.5 bg-gradient-to-r from-[#4c55a4] to-[#606aba] hover:from-[#3b438b] hover:to-[#4c55a4] text-white font-bold rounded-xl transition-colors shadow-md shadow-[#4c55a4]/20"
                 >
-                  View All Apartments
+                  {t("search_page.view_all")}
                 </a>
               </div>
             ) : (
@@ -302,8 +310,9 @@ function SearchContent() {
 }
 
 export default function SearchPage() {
+  const { t } = useLanguage();
   return (
-    <Suspense fallback={<div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 flex items-center justify-center">Loading...</div>}>
+    <Suspense fallback={<div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 flex items-center justify-center">{t("search_page.loading")}</div>}>
       <SearchContent />
     </Suspense>
   );

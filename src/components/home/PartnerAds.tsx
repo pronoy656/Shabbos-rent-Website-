@@ -1,17 +1,21 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { ChevronLeft, ChevronRight, ArrowRight, CheckCircle2, Users2 } from "lucide-react";
+import { useLanguage } from "@/context/LanguageContext";
 
-const partnerAds = [
+export default function PartnerAds() {
+  const { t } = useLanguage();
+
+  const partnerAds = [
   {
     id: 1,
-    partner: "Home Style Furniture",
+    partner: t("partner_ads.items.0.partner"),
     partnerIcon: "🛋️",
     image: "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=800&q=80",
-    headline: "Make Your Shabbos Stay Even More Comfortable",
-    sub: "Up to 20% off on premium furniture rentals.",
-    cta: "Explore Now",
+    headline: t("partner_ads.items.0.headline"),
+    sub: t("partner_ads.items.0.sub"),
+    cta: t("partner_ads.items.0.cta"),
     link: "#",
     dark: true,
     features: [],
@@ -19,12 +23,12 @@ const partnerAds = [
   },
   {
     id: 2,
-    partner: "Mizrachi Transport",
+    partner: t("partner_ads.items.1.partner"),
     partnerIcon: "🚗",
     image: "https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=800&q=80",
-    headline: "Airport Transfers",
-    sub: "Reliable rides to and from the airport.",
-    cta: "Book Your Ride",
+    headline: t("partner_ads.items.1.headline"),
+    sub: t("partner_ads.items.1.sub"),
+    cta: t("partner_ads.items.1.cta"),
     link: "#",
     dark: true,
     features: ["Professional Drivers", "24/7 Availability", "Fixed Prices"],
@@ -32,12 +36,12 @@ const partnerAds = [
   },
   {
     id: 3,
-    partner: "Bakery House",
+    partner: t("partner_ads.items.2.partner"),
     partnerIcon: "🥐",
     image: "https://images.unsplash.com/photo-1549931319-a545dcf3bc73?w=800&q=80",
-    headline: "Fresh. Local. For Shabbos.",
-    sub: "Order delicious homemade meals, challah & more.",
-    cta: "Order Now",
+    headline: t("partner_ads.items.2.headline"),
+    sub: t("partner_ads.items.2.sub"),
+    cta: t("partner_ads.items.2.cta"),
     link: "#",
     dark: false,
     features: [],
@@ -45,12 +49,12 @@ const partnerAds = [
   },
   {
     id: 4,
-    partner: "Community Care",
+    partner: t("partner_ads.items.3.partner"),
     partnerIcon: "🫶",
     image: "https://images.unsplash.com/photo-1584820927498-cfe5211fd8bf?w=800&q=80",
-    headline: "We Care For Your Peace of Mind",
-    sub: "Housekeeping & cleaning services you can trust.",
-    cta: "Learn More",
+    headline: t("partner_ads.items.3.headline"),
+    sub: t("partner_ads.items.3.sub"),
+    cta: t("partner_ads.items.3.cta"),
     link: "#",
     dark: false,
     features: ["Deep Cleaning", "Before Your Arrival", "After Your Stay"],
@@ -58,12 +62,12 @@ const partnerAds = [
   },
   {
     id: 5,
-    partner: "Shabbos Catering",
+    partner: t("partner_ads.items.4.partner"),
     partnerIcon: "🍽️",
     image: "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=800&q=80",
-    headline: "Full Shabbos Meal Packages",
-    sub: "Delivered fresh to your rental. Mehadrin certified.",
-    cta: "Order Meals",
+    headline: t("partner_ads.items.4.headline"),
+    sub: t("partner_ads.items.4.sub"),
+    cta: t("partner_ads.items.4.cta"),
     link: "#",
     dark: true,
     features: ["Mehadrin Certified", "Friday Delivery", "Full Menu"],
@@ -71,12 +75,12 @@ const partnerAds = [
   },
   {
     id: 6,
-    partner: "Jerusalem Tours",
+    partner: t("partner_ads.items.5.partner"),
     partnerIcon: "🕌",
     image: "https://images.unsplash.com/photo-1586699253884-e199770f63b9?w=800&q=80",
-    headline: "Explore the Holy City",
-    sub: "Guided Motzei Shabbos walking tours of the Old City.",
-    cta: "Book a Tour",
+    headline: t("partner_ads.items.5.headline"),
+    sub: t("partner_ads.items.5.sub"),
+    cta: t("partner_ads.items.5.cta"),
     link: "#",
     dark: true,
     features: [],
@@ -84,20 +88,31 @@ const partnerAds = [
   },
 ];
 
-const GAP = 16;
-const VISIBLE = 4;
-
-export default function PartnerAds() {
+  const GAP = 16;
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [visible, setVisible] = useState(4);
   const trackRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const totalSlides = partnerAds.length - VISIBLE;
+  
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth < 640) setVisible(1);
+      else if (window.innerWidth < 768) setVisible(2);
+      else if (window.innerWidth < 1024) setVisible(3);
+      else setVisible(4);
+    };
+    handleResize(); // initial call
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  const totalSlides = Math.max(0, partnerAds.length - visible);
 
   const goTo = (idx: number) => {
     const clamped = Math.max(0, Math.min(idx, totalSlides));
     setCurrentIndex(clamped);
     if (trackRef.current && containerRef.current) {
-      const cardWidth = (containerRef.current.offsetWidth - GAP * (VISIBLE - 1)) / VISIBLE;
+      const cardWidth = (containerRef.current.offsetWidth - GAP * (visible - 1)) / visible;
       trackRef.current.style.transform = `translateX(-${clamped * (cardWidth + GAP)}px)`;
     }
   };
@@ -109,13 +124,13 @@ export default function PartnerAds() {
         <div className="text-center mb-10">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 mb-4">
             <Users2 className="w-3.5 h-3.5 text-amber-500" />
-            <span className="text-xs font-extrabold uppercase tracking-widest text-amber-600 dark:text-amber-400">Our Partners</span>
+            <span className="text-xs font-extrabold uppercase tracking-widest text-amber-600 dark:text-amber-400">{t("partner_ads.our_partners")}</span>
           </div>
           <h2 className="text-3xl md:text-4xl font-extrabold text-zinc-900 dark:text-white tracking-tight mb-3">
-            Special Offers &amp; Local Deals
+            {t("partner_ads.special_offers")}
           </h2>
           <p className="text-zinc-500 dark:text-zinc-400 max-w-md mx-auto">
-            Exclusive discounts and services from trusted partners for our community.
+            {t("partner_ads.subtitle")}
           </p>
         </div>
 
@@ -147,7 +162,7 @@ export default function PartnerAds() {
                   href={ad.link}
                   className="relative flex-none rounded-3xl overflow-hidden group"
                   style={{
-                    width: `calc((100% - ${GAP * (VISIBLE - 1)}px) / ${VISIBLE})`,
+                    width: `calc((100% - ${GAP * (visible - 1)}px) / ${visible})`,
                     minHeight: 340,
                   }}
                 >

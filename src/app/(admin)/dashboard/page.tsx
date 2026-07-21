@@ -33,23 +33,25 @@ import {
   BarChart,
   Bar,
 } from "recharts";
+import { useLanguage } from "@/context/LanguageContext";
 
 export default function AdminDashboardPage() {
+  const { t } = useLanguage();
   const metrics = [
     {
-      title: "Total Apartments",
+      title: t("admin_dashboard.metrics.total_apartments"),
       value: "1,520",
-      subtext: "All registered listings",
+      subtext: t("admin_dashboard.metrics.all_registered"),
       icon: Building2,
       iconColor: "text-blue-500",
       iconBg: "bg-blue-50 dark:bg-blue-500/10",
-      badge: "Total",
+      badge: t("admin_dashboard.metrics.total"),
       badgeColor: "text-blue-700 bg-blue-100 dark:text-blue-400 dark:bg-blue-500/10",
     },
     {
-      title: "Active Apartments",
+      title: t("admin_dashboard.metrics.active_apartments"),
       value: "1,245",
-      subtext: "Currently live on site",
+      subtext: t("admin_dashboard.metrics.currently_live"),
       icon: CheckCircle2,
       iconColor: "text-purple-500",
       iconBg: "bg-purple-50 dark:bg-purple-500/10",
@@ -57,9 +59,9 @@ export default function AdminDashboardPage() {
       badgeColor: "text-emerald-700 bg-emerald-100 dark:text-emerald-400 dark:bg-emerald-500/10",
     },
     {
-      title: "Completed Rentals",
+      title: t("admin_dashboard.metrics.completed_rentals"),
       value: "98",
-      subtext: "This month",
+      subtext: t("admin_dashboard.metrics.this_month"),
       icon: CheckCircle2,
       iconColor: "text-emerald-500",
       iconBg: "bg-emerald-50 dark:bg-emerald-500/10",
@@ -67,35 +69,35 @@ export default function AdminDashboardPage() {
       badgeColor: "text-emerald-700 bg-emerald-100 dark:text-emerald-400 dark:bg-emerald-500/10",
     },
     {
-      title: "Unpaid ₪50 Fees",
+      title: t("admin_dashboard.metrics.unpaid_fees"),
       value: "23",
-      subtext: "Needs follow-up",
+      subtext: t("admin_dashboard.metrics.needs_follow_up"),
       icon: DollarSign,
       iconColor: "text-orange-500",
       iconBg: "bg-orange-50 dark:bg-orange-500/10",
-      badge: "Pending",
+      badge: t("admin_dashboard.metrics.pending"),
       badgeColor: "text-orange-700 bg-orange-100 dark:text-orange-400 dark:bg-orange-500/10",
     },
   ];
 
   const activities = [
     {
-      title: "Apartment A-102 rented",
-      time: "5 minutes ago",
+      title: t("admin_dashboard.recent_activity.apt_rented"),
+      time: t("admin_dashboard.recent_activity.mins_ago"),
       icon: CheckCircle2,
       iconColor: "text-emerald-600 dark:text-emerald-400",
       iconBg: "bg-emerald-100 dark:bg-emerald-500/20",
     },
     {
-      title: "₪50 payment pending",
-      time: "Owner: David",
+      title: t("admin_dashboard.recent_activity.payment_pending"),
+      time: t("admin_dashboard.recent_activity.owner"),
       icon: DollarSign,
       iconColor: "text-orange-600 dark:text-orange-400",
       iconBg: "bg-orange-100 dark:bg-orange-500/20",
     },
     {
-      title: "New swap match found",
-      time: "Bnei Brak ↔ Jerusalem",
+      title: t("admin_dashboard.recent_activity.swap_match"),
+      time: t("admin_dashboard.recent_activity.swap_cities"),
       icon: ArrowRightLeft,
       iconColor: "text-purple-600 dark:text-purple-400",
       iconBg: "bg-purple-100 dark:bg-purple-500/20",
@@ -140,9 +142,9 @@ export default function AdminDashboardPage() {
       {/* Header Section */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-white">Dashboard</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-white">{t("admin_dashboard.title")}</h1>
           <p className="text-sm text-zinc-500 dark:text-zinc-400">
-            Overview of the platform
+            {t("admin_dashboard.overview")}
           </p>
         </div>
       </div>
@@ -186,8 +188,8 @@ export default function AdminDashboardPage() {
             <div className="flex items-center gap-2">
               <TrendingUp className="h-5 w-5 text-blue-500" />
               <div>
-                <h2 className="text-lg font-bold text-zinc-900 dark:text-white leading-tight">Monthly Revenue</h2>
-                <p className="text-xs text-zinc-500 dark:text-zinc-400">Total earnings</p>
+                <h2 className="text-lg font-bold text-zinc-900 dark:text-white leading-tight">{t("admin_dashboard.charts.monthly_revenue")}</h2>
+                <p className="text-xs text-zinc-500 dark:text-zinc-400">{t("admin_dashboard.charts.total_earnings")}</p>
               </div>
             </div>
             <DropdownMenu>
@@ -223,7 +225,7 @@ export default function AdminDashboardPage() {
                 <RechartsTooltip 
                   contentStyle={{ borderRadius: '8px', border: '1px solid #e4e4e7', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
                   itemStyle={{ color: '#18181b', fontWeight: 600 }}
-                  formatter={(value: any) => [`₪${value}`, 'Revenue']}
+                  formatter={(value: any) => [`₪${value}`, t("admin_dashboard.charts.revenue")]}
                 />
                 <Area type="monotone" dataKey="revenue" stroke="#3b82f6" strokeWidth={3} fillOpacity={1} fill="url(#colorRevenue)" />
               </AreaChart>
@@ -237,8 +239,8 @@ export default function AdminDashboardPage() {
             <div className="flex items-center gap-2">
               <BarChart3 className="h-5 w-5 text-purple-500" />
               <div>
-                <h2 className="text-lg font-bold text-zinc-900 dark:text-white leading-tight">Search Demand by City</h2>
-                <p className="text-xs text-zinc-500 dark:text-zinc-400">Top searches</p>
+                <h2 className="text-lg font-bold text-zinc-900 dark:text-white leading-tight">{t("admin_dashboard.charts.search_demand")}</h2>
+                <p className="text-xs text-zinc-500 dark:text-zinc-400">{t("admin_dashboard.charts.top_searches")}</p>
               </div>
             </div>
             <DropdownMenu>
@@ -269,7 +271,7 @@ export default function AdminDashboardPage() {
                   cursor={{ fill: '#f4f4f5' }}
                   contentStyle={{ borderRadius: '8px', border: '1px solid #e4e4e7', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
                   itemStyle={{ color: '#18181b', fontWeight: 600 }}
-                  formatter={(value: any) => [value, 'Searches']}
+                  formatter={(value: any) => [value, t("admin_dashboard.charts.searches")]}
                 />
                 <Bar dataKey="searches" fill="#a855f7" radius={[4, 4, 0, 0]} barSize={40} />
               </BarChart>
@@ -284,10 +286,10 @@ export default function AdminDashboardPage() {
         <div className="flex items-center justify-between border-b border-zinc-200 dark:border-zinc-800 px-6 py-4">
           <div className="flex items-center gap-2">
             <Activity className="h-5 w-5 text-blue-500" />
-            <h2 className="text-lg font-bold text-zinc-900 dark:text-white">Recent Activity</h2>
+            <h2 className="text-lg font-bold text-zinc-900 dark:text-white">{t("admin_dashboard.recent_activity.title")}</h2>
           </div>
           <button className="inline-flex items-center justify-center rounded-md border border-zinc-200 bg-white px-3 py-1 text-xs font-medium text-zinc-700 shadow-sm hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800">
-            View All
+            {t("admin_dashboard.recent_activity.view_all")}
             <ArrowRight className="ml-1 h-3 w-3" />
           </button>
         </div>
@@ -304,7 +306,7 @@ export default function AdminDashboardPage() {
                 </div>
               </div>
               <button className="inline-flex items-center justify-center rounded-md border border-zinc-200 bg-white px-3 py-1.5 text-xs font-semibold text-zinc-700 shadow-sm hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700">
-                View
+                {t("admin_dashboard.recent_activity.view")}
                 <ArrowRight className="ml-1 h-3 w-3" />
               </button>
             </div>

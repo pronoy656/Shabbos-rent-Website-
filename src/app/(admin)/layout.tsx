@@ -32,24 +32,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-
-const navigation = [
-  { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard, color: "text-blue-600" },
-  { name: "Apartments", href: "/dashboard/apartments", icon: Building2, color: "text-purple-600" },
-  { name: "Owners", href: "/dashboard/owners", icon: Users, color: "text-emerald-600" },
-  { name: "Renters", href: "/dashboard/renters", icon: UserCheck, color: "text-orange-600" },
-  { name: "Rentals", href: "/dashboard/rentals", icon: CheckSquare, color: "text-blue-500" },
-  { name: "Swaps", href: "/dashboard/swaps", icon: ArrowRightLeft, color: "text-indigo-500" },
-  { name: "Weekends", href: "/dashboard/dates", icon: Calendar, color: "text-orange-500" },
-  { name: "News", href: "/dashboard/news", icon: Megaphone, color: "text-blue-600" },
-  { name: "Advertisements", href: "/dashboard/advertisements", icon: ImageIcon, color: "text-purple-500" },
-  { name: "Alerts", href: "/dashboard/alerts", icon: BellRing, color: "text-orange-600" },
-  { name: "Payments", href: "/dashboard/payments", icon: CreditCard, color: "text-green-600" },
-];
-
-function classNames(...classes: string[]) {
-  return classes.filter(Boolean).join(" ");
-}
+import { useLanguage } from "@/context/LanguageContext";
 
 export default function AdminLayout({
   children,
@@ -57,6 +40,25 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const { t } = useLanguage();
+  
+  const navigation = [
+    { name: t("admin.nav.dashboard"), href: "/dashboard", icon: LayoutDashboard, color: "text-blue-600" },
+    { name: t("admin.nav.apartments"), href: "/dashboard/apartments", icon: Building2, color: "text-purple-600" },
+    { name: t("admin.nav.owners"), href: "/dashboard/owners", icon: Users, color: "text-emerald-600" },
+    { name: t("admin.nav.renters"), href: "/dashboard/renters", icon: UserCheck, color: "text-orange-600" },
+    { name: t("admin.nav.rentals"), href: "/dashboard/rentals", icon: CheckSquare, color: "text-blue-500" },
+    { name: t("admin.nav.swaps"), href: "/dashboard/swaps", icon: ArrowRightLeft, color: "text-indigo-500" },
+    { name: t("admin.nav.weekends"), href: "/dashboard/dates", icon: Calendar, color: "text-orange-500" },
+    { name: t("admin.nav.news"), href: "/dashboard/news", icon: Megaphone, color: "text-blue-600" },
+    { name: t("admin.nav.advertisements"), href: "/dashboard/advertisements", icon: ImageIcon, color: "text-purple-500" },
+    { name: t("admin.nav.alerts"), href: "/dashboard/alerts", icon: BellRing, color: "text-orange-600" },
+    { name: t("admin.nav.payments"), href: "/dashboard/payments", icon: CreditCard, color: "text-green-600" },
+  ];
+
+  function classNames(...classes: string[]) {
+    return classes.filter(Boolean).join(" ");
+  }
 
   return (
     <div className="flex min-h-screen bg-zinc-50 dark:bg-black font-sans">
@@ -64,7 +66,7 @@ export default function AdminLayout({
       <aside className="fixed inset-y-0 left-0 w-72 border-r border-zinc-200 bg-white dark:border-zinc-800 dark:bg-[#121212] hidden md:flex flex-col z-10 text-zinc-600 dark:text-zinc-300">
         <div className="flex h-16 shrink-0 items-center px-6 border-b border-zinc-200 dark:border-zinc-800 sticky top-0 bg-white dark:bg-[#121212] z-10">
           <Link href="/dashboard" className="flex items-center gap-2 font-bold text-xl tracking-tight text-zinc-900 dark:text-white">
-            Sidebar Structure <span className="text-zinc-500 dark:text-zinc-400 font-medium text-sm ml-1">(Final)</span>
+            {t("admin.sidebar_structure")} <span className="text-zinc-500 dark:text-zinc-400 font-medium text-sm ml-1">({t("admin.final")})</span>
           </Link>
         </div>
         <nav className="p-4 flex flex-col flex-1 overflow-y-auto">
@@ -103,7 +105,7 @@ export default function AdminLayout({
         <div className="p-4 border-t border-zinc-200 dark:border-zinc-800">
           <button className="flex w-full items-center gap-3 rounded-lg px-3 py-3 text-[15px] font-bold text-red-600 bg-red-50 dark:bg-red-950/30 hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors">
             <LogOut className="h-5 w-5 shrink-0" />
-            Logout
+            {t("admin.logout")}
           </button>
         </div>
       </aside>
@@ -124,8 +126,8 @@ export default function AdminLayout({
                   <AvatarFallback className="bg-blue-600 text-white font-bold text-xs">AD</AvatarFallback>
                 </Avatar>
                 <div className="flex flex-col items-start hidden md:block text-left">
-                  <span className="text-[13px] font-bold leading-none text-zinc-900 dark:text-white block pb-0.5">Admin User</span>
-                  <span className="text-[11px] font-medium leading-none text-zinc-500 dark:text-zinc-400 block">Superadmin</span>
+                  <span className="text-[13px] font-bold leading-none text-zinc-900 dark:text-white block pb-0.5">{t("admin.admin_user")}</span>
+                  <span className="text-[11px] font-medium leading-none text-zinc-500 dark:text-zinc-400 block">{t("admin.superadmin")}</span>
                 </div>
                 <ChevronDown className="h-4 w-4 text-zinc-400 hidden md:block ml-1" />
               </DropdownMenuTrigger>
@@ -133,7 +135,7 @@ export default function AdminLayout({
                 <DropdownMenuGroup>
                   <DropdownMenuLabel className="p-2">
                     <div className="flex flex-col space-y-1.5">
-                      <p className="text-sm font-bold leading-none text-zinc-900 dark:text-white">Admin User</p>
+                      <p className="text-sm font-bold leading-none text-zinc-900 dark:text-white">{t("admin.admin_user")}</p>
                       <p className="text-xs font-medium leading-none text-zinc-500 dark:text-zinc-400">
                         admin@shabbosrent.com
                       </p>
@@ -144,13 +146,13 @@ export default function AdminLayout({
                 <DropdownMenuItem asChild className="p-2 rounded-lg cursor-pointer">
                   <Link href="/dashboard/settings" className="flex items-center text-sm font-medium text-zinc-700 dark:text-zinc-300 hover:text-blue-600 dark:hover:text-blue-400">
                     <Settings className="mr-2 h-4 w-4 text-zinc-500" />
-                    <span>Settings & Password</span>
+                    <span>{t("admin.settings_password")}</span>
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator className="my-1.5" />
                 <DropdownMenuItem className="p-2 rounded-lg text-red-600 focus:text-red-700 dark:text-red-400 font-medium focus:bg-red-50 dark:focus:bg-red-950/30 cursor-pointer transition-colors">
                   <LogOut className="mr-2 h-4 w-4" />
-                  <span>Log out</span>
+                  <span>{t("admin.logout")}</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
