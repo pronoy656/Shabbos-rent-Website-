@@ -59,15 +59,16 @@ function CustomSelect({ icon: Icon, value, onChange, options, placeholder }: Cus
 }
 
 interface SearchWidgetProps {
-  onSwapSearch?: (active: boolean) => void;
+  onSearch?: (active: boolean) => void;
 }
 
-export default function SearchWidget({ onSwapSearch }: SearchWidgetProps) {
+export default function SearchWidget({ onSearch }: SearchWidgetProps) {
   const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState<"rent" | "swap">("rent");
   const [isMySwipeOn, setIsMySwipeOn] = useState(false);
   const [showSwipeModal, setShowSwipeModal] = useState(false);
   const [hasSearchedSwap, setHasSearchedSwap] = useState(false);
+  const [hasSearchedRent, setHasSearchedRent] = useState(false);
   const [showMap, setShowMap] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   
@@ -89,8 +90,7 @@ export default function SearchWidget({ onSwapSearch }: SearchWidgetProps) {
         <button
           onClick={() => {
             setActiveTab("rent");
-            setHasSearchedSwap(false);
-            onSwapSearch?.(false);
+            onSearch?.(false);
           }}
           className={`flex items-center justify-center gap-2 px-8 py-2.5 rounded-lg font-bold text-sm transition-all ${
             activeTab === "rent"
@@ -107,6 +107,7 @@ export default function SearchWidget({ onSwapSearch }: SearchWidgetProps) {
               setShowSwipeModal(true);
             } else {
               setActiveTab("swap");
+              onSearch?.(hasSearchedSwap);
             }
           }}
           className={`flex items-center justify-center gap-2 px-8 py-2.5 rounded-lg font-bold text-sm transition-all ${
@@ -269,7 +270,7 @@ export default function SearchWidget({ onSwapSearch }: SearchWidgetProps) {
             <button 
               onClick={() => {
                 setHasSearchedSwap(true);
-                onSwapSearch?.(true);
+                onSearch?.(true);
               }}
               className="flex items-center justify-center gap-2 h-[48px] w-full bg-[#4c55a4] hover:bg-[#3d4484] text-white font-bold rounded-xl shadow-md transition-colors"
             >
@@ -277,15 +278,16 @@ export default function SearchWidget({ onSwapSearch }: SearchWidgetProps) {
               <span>{t("search_widget.search_apartments")}</span>
             </button>
           ) : (
-            <Link 
-              href={`/search?${new URLSearchParams({
-                ...(city ? { city } : {}),
-              }).toString()}`} 
+            <button 
+              onClick={() => {
+                setHasSearchedRent(true);
+                onSearch?.(false);
+              }}
               className="flex items-center justify-center gap-2 h-[48px] w-full bg-[#4c55a4] hover:bg-[#3d4484] text-white font-bold rounded-xl shadow-md transition-colors"
             >
               <Search className="w-5 h-5 shrink-0" />
               <span>{t("search_widget.search_apartments")}</span>
-            </Link>
+            </button>
           )}
         </div>
 
@@ -293,16 +295,86 @@ export default function SearchWidget({ onSwapSearch }: SearchWidgetProps) {
 
       </div>
 
-      {/* Swap Results Section */}
-      {activeTab === "swap" && hasSearchedSwap && (
-        <div className="container mx-auto mt-12 mb-20 animate-in fade-in slide-in-from-bottom-4 duration-500">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-4">
-             <div>
-               <h3 className="text-3xl font-extrabold text-zinc-900 dark:text-white mb-2">{t("search_widget.swap_matches")}</h3>
-               <p className="text-lg font-medium text-zinc-500">
-                  9 {t("search_widget.properties_found")}
-               </p>
-             </div>
+      {/* Results Section */}
+      {(() => {
+        const isShowingSwap = activeTab === "swap" && hasSearchedSwap;
+        const isShowingRent = activeTab === "rent" && hasSearchedRent;
+        const isShowingResults = isShowingSwap || isShowingRent;
+
+        if (!isShowingResults) return null;
+
+        const demoApartments = Array.from({ length: 18 }).map((_, i) => {
+          const location = [
+            "Rehavia, Jerusalem",
+            "City Center, Jerusalem",
+            "Rehavia, Jerusalem",
+            "Baka, Jerusalem",
+            "Tel Aviv, Israel",
+            "Jerusalem, Israel",
+            "Old City, Jerusalem",
+            "City Center, Jerusalem",
+            "Tzfat, Israel"
+          ][i % 9];
+
+          return {
+            id: `${activeTab}-demo-${i}`,
+            title: [
+              "Beautiful Apartment in Jerusalem",
+              "Luxury Penthouse with Kosher Kitchen",
+              "Cozy Studio in Rehavia",
+              "Spacious Family Home near Shul",
+              "Modern Apartment in City Center",
+              "Elegant Residence with Panoramic View",
+              "Historic Stone House in Old City",
+              "Bright luxury apartment",
+              "Artistic Villa with Mountain Views"
+            ][i % 9],
+            location,
+            image: [
+              "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&q=80",
+              "https://images.unsplash.com/photo-1502672260266-1c1e5088e756?w=800&q=80",
+              "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800&q=80",
+              "https://images.unsplash.com/photo-1493809842364-78817add7ffb?w=800&q=80",
+              "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=800&q=80",
+              "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&q=80",
+              "https://images.unsplash.com/photo-1502672260266-1c1e5088e756?w=800&q=80",
+              "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800&q=80",
+              "https://images.unsplash.com/photo-1493809842364-78817add7ffb?w=800&q=80"
+            ][i % 9],
+            price: activeTab === "rent" ? 450 + (i * 120) % 800 : 0,
+            rating: 4.8 + (i % 3) * 0.1,
+            reviews: 10 + i * 5,
+            beds: 2 + (i % 4),
+            baths: 1 + (i % 2),
+            guests: 4 + (i % 5) * 2,
+            isSwapAvailable: activeTab === "swap",
+            verified: i % 2 === 0
+          };
+        });
+
+        const filteredApartments = demoApartments.filter(apt => {
+          if (!city) return true;
+          const locLower = apt.location.toLowerCase();
+          if (city === "jerusalem" && locLower.includes("jerusalem")) return true;
+          if (city === "tel-aviv" && locLower.includes("tel aviv")) return true;
+          if (city === "tzfat" && locLower.includes("tzfat")) return true;
+          return false;
+        });
+
+        const totalPages = Math.ceil(filteredApartments.length / 9) || 1;
+        const paginatedApartments = filteredApartments.slice((currentPage - 1) * 9, currentPage * 9);
+
+        return (
+          <div className="container mx-auto mt-12 mb-20 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-4">
+               <div>
+                 <h3 className="text-3xl font-extrabold text-zinc-900 dark:text-white mb-2">
+                   {activeTab === "swap" ? t("search_widget.swap_matches") : "Search Results"}
+                 </h3>
+                 <p className="text-lg font-medium text-zinc-500">
+                    {filteredApartments.length} {t("search_widget.properties_found")}
+                 </p>
+               </div>
              
              <button 
                onClick={() => setShowMap(!showMap)}
@@ -330,89 +402,51 @@ export default function SearchWidget({ onSwapSearch }: SearchWidgetProps) {
           )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
-            {Array.from({ length: 18 }).map((_, i) => ({ 
-                  id: `swap-demo-${i}`,
-                  title: [
-                    "Beautiful Apartment in Jerusalem",
-                    "Luxury Penthouse with Kosher Kitchen",
-                    "Cozy Studio in Rehavia",
-                    "Spacious Family Home near Shul",
-                    "Modern Apartment in City Center",
-                    "Elegant Residence with Panoramic View",
-                    "Historic Stone House in Old City",
-                    "Bright luxury apartment",
-                    "Artistic Villa with Mountain Views"
-                  ][i % 9],
-                  location: [
-                    "Rehavia, Jerusalem",
-                    "City Center, Jerusalem",
-                    "Rehavia, Jerusalem",
-                    "Baka, Jerusalem",
-                    "Tel Aviv, Israel",
-                    "Jerusalem, Israel",
-                    "Old City, Jerusalem",
-                    "City Center, Jerusalem",
-                    "Tzfat, Israel"
-                  ][i % 9],
-                  image: [
-                    "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&q=80",
-                    "https://images.unsplash.com/photo-1502672260266-1c1e5088e756?w=800&q=80",
-                    "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800&q=80",
-                    "https://images.unsplash.com/photo-1493809842364-78817add7ffb?w=800&q=80",
-                    "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=800&q=80",
-                    "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&q=80",
-                    "https://images.unsplash.com/photo-1502672260266-1c1e5088e756?w=800&q=80",
-                    "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800&q=80",
-                    "https://images.unsplash.com/photo-1493809842364-78817add7ffb?w=800&q=80"
-                  ][i % 9],
-                  price: 0,
-                  rating: 4.8 + (i % 3) * 0.1,
-                  reviews: 10 + i * 5,
-                  beds: 2 + (i % 4),
-                  baths: 1 + (i % 2),
-                  guests: 4 + (i % 5) * 2,
-                  isSwapAvailable: true,
-                  verified: i % 2 === 0
-            })).slice((currentPage - 1) * 9, currentPage * 9).map(apt => (
-              <ApartmentCard 
-                key={apt.id}
-                apartment={apt} 
-                mode="swap"
-              />
-            ))}
+            {paginatedApartments.length > 0 ? (
+              paginatedApartments.map(apt => (
+                <ApartmentCard 
+                  key={apt.id}
+                  apartment={apt} 
+                  mode={activeTab === "swap" ? "swap" : "rent"}
+                />
+              ))
+            ) : (
+              <div className="col-span-full py-12 text-center text-zinc-500">
+                No properties found matching your criteria.
+              </div>
+            )}
           </div>
 
           {/* Pagination */}
-          <div className="flex items-center justify-center gap-2">
-             <button 
-                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                disabled={currentPage === 1}
-                className={`w-10 h-10 flex items-center justify-center rounded-xl border border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 transition-colors ${currentPage === 1 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-zinc-50 dark:hover:bg-zinc-800 font-bold'}`}
-             >
-                &lt;
-             </button>
-             <button 
-                onClick={() => setCurrentPage(1)}
-                className={`w-10 h-10 flex items-center justify-center rounded-xl font-bold transition-all ${currentPage === 1 ? 'bg-[#4c55a4] text-white shadow-md shadow-[#4c55a4]/20' : 'border border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800'}`}
-             >
-                1
-             </button>
-             <button 
-                onClick={() => setCurrentPage(2)}
-                className={`w-10 h-10 flex items-center justify-center rounded-xl font-bold transition-all ${currentPage === 2 ? 'bg-[#4c55a4] text-white shadow-md shadow-[#4c55a4]/20' : 'border border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800'}`}
-             >
-                2
-             </button>
-             <button 
-                onClick={() => setCurrentPage(p => Math.min(2, p + 1))}
-                disabled={currentPage === 2}
-                className={`w-10 h-10 flex items-center justify-center rounded-xl border border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 transition-colors ${currentPage === 2 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-zinc-50 dark:hover:bg-zinc-800 font-bold'}`}
-             >
-                &gt;
-             </button>
-          </div>
+          {totalPages > 1 && (
+            <div className="flex items-center justify-center gap-2">
+               <button 
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  className={`w-10 h-10 flex items-center justify-center rounded-xl border border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 transition-colors ${currentPage === 1 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-zinc-50 dark:hover:bg-zinc-800 font-bold'}`}
+               >
+                  &lt;
+               </button>
+               {Array.from({ length: totalPages }).map((_, idx) => (
+                 <button 
+                    key={idx}
+                    onClick={() => setCurrentPage(idx + 1)}
+                    className={`w-10 h-10 flex items-center justify-center rounded-xl font-bold transition-all ${currentPage === idx + 1 ? 'bg-[#4c55a4] text-white shadow-md shadow-[#4c55a4]/20' : 'border border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800'}`}
+                 >
+                    {idx + 1}
+                 </button>
+               ))}
+               <button 
+                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                  className={`w-10 h-10 flex items-center justify-center rounded-xl border border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 transition-colors ${currentPage === totalPages ? 'opacity-50 cursor-not-allowed' : 'hover:bg-zinc-50 dark:hover:bg-zinc-800 font-bold'}`}
+               >
+                  &gt;
+               </button>
+            </div>
+          )}
         </div>
-      )}
+      );})()}
 
       {/* Swipe Modal */}
       {showSwipeModal && (
@@ -439,6 +473,7 @@ export default function SearchWidget({ onSwapSearch }: SearchWidgetProps) {
                     setIsMySwipeOn(true);
                     setShowSwipeModal(false);
                     setActiveTab("swap");
+                    onSearch?.(hasSearchedSwap);
                   }}
                   className="flex-1 py-3 bg-[#4c55a4] hover:bg-[#3d4484] text-white rounded-xl font-medium transition-all shadow-md shadow-[#4c55a4]/20"
                 >

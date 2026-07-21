@@ -14,7 +14,7 @@ import ContactSection from "@/components/home/ContactSection";
 import { ArrowRightLeft, Navigation, ShieldCheck } from "lucide-react";
 
 export default function HomePage() {
-  const [isSwapSearchActive, setIsSwapSearchActive] = useState(false);
+  const [isSearchActive, setIsSearchActive] = useState(false);
   const { t } = useLanguage();
 
   return (
@@ -70,10 +70,10 @@ export default function HomePage() {
 
       {/* Search Widget Component (Overlaps the hero bottom) */}
       <div className="px-4 pb-12">
-        <SearchWidget onSwapSearch={(active) => setIsSwapSearchActive(active)} />
+        <SearchWidget onSearch={(active) => setIsSearchActive(active)} />
       </div>
 
-      {!isSwapSearchActive && (
+      {!isSearchActive && (
         <>
           <PopularCities />
           <PremiumCities />
