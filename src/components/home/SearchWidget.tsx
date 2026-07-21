@@ -77,7 +77,8 @@ export default function SearchWidget({ onSearch }: SearchWidgetProps) {
   const [walkingTime, setWalkingTime] = useState("10");
   const [weekend, setWeekend] = useState("");
   const [rooms, setRooms] = useState("");
-  const [bathrooms, setBathrooms] = useState("");
+  const [minPrice, setMinPrice] = useState("");
+  const [maxPrice, setMaxPrice] = useState("");
   const [beds, setBeds] = useState("");
   const [guests, setGuests] = useState("");
 
@@ -210,21 +211,26 @@ export default function SearchWidget({ onSearch }: SearchWidgetProps) {
       {/* Row 2: Additional Fields & Search Button */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-5 items-end mt-5">
         
-        {/* Bathrooms */}
+        {/* Price Range */}
         <div className="lg:col-span-3 space-y-1.5">
-          <label className="text-xs font-bold text-zinc-900 dark:text-white">{t("search_widget.bathrooms")}</label>
-          <CustomSelect
-            icon={Bath}
-            value={bathrooms}
-            onChange={setBathrooms}
-            placeholder={t("search_widget.select_bathrooms")}
-            options={[
-              { value: "any", label: t("search_widget.any") },
-              { value: "1", label: t("search_widget.plus_1") },
-              { value: "2", label: t("search_widget.plus_2") },
-              { value: "3", label: t("search_widget.plus_3") },
-            ]}
-          />
+          <label className="text-xs font-bold text-zinc-900 dark:text-white">Price Range (₪)</label>
+          <div className="flex items-center gap-2">
+            <input 
+              type="number" 
+              placeholder="Min" 
+              value={minPrice}
+              onChange={(e) => setMinPrice(e.target.value)}
+              className="w-full h-[48px] px-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#4c55a4] transition-all"
+            />
+            <span className="text-zinc-400 font-bold">-</span>
+            <input 
+              type="number" 
+              placeholder="Max" 
+              value={maxPrice}
+              onChange={(e) => setMaxPrice(e.target.value)}
+              className="w-full h-[48px] px-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#4c55a4] transition-all"
+            />
+          </div>
         </div>
 
         {/* Beds */}

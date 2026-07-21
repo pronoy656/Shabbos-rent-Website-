@@ -5,6 +5,7 @@ import {
   Info, MapPin, Phone, Building, Sparkles, Image as ImageIcon, 
   UploadCloud, AlignLeft, Check, Plus, X, Search, DollarSign, ChevronDown, PartyPopper, Star
 } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 interface CreateListingModalProps {
   isOpen: boolean;
@@ -14,22 +15,20 @@ interface CreateListingModalProps {
 }
 
 export default function CreateListingModal({ isOpen, onClose, onSave, isEditMode }: CreateListingModalProps) {
+  const router = useRouter();
   const [amenityInput, setAmenityInput] = useState("");
   const [amenities, setAmenities] = useState<string[]>([]);
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [selectedDate, setSelectedDate] = useState("");
   const [whatsappEnabled, setWhatsappEnabled] = useState(false);
   const [emailEnabled, setEmailEnabled] = useState(false);
   const [coverImagePreview, setCoverImagePreview] = useState<string | null>(null);
   const [galleryPreviews, setGalleryPreviews] = useState<string[]>([]);
-  const [isSuccess, setIsSuccess] = useState(false);
+  const [modalStep, setModalStep] = useState<"form" | "success" | "payment" | "approval">("form");
   const coverImageRef = useRef<HTMLInputElement>(null);
   const galleryRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (isOpen && isEditMode) {
       setAmenities(["Fast High-Speed WiFi", "Kosher Kitchen", "Panoramic View"]);
-      setSelectedDate("Upcoming Shabbat (Aug 15 - Aug 17)");
       setWhatsappEnabled(true);
       setEmailEnabled(true);
       setCoverImagePreview("https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&q=80&w=800");
@@ -39,7 +38,6 @@ export default function CreateListingModal({ isOpen, onClose, onSave, isEditMode
       ]);
     } else if (isOpen && !isEditMode) {
       setAmenities([]);
-      setSelectedDate("");
       setWhatsappEnabled(false);
       setEmailEnabled(false);
       setCoverImagePreview(null);
@@ -77,26 +75,26 @@ export default function CreateListingModal({ isOpen, onClose, onSave, isEditMode
   };
 
   const handleSaveAndContinue = () => {
-    setIsSuccess(true);
+    setModalStep("success");
   };
 
   const handleFinalClose = () => {
-    if (onSave) onSave(selectedDate);
+    if (onSave) onSave("");
     onClose();
-    setTimeout(() => setIsSuccess(false), 300);
+    setTimeout(() => setModalStep("form"), 300);
   };
 
   const handleClose = () => {
     onClose();
-    setTimeout(() => setIsSuccess(false), 300);
+    setTimeout(() => setModalStep("form"), 300);
   }
 
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-zinc-900/60 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className={`bg-white dark:bg-[#121212] rounded-3xl shadow-2xl w-full ${isSuccess ? 'max-w-3xl' : 'max-w-5xl'} max-h-[90vh] flex flex-col overflow-hidden border border-zinc-200 dark:border-zinc-800 animate-in zoom-in-95 duration-300 relative transition-all`}>
-        {isSuccess ? (
+      <div className={`bg-white dark:bg-[#121212] rounded-3xl shadow-2xl w-full ${modalStep !== "form" ? 'max-w-3xl' : 'max-w-5xl'} max-h-[90vh] flex flex-col overflow-hidden border border-zinc-200 dark:border-zinc-800 animate-in zoom-in-95 duration-300 relative transition-all`}>
+        {modalStep === "success" ? (
           <div className="flex-1 flex flex-col items-center justify-center p-8 sm:p-10 text-center animate-in fade-in zoom-in-95 duration-300 bg-white dark:bg-[#121212] overflow-hidden relative">
             
             {/* Colorful Animated Background Elements (Balloons/Confetti Vibe) */}
@@ -132,23 +130,81 @@ export default function CreateListingModal({ isOpen, onClose, onSave, isEditMode
               <p className="text-lg text-zinc-600 dark:text-zinc-300 max-w-lg mb-8 font-medium">
                 Thank you for adding your amazing apartment to ShabbosRent. Get ready to welcome some guests!
               </p>
-              <div className="bg-white/80 dark:bg-zinc-900/80 backdrop-blur-sm border border-amber-200/50 dark:border-amber-800/50 rounded-2xl p-6 w-full mb-10 text-left flex items-start gap-4 shadow-sm relative overflow-hidden group">
-                <div className="absolute top-0 left-0 w-1.5 h-full bg-amber-400"></div>
-                <Info className="w-7 h-7 text-amber-500 shrink-0 mt-0.5 group-hover:scale-110 transition-transform" />
-                <div>
-                  <h4 className="font-bold text-zinc-900 dark:text-white mb-1.5 text-lg">Under Admin Approval</h4>
-                  <p className="text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed">
-                    Our team is doing a quick review of your listing to ensure quality and safety. This usually takes <span className="font-bold text-amber-600 dark:text-amber-400">less than 24 hours</span>. We'll notify you as soon as it's live!
-                  </p>
-                </div>
-              </div>
               <button 
-                onClick={handleFinalClose}
+                onClick={() => setModalStep("payment")}
                 className="w-full sm:w-auto px-16 py-4 bg-[#4c55a4] hover:bg-[#3d4484] text-white text-[16px] font-bold rounded-full shadow-lg transition-colors"
               >
                 Awesome, I'm Done!
               </button>
             </div>
+          </div>
+        ) : modalStep === "payment" ? (
+          <div className="flex-1 flex flex-col items-center justify-center p-8 sm:p-10 text-center animate-in fade-in zoom-in-95 duration-300 bg-white dark:bg-[#121212] relative overflow-hidden">
+            <div className="mb-8 mt-4 relative">
+              <div className="w-24 h-24 bg-gradient-to-tr from-blue-400 to-indigo-600 rounded-full flex items-center justify-center shadow-xl shadow-blue-500/30 relative z-10">
+                <DollarSign className="w-12 h-12 text-white" />
+              </div>
+              <div className="absolute -inset-2 bg-blue-500/20 rounded-full"></div>
+            </div>
+            <h2 className="text-3xl font-extrabold text-zinc-900 dark:text-white mb-4">
+              Yearly Subscription Fee
+            </h2>
+            <p className="text-lg text-zinc-600 dark:text-zinc-300 max-w-lg mb-8 font-medium">
+              Activate your listing for a full year and start receiving guest inquiries.
+            </p>
+            
+            <div className="bg-white/80 dark:bg-zinc-900/80 backdrop-blur-sm border border-zinc-200 dark:border-zinc-800 rounded-2xl p-6 w-full max-w-sm mb-10 text-left shadow-sm">
+              <div className="flex justify-between items-center mb-4 pb-4 border-b border-zinc-100 dark:border-zinc-800">
+                <span className="font-bold text-zinc-700 dark:text-zinc-300">ShabbosRent Yearly</span>
+                <span className="font-black text-2xl text-[#4c55a4] dark:text-indigo-400">₪28</span>
+              </div>
+              <div className="space-y-3">
+                <div className="flex items-center gap-3 text-[15px] font-medium text-zinc-600 dark:text-zinc-400">
+                  <div className="w-6 h-6 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center shrink-0">
+                    <Check className="w-3.5 h-3.5 text-green-600 dark:text-green-500" />
+                  </div>
+                  Unlimited inquiries
+                </div>
+                <div className="flex items-center gap-3 text-[15px] font-medium text-zinc-600 dark:text-zinc-400">
+                  <div className="w-6 h-6 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center shrink-0">
+                    <Check className="w-3.5 h-3.5 text-green-600 dark:text-green-500" />
+                  </div>
+                  Instant visibility
+                </div>
+              </div>
+            </div>
+
+            <button 
+              onClick={() => setModalStep("approval")}
+              className="w-full max-w-sm px-8 py-4 bg-[#4c55a4] hover:bg-[#3d4484] text-white text-[16px] font-bold rounded-xl shadow-lg transition-colors flex items-center justify-center gap-2"
+            >
+              Pay ₪28 Now
+            </button>
+          </div>
+        ) : modalStep === "approval" ? (
+          <div className="flex-1 flex flex-col items-center justify-center p-8 sm:p-10 text-center animate-in fade-in zoom-in-95 duration-300 bg-white dark:bg-[#121212] relative overflow-hidden">
+            <div className="mb-8 mt-4 relative">
+              <div className="w-24 h-24 bg-gradient-to-tr from-amber-400 to-orange-500 rounded-full flex items-center justify-center shadow-xl shadow-amber-500/30 relative z-10">
+                <Info className="w-12 h-12 text-white" />
+              </div>
+              <div className="absolute -inset-2 bg-amber-500/20 rounded-full animate-pulse"></div>
+            </div>
+            <h2 className="text-3xl font-extrabold text-zinc-900 dark:text-white mb-4">
+              Pending Admin Approval
+            </h2>
+            <p className="text-lg text-zinc-600 dark:text-zinc-300 max-w-lg mb-8 font-medium">
+              We are verifying your pictures to ensure quality and safety. This will take some time. Please wait for the admin approval to complete.
+            </p>
+            
+            <button 
+              onClick={() => {
+                handleFinalClose();
+                router.push("/user-dashboard");
+              }}
+              className="w-full sm:w-auto px-12 py-4 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-900 dark:text-white text-[16px] font-bold rounded-full transition-colors shadow-sm"
+            >
+              Go to Dashboard
+            </button>
           </div>
         ) : (
           <>
@@ -227,7 +283,7 @@ export default function CreateListingModal({ isOpen, onClose, onSave, isEditMode
                       <input defaultValue={isEditMode ? "Apartment" : ""} type="text" placeholder="e.g. Villa, Duplex" className="w-full px-4 py-3.5 bg-zinc-50/80 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-2xl text-[15px] text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:bg-white dark:focus:bg-zinc-900 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all duration-200" />
                     </div>
                     <div>
-                      <label className="block text-sm font-bold text-zinc-800 dark:text-zinc-200 mb-2">Bedrooms</label>
+                      <label className="block text-sm font-bold text-zinc-800 dark:text-zinc-200 mb-2">Bedrooms <span className="text-red-500">*</span></label>
                       <input defaultValue={isEditMode ? "4" : ""} type="text" placeholder="e.g. 4" className="w-full px-4 py-3.5 bg-zinc-50/80 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-2xl text-[15px] text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:bg-white dark:focus:bg-zinc-900 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all duration-200" />
                     </div>
                     <div>
@@ -237,40 +293,14 @@ export default function CreateListingModal({ isOpen, onClose, onSave, isEditMode
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div>
-                      <label className="block text-sm font-bold text-zinc-800 dark:text-zinc-200 mb-2">Max Guests</label>
+                      <label className="block text-sm font-bold text-zinc-800 dark:text-zinc-200 mb-2">Max Guests <span className="text-red-500">*</span></label>
                       <input defaultValue={isEditMode ? "8" : ""} type="text" placeholder="e.g. 8" className="w-full px-4 py-3.5 bg-zinc-50/80 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-2xl text-[15px] text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:bg-white dark:focus:bg-zinc-900 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all duration-200" />
                     </div>
                     <div className="md:col-span-2">
-                      <label className="block text-sm font-bold text-zinc-800 dark:text-zinc-200 mb-2">Available Dates</label>
+                      <label className="block text-sm font-bold text-zinc-800 dark:text-zinc-200 mb-2">Price per Shabbat (₪) <span className="text-red-500">*</span></label>
                       <div className="relative">
-                        <button 
-                          type="button"
-                          onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                          className="w-full flex items-center justify-between px-4 py-3.5 bg-zinc-50/80 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-2xl text-[15px] text-zinc-900 dark:text-white outline-none transition-all duration-200 focus:bg-white dark:focus:bg-zinc-900 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500"
-                        >
-                          <span className={selectedDate ? "font-medium" : "text-zinc-400"}>
-                            {selectedDate || "Select an available date..."}
-                          </span>
-                          <ChevronDown className={`w-4 h-4 text-zinc-400 transition-transform duration-200 ${isDropdownOpen ? "rotate-180" : ""}`} />
-                        </button>
-                        
-                        {isDropdownOpen && (
-                          <div className="absolute z-50 top-full left-0 right-0 mt-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
-                            {["Upcoming Shabbat (Aug 15 - Aug 17)", "Next Shabbat (Aug 22 - Aug 24)", "Rosh Hashanah (Sep 15 - Sep 17)", "Sukkot (Sep 29 - Oct 6)"].map((date) => (
-                              <button
-                                key={date}
-                                type="button"
-                                onClick={() => {
-                                  setSelectedDate(date);
-                                  setIsDropdownOpen(false);
-                                }}
-                                className={`w-full text-left px-4 py-3 text-[15px] hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors ${selectedDate === date ? "text-[#4c55a4] dark:text-indigo-400 font-bold bg-[#4c55a4]/5 dark:bg-[#4c55a4]/20" : "text-zinc-700 dark:text-zinc-300 font-medium"}`}
-                              >
-                                {date}
-                              </button>
-                            ))}
-                          </div>
-                        )}
+                        <DollarSign className="absolute left-4 top-4 h-5 w-5 text-zinc-400" />
+                        <input defaultValue={isEditMode ? "1500" : ""} type="text" placeholder="e.g. 1500" className="w-full pl-12 pr-4 py-3.5 bg-zinc-50/80 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-2xl text-[15px] text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:bg-white dark:focus:bg-zinc-900 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all duration-200" />
                       </div>
                     </div>
                   </div>
@@ -280,7 +310,7 @@ export default function CreateListingModal({ isOpen, onClose, onSave, isEditMode
               {/* Amenities */}
               <div className="bg-white dark:bg-zinc-900 rounded-3xl border border-zinc-200 dark:border-zinc-800 overflow-hidden shadow-sm shadow-zinc-200/50 dark:shadow-none p-8">
                 <div className="mb-6">
-                  <h2 className="text-xl font-bold text-zinc-900 dark:text-white">What this place offers</h2>
+                  <h2 className="text-xl font-bold text-zinc-900 dark:text-white">What this place offers <span className="text-red-500">*</span></h2>
                   <p className="text-sm text-zinc-500 mt-1">Specific amenities help guests find your property easily and set clear expectations.</p>
                 </div>
                 
@@ -414,17 +444,10 @@ export default function CreateListingModal({ isOpen, onClose, onSave, isEditMode
                   </div>
                   <h2 className="text-xl font-bold text-zinc-900 dark:text-white">Contact Details & Specs</h2>
                 </div>
-                <div className="p-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="p-8">
                   <div>
                     <label className="block text-sm font-bold text-zinc-800 dark:text-zinc-200 mb-2">Phone Number <span className="text-red-500">*</span></label>
-                    <input type="tel" placeholder="+972 XX XXX XXXX" className="w-full px-4 py-3.5 bg-zinc-50/80 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-2xl text-[15px] text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:bg-white dark:focus:bg-zinc-900 focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 outline-none transition-all duration-200" />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-bold text-zinc-800 dark:text-zinc-200 mb-2">Price per Shabbat (₪) <span className="text-red-500">*</span></label>
-                    <div className="relative">
-                      <DollarSign className="absolute left-4 top-4 h-5 w-5 text-zinc-400" />
-                      <input type="text" placeholder="e.g. 1500" className="w-full pl-12 pr-4 py-3.5 bg-zinc-50/80 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-2xl text-[15px] text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:bg-white dark:focus:bg-zinc-900 focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 outline-none transition-all duration-200" />
-                    </div>
+                    <input type="tel" defaultValue={isEditMode ? "+972 50 123 4567" : ""} placeholder="+972 XX XXX XXXX" className="w-full px-4 py-3.5 bg-zinc-50/80 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-2xl text-[15px] text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:bg-white dark:focus:bg-zinc-900 focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 outline-none transition-all duration-200" />
                   </div>
                 </div>
               </div>

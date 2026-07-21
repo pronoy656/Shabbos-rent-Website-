@@ -11,8 +11,6 @@ export default function MainNavbar() {
   const pathname = usePathname();
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [userRole, setUserRole] = useState<string | null>(null);
-  const [hasApartment, setHasApartment] = useState(false);
-  const [isApartmentVisible, setIsApartmentVisible] = useState(true);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isNotifDropdownOpen, setIsNotifDropdownOpen] = useState(false);
   const [isLangDropdownOpen, setIsLangDropdownOpen] = useState(false);
@@ -23,8 +21,6 @@ export default function MainNavbar() {
 
   useEffect(() => {
     setUserRole(localStorage.getItem("userRole"));
-    setHasApartment(localStorage.getItem("hasUserListing") === "true");
-    setIsApartmentVisible(localStorage.getItem("isApartmentVisible") !== "false");
 
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -231,27 +227,7 @@ export default function MainNavbar() {
                       <p className="text-sm font-bold text-zinc-900 dark:text-white">{t("nav.user_account")}</p>
                       <p className="text-xs text-zinc-500 truncate">user@shabbosrent.com</p>
                     </div>
-                    {hasApartment && (
-                      <>
-                        <div className="px-4 py-2 flex items-center justify-between">
-                          <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">{t("nav.available_status")}</span>
-                          <label className="relative inline-flex items-center cursor-pointer" onClick={(e) => e.stopPropagation()}>
-                            <input 
-                              type="checkbox" 
-                              className="sr-only peer" 
-                              checked={isApartmentVisible} 
-                              onChange={(e) => {
-                                const newVal = e.target.checked;
-                                setIsApartmentVisible(newVal);
-                                localStorage.setItem("isApartmentVisible", newVal.toString());
-                              }}
-                            />
-                            <div className="w-9 h-5 bg-zinc-200 peer-focus:outline-none rounded-full peer dark:bg-zinc-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-zinc-600 peer-checked:bg-blue-600"></div>
-                          </label>
-                        </div>
-                        <div className="h-px bg-zinc-100 dark:bg-zinc-800 my-1"></div>
-                      </>
-                    )}
+
                     <Link
                       href={userRole === "admin" ? "/dashboard" : "/user-dashboard"}
                       onClick={() => setIsDropdownOpen(false)}

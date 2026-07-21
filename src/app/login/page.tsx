@@ -201,7 +201,7 @@ export default function LoginPage() {
 
             <p className="mt-8 text-center text-[13px] text-zinc-500 dark:text-zinc-400">
               Don't have an account?{" "}
-              <Link href="/" className="font-bold text-zinc-900 dark:text-white hover:underline underline-offset-4">
+              <Link href="/signup" className="font-bold text-zinc-900 dark:text-white hover:underline underline-offset-4">
                 Sign up for free
               </Link>
             </p>

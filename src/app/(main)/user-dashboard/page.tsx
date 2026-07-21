@@ -600,35 +600,7 @@ export default function UserDashboardPage() {
 
                       {manageSubTab === "apartment_calendar" && (
                         <div className="flex flex-col gap-6">
-                          {/* Visibility Toggle Card */}
-                          <div className="bg-white dark:bg-zinc-900 rounded-3xl border border-zinc-200 dark:border-zinc-800 p-6 flex items-start justify-between shadow-sm w-full">
-                            <div className="flex items-start gap-4">
-                              <div className="w-12 h-12 rounded-full bg-purple-50 dark:bg-purple-900/20 flex items-center justify-center shrink-0">
-                                <Eye className="w-6 h-6 text-purple-600 dark:text-purple-400" />
-                              </div>
-                              <div>
-                                <h3 className="text-xl font-extrabold text-zinc-900 dark:text-white mb-1">
-                                  {t("dashboard.manage.apartment_status")} {isApartmentVisible ? t("dashboard.manage.visible") : t("dashboard.manage.hidden")}
-                                </h3>
-                                <p className="text-[15px] text-zinc-500 max-w-xl leading-relaxed">
-                                  {t("dashboard.manage.hide_desc")}
-                                </p>
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-4 shrink-0 mt-2">
-                              <span className="text-[15px] font-bold text-zinc-600 dark:text-zinc-400">{isApartmentVisible ? t("dashboard.manage.active") : t("dashboard.manage.hidden")}</span>
-                              <button 
-                                onClick={() => {
-                                  const newVal = !isApartmentVisible;
-                                  setIsApartmentVisible(newVal);
-                                  localStorage.setItem("isApartmentVisible", newVal.toString());
-                                }}
-                                className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors duration-300 focus:outline-none ${isApartmentVisible ? 'bg-[#4c55a4]' : 'bg-zinc-300 dark:bg-zinc-700'}`}
-                              >
-                                <span className={`inline-block h-6 w-6 transform rounded-full bg-white transition-transform duration-300 shadow-sm ${isApartmentVisible ? 'translate-x-7' : 'translate-x-1'}`} />
-                              </button>
-                            </div>
-                          </div>
+
 
                           {/* Calendar Grid Card */}
                           <div className="bg-white dark:bg-zinc-900 rounded-3xl border border-zinc-200 dark:border-zinc-800 p-8 shadow-sm w-full">
@@ -1125,6 +1097,36 @@ export default function UserDashboardPage() {
                                 <MapPin className="w-4 h-4 text-zinc-400" /> Jerusalem, Israel
                               </div>
                             </div>
+                          </div>
+                        </div>
+
+                        {/* Visibility Toggle Card */}
+                        <div className="bg-white dark:bg-zinc-900 rounded-3xl border border-zinc-200 dark:border-zinc-800 p-6 flex items-start justify-between shadow-sm w-full">
+                          <div className="flex items-start gap-4">
+                            <div className="w-12 h-12 rounded-full bg-purple-50 dark:bg-purple-900/20 flex items-center justify-center shrink-0">
+                              <Eye className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+                            </div>
+                            <div>
+                              <h3 className="text-xl font-extrabold text-zinc-900 dark:text-white mb-1">
+                                {t("dashboard.manage.apartment_status")} {isApartmentVisible ? t("dashboard.manage.visible") : t("dashboard.manage.hidden")}
+                              </h3>
+                              <p className="text-[15px] text-zinc-500 max-w-xl leading-relaxed">
+                                {t("dashboard.manage.hide_desc")}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-4 shrink-0 mt-2">
+                            <span className="text-[15px] font-bold text-zinc-600 dark:text-zinc-400">{isApartmentVisible ? t("dashboard.manage.active") : t("dashboard.manage.hidden")}</span>
+                            <button 
+                              onClick={() => {
+                                const newVal = !isApartmentVisible;
+                                setIsApartmentVisible(newVal);
+                                localStorage.setItem("isApartmentVisible", newVal.toString());
+                              }}
+                              className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors duration-300 focus:outline-none ${isApartmentVisible ? 'bg-[#4c55a4]' : 'bg-zinc-300 dark:bg-zinc-700'}`}
+                            >
+                              <span className={`inline-block h-6 w-6 transform rounded-full bg-white transition-transform duration-300 shadow-sm ${isApartmentVisible ? 'translate-x-7' : 'translate-x-1'}`} />
+                            </button>
                           </div>
                         </div>
 
