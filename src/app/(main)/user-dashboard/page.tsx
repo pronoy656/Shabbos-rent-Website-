@@ -136,8 +136,9 @@ export default function UserDashboardPage() {
   useEffect(() => {
     if (typeof window !== "undefined") {
       const savedTab = sessionStorage.getItem("dashboardTab");
+      const hasListingVal = localStorage.getItem("hasUserListing") === "true";
       
-      if (localStorage.getItem("hasUserListing") === "true") {
+      if (hasListingVal) {
         setHasListing(true);
       }
       
@@ -164,7 +165,17 @@ export default function UserDashboardPage() {
       }
       
       if (!initialTabSet && savedTab) {
-        setActiveTab(savedTab);
+        if (hasListingVal && savedTab === "add") {
+          setActiveTab("manage");
+          sessionStorage.setItem("dashboardTab", "manage");
+        } else {
+          setActiveTab(savedTab);
+        }
+      } else if (!initialTabSet && !savedTab) {
+        if (hasListingVal) {
+          setActiveTab("manage");
+          sessionStorage.setItem("dashboardTab", "manage");
+        }
       }
       
       const savedVisibility = localStorage.getItem("isApartmentVisible");
@@ -207,13 +218,13 @@ export default function UserDashboardPage() {
   };
 
   const navItems = [
-    { id: "add", label: t("dashboard.nav.add"), icon: PlusCircle, color: "text-emerald-600" },
+    !hasListing ? { id: "add", label: t("dashboard.nav.add"), icon: PlusCircle, color: "text-emerald-600" } : null,
     { id: "manage", label: t("dashboard.nav.manage"), icon: Building, color: "text-blue-600" },
     { id: "swap", label: t("dashboard.nav.swap"), icon: RefreshCw, color: "text-indigo-500" },
     { id: "affiliate", label: t("dashboard.nav.affiliate"), icon: Gift, color: "text-purple-500" },
     { id: "notifications", label: t("dashboard.nav.notifications"), icon: Bell, color: "text-pink-500" },
     { id: "settings", label: t("dashboard.nav.settings"), icon: Settings, color: "text-zinc-600 dark:text-zinc-400" },
-  ];
+  ].filter(Boolean) as Array<{ id: string, label: string, icon: any, color: string }>;
 
   function classNames(...classes: string[]) {
     return classes.filter(Boolean).join(" ");
@@ -366,8 +377,9 @@ export default function UserDashboardPage() {
                       <div className="flex flex-col sm:flex-row items-center gap-3 mt-2">
                         <button 
                           onClick={() => { setModalMode("edit"); setIsCreateModalOpen(true); }}
-                          className="w-full sm:flex-1 py-3 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-900 dark:text-white rounded-xl font-bold transition-colors"
+                          className="w-full sm:flex-1 flex items-center justify-center gap-2 py-3 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-900 dark:text-white rounded-xl font-bold transition-colors"
                         >
+                          <Edit3 className="w-4 h-4" />
                           {t("dashboard.add.edit_listing")}
                         </button>
                       </div>
@@ -503,14 +515,10 @@ export default function UserDashboardPage() {
                             
                             <div className="flex flex-col sm:flex-row items-center gap-3 mt-2">
                               <button 
-                                className="w-full sm:flex-1 py-3 bg-[#4c55a4] hover:bg-[#3d4484] text-white rounded-xl font-bold transition-all shadow-md shadow-[#4c55a4]/20"
-                              >
-                                {t("dashboard.manage.confirm_booking")}
-                              </button>
-                              <button 
                                 onClick={() => { setModalMode("edit"); setIsCreateModalOpen(true); }}
-                                className="w-full sm:flex-1 py-3 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-900 dark:text-white rounded-xl font-bold transition-colors"
+                                className="w-full sm:flex-1 flex items-center justify-center gap-2 py-3 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-900 dark:text-white rounded-xl font-bold transition-colors"
                               >
+                                <Edit3 className="w-4 h-4" />
                                 {t("dashboard.add.edit_listing")}
                               </button>
                             </div>

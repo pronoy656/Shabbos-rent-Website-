@@ -3,26 +3,23 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Mail, Lock, Eye, EyeOff, ArrowRight } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff, User } from "lucide-react";
 
-export default function LoginPage() {
+export default function SignupPage() {
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleLogin = (role: "user" | "admin", isFreshUser?: boolean) => {
+  const handleSignup = (role: "user" | "admin") => {
     setIsLoading(true);
     
-    // Mock login logic - set role in localStorage
+    // Mock signup logic - set role in localStorage
     localStorage.setItem("userRole", role);
     if (role === "user") {
-        if (isFreshUser) {
-            localStorage.setItem("hasUserListing", "false");
-        } else {
-            localStorage.setItem("hasUserListing", "true");
-        }
+        localStorage.setItem("hasUserListing", "false"); // Fresh user
     }
     
     setTimeout(() => {
@@ -37,7 +34,7 @@ export default function LoginPage() {
   return (
     <div className="flex min-h-screen bg-white dark:bg-black font-sans selection:bg-blue-100 selection:text-blue-900">
       
-      {/* Left Image/Graphic Section (Formerly Right) */}
+      {/* Left Image/Graphic Section */}
       <div className="relative hidden w-0 flex-1 lg:block">
         <div className="absolute inset-0 h-full w-full bg-zinc-900 overflow-hidden">
           {/* Real Background Image */}
@@ -61,25 +58,25 @@ export default function LoginPage() {
             </div>
             
             <h1 className="text-5xl lg:text-6xl font-extrabold tracking-tight text-white mb-6 leading-tight">
-              Welcome to <br/>
+              Join <br/>
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-white to-zinc-400">
                 ShabbosRent.
               </span>
             </h1>
             <p className="text-lg text-zinc-200 max-w-lg font-medium leading-relaxed">
-              The premier platform for discovering and managing premium short-term rentals in Israel's most beautiful neighborhoods.
+              Create an account to start discovering and managing premium short-term rentals in Israel's most beautiful neighborhoods.
             </p>
           </div>
         </div>
       </div>
 
-      {/* Right Form Section (Formerly Left) */}
+      {/* Right Form Section */}
       <div className="flex w-full flex-col justify-center px-4 py-12 sm:px-6 lg:flex-none lg:w-1/2 lg:px-20 xl:px-24 border-l border-zinc-100 dark:border-zinc-900 z-10 bg-white dark:bg-black">
         <div className="mx-auto w-full max-w-md lg:w-[480px]">
           
           {/* Brand Logo */}
           <Link href="/" className="inline-flex items-center gap-2 mb-10 group">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600 text-white shadow-lg shadow-blue-600/20 transition-transform group-hover:scale-105">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#4c55a4] text-white shadow-lg shadow-[#4c55a4]/20 transition-transform group-hover:scale-105">
               <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
                 <polyline points="9 22 9 12 15 12 15 22" />
@@ -90,16 +87,33 @@ export default function LoginPage() {
 
           <div>
             <h2 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-white">
-              Welcome back
+              Create an account
             </h2>
             <p className="mt-2 text-[15px] text-zinc-500 dark:text-zinc-400">
-              Enter your details to access your account.
+              Enter your details to get started.
             </p>
           </div>
 
           <div className="mt-8">
             <div className="space-y-5">
               
+              <div className="space-y-1.5">
+                <label className="text-sm font-semibold text-zinc-900 dark:text-zinc-200">Full name</label>
+                <div className="relative">
+                  <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5">
+                    <User className="h-5 w-5 text-zinc-400" />
+                  </div>
+                  <input
+                    type="text"
+                    required
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="John Doe"
+                    className="block w-full rounded-xl border border-zinc-200 bg-white py-3 pl-11 pr-4 text-sm text-zinc-900 outline-none focus:border-[#4c55a4] focus:ring-4 focus:ring-[#4c55a4]/10 dark:border-zinc-800 dark:bg-zinc-950 dark:text-white dark:focus:ring-[#4c55a4]/20 transition-all shadow-sm"
+                  />
+                </div>
+              </div>
+
               <div className="space-y-1.5">
                 <label className="text-sm font-semibold text-zinc-900 dark:text-zinc-200">Email address</label>
                 <div className="relative">
@@ -112,7 +126,7 @@ export default function LoginPage() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="name@example.com"
-                    className="block w-full rounded-xl border border-zinc-200 bg-white py-3 pl-11 pr-4 text-sm text-zinc-900 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-zinc-800 dark:bg-zinc-950 dark:text-white dark:focus:ring-blue-500/20 transition-all shadow-sm"
+                    className="block w-full rounded-xl border border-zinc-200 bg-white py-3 pl-11 pr-4 text-sm text-zinc-900 outline-none focus:border-[#4c55a4] focus:ring-4 focus:ring-[#4c55a4]/10 dark:border-zinc-800 dark:bg-zinc-950 dark:text-white dark:focus:ring-[#4c55a4]/20 transition-all shadow-sm"
                   />
                 </div>
               </div>
@@ -120,9 +134,6 @@ export default function LoginPage() {
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
                   <label className="text-sm font-semibold text-zinc-900 dark:text-zinc-200">Password</label>
-                  <a href="#" className="text-[13px] font-semibold text-blue-600 hover:text-blue-500 dark:text-blue-400 transition-colors">
-                    Forgot password?
-                  </a>
                 </div>
                 <div className="relative">
                   <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5">
@@ -133,8 +144,8 @@ export default function LoginPage() {
                     required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Enter your password"
-                    className="block w-full rounded-xl border border-zinc-200 bg-white py-3 pl-11 pr-11 text-sm text-zinc-900 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-zinc-800 dark:bg-zinc-950 dark:text-white dark:focus:ring-blue-500/20 transition-all shadow-sm"
+                    placeholder="Create a password"
+                    className="block w-full rounded-xl border border-zinc-200 bg-white py-3 pl-11 pr-11 text-sm text-zinc-900 outline-none focus:border-[#4c55a4] focus:ring-4 focus:ring-[#4c55a4]/10 dark:border-zinc-800 dark:bg-zinc-950 dark:text-white dark:focus:ring-[#4c55a4]/20 transition-all shadow-sm"
                   />
                   <button
                     type="button"
@@ -147,31 +158,13 @@ export default function LoginPage() {
               </div>
 
               <div className="flex flex-col gap-3 mt-4">
-                <div className="flex gap-3">
-                  <button
-                    type="button"
-                    disabled={isLoading}
-                    onClick={() => handleLogin("user", false)}
-                    className="group relative flex flex-1 justify-center items-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-sm font-bold text-white transition-all hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-600/20 disabled:opacity-70 disabled:cursor-not-allowed shadow-md shadow-blue-600/20"
-                  >
-                    {isLoading ? "Wait..." : "User 1 (Has Listing)"}
-                  </button>
-                  <button
-                    type="button"
-                    disabled={isLoading}
-                    onClick={() => handleLogin("user", true)}
-                    className="group relative flex flex-1 justify-center items-center gap-2 rounded-xl bg-emerald-600 px-4 py-3 text-sm font-bold text-white transition-all hover:bg-emerald-700 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-emerald-600/20 disabled:opacity-70 disabled:cursor-not-allowed shadow-md shadow-emerald-600/20"
-                  >
-                    {isLoading ? "Wait..." : "User 2 (Fresh)"}
-                  </button>
-                </div>
                 <button
                   type="button"
                   disabled={isLoading}
-                  onClick={() => handleLogin("admin")}
-                  className="group relative flex w-full justify-center items-center gap-2 rounded-xl bg-zinc-900 dark:bg-white px-4 py-3 text-sm font-bold text-white dark:text-zinc-900 transition-all hover:bg-zinc-800 dark:hover:bg-zinc-100 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-zinc-900/10 disabled:opacity-70 disabled:cursor-not-allowed shadow-md shadow-zinc-900/10"
+                  onClick={() => handleSignup("user")}
+                  className="group relative flex w-full justify-center items-center gap-2 rounded-xl bg-[#4c55a4] px-4 py-3 text-sm font-bold text-white transition-all hover:bg-[#3d4484] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#4c55a4]/20 disabled:opacity-70 disabled:cursor-not-allowed shadow-md shadow-[#4c55a4]/20"
                 >
-                  {isLoading ? "Wait..." : "Admin Account"}
+                  {isLoading ? "Wait..." : "Sign Up"}
                 </button>
               </div>
             </div>
@@ -200,9 +193,9 @@ export default function LoginPage() {
             </div>
 
             <p className="mt-8 text-center text-[13px] text-zinc-500 dark:text-zinc-400">
-              Don't have an account?{" "}
-              <Link href="/" className="font-bold text-zinc-900 dark:text-white hover:underline underline-offset-4">
-                Sign up for free
+              Already have an account?{" "}
+              <Link href="/login" className="font-bold text-zinc-900 dark:text-white hover:underline underline-offset-4">
+                Sign in
               </Link>
             </p>
           </div>
