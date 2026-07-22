@@ -13,6 +13,7 @@ export interface ApartmentData {
   guests: number;
   isSwapAvailable: boolean;
   verified: boolean;
+  isAvailable?: boolean;
 }
 
 export interface Amenity {

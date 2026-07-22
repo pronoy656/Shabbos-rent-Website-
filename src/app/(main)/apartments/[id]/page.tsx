@@ -7,10 +7,11 @@ import ApartmentCard from "@/components/search/ApartmentCard";
 import { ApartmentData } from "@/types";
 import { 
   MapPin, BedDouble, Bath, Users, Star, ArrowRightLeft, 
-  ShieldCheck, CalendarCheck, Wifi, Tent, Monitor, ChefHat, X, Mail,
+  ShieldCheck, CalendarCheck, Wifi, Tent, Monitor, ChefHat, X, Mail, Sparkles,
   Coffee, Tv, Snowflake, Car, WashingMachine, Phone, MessageCircle, Copy, ChevronDown, Home, Footprints, Check
 } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
+import { mockBaseApartments } from "@/data/mockData";
 
 // Mock Data
 const galleryImages = [
@@ -21,8 +22,6 @@ const galleryImages = [
   "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=800&q=80"
 ];
 
-// We will use the URL parameter `id` to mock availability
-// If id === '1', show dates. Otherwise, empty.
 const mockAvailableDates = [
   { id: 1, date: "Oct 13 - 15", day: "Fri - Sun", reason: "Shabbos Parshat Bereishit" },
   { id: 2, date: "Oct 27 - 29", day: "Fri - Sun", reason: "Shabbos Parshat Lech Lecha" },
@@ -30,10 +29,10 @@ const mockAvailableDates = [
 ];
 
 const similarApartments: ApartmentData[] = [
-  { id: "sim-1", title: "Luxury Penthouse near Beach", location: "Tel Aviv, Israel", image: "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&q=80", price: 4000, rating: 4.9, reviews: 120, beds: 3, baths: 2, guests: 6, isSwapAvailable: true, verified: true },
-  { id: "sim-2", title: "Historic Stone House in Old City", location: "Jerusalem, Israel", image: "https://images.unsplash.com/photo-1572120360610-d971b9d7767c?w=800&q=80", price: 4500, rating: 4.9, reviews: 150, beds: 4, baths: 3, guests: 10, isSwapAvailable: false, verified: true },
-  { id: "sim-3", title: "Elegant Residence with Panoramic View", location: "Jerusalem, Israel", image: "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=800&q=80", price: 5000, rating: 4.8, reviews: 110, beds: 5, baths: 4, guests: 12, isSwapAvailable: true, verified: true },
-  { id: "sim-4", title: "Artistic Villa with Mountain Views", location: "Tzfat, Israel", image: "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=800&q=80", price: 3000, rating: 4.9, reviews: 105, beds: 4, baths: 2, guests: 8, isSwapAvailable: true, verified: true },
+  { id: "sim-1", title: "Luxury Penthouse near Beach", location: "Tel Aviv, Israel", image: "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&q=80", price: 4000, rating: 4.9, reviews: 120, beds: 3, baths: 2, guests: 6, isSwapAvailable: true, verified: true, isAvailable: true },
+  { id: "sim-2", title: "Historic Stone House in Old City", location: "Jerusalem, Israel", image: "https://images.unsplash.com/photo-1572120360610-d971b9d7767c?w=800&q=80", price: 4500, rating: 4.9, reviews: 150, beds: 4, baths: 3, guests: 10, isSwapAvailable: false, verified: true, isAvailable: false },
+  { id: "sim-3", title: "Elegant Residence with Panoramic View", location: "Jerusalem, Israel", image: "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=800&q=80", price: 5000, rating: 4.8, reviews: 110, beds: 5, baths: 4, guests: 12, isSwapAvailable: true, verified: true, isAvailable: true },
+  { id: "sim-4", title: "Artistic Villa with Mountain Views", location: "Tzfat, Israel", image: "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=800&q=80", price: 3000, rating: 4.9, reviews: 105, beds: 4, baths: 2, guests: 8, isSwapAvailable: true, verified: true, isAvailable: false },
 ];
 
 export default function ApartmentDetailsPage({ params }: { params: Promise<{ id: string }> }) {
@@ -72,8 +71,11 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
   
   const displayedAmenities = showAllAmenities ? amenitiesList : amenitiesList.slice(0, 6);
 
-  // MOCK LOGIC: Always show mock available dates for the dropdown to work in testing
-  const availableDates = mockAvailableDates;
+  // Dynamic Logic: Determine availability based on ID and apartment metadata
+  const baseId = id ? id.split("-")[0] : "1";
+  const targetApartment = mockBaseApartments.find((a) => a.id === id || a.id === baseId) || similarApartments.find((a) => a.id === id);
+  const isApartmentAvailable = targetApartment ? targetApartment.isAvailable !== false : (id !== "2" && id !== "4" && id !== "6");
+  const availableDates = isApartmentAvailable ? mockAvailableDates : [];
 
   // Mock Form Submit
   const handleContactSubmit = (e: React.FormEvent) => {
@@ -229,42 +231,24 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
 
 
 
-            {/* Contact Landlord Section */}
-            <div className="bg-[#4c55a4]/5 dark:bg-[#4c55a4]/10 rounded-3xl p-6 md:p-8 border border-[#4c55a4]/20 dark:border-[#4c55a4]/30 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-6">
-                <div>
-                   <h2 className="text-2xl font-bold text-zinc-900 dark:text-white mb-2">{t("apartment_details.like_apartment")}</h2>
-                   <p className="text-zinc-600 dark:text-zinc-400">{t("apartment_details.get_in_touch")}</p>
-                </div>
-                {!isNumberRevealed ? (
+            {/* Contact Landlord Section (Only shown if apartment is available) */}
+            {isApartmentAvailable && (
+              <div className="bg-[#4c55a4]/5 dark:bg-[#4c55a4]/10 rounded-3xl p-6 md:p-8 border border-[#4c55a4]/20 dark:border-[#4c55a4]/30 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+                  <div>
+                     <h2 className="text-2xl font-bold text-zinc-900 dark:text-white mb-2">{t("apartment_details.like_apartment")}</h2>
+                     <p className="text-zinc-600 dark:text-zinc-400">{t("apartment_details.get_in_touch")}</p>
+                  </div>
                   <button 
                      onClick={() => {
-                       setLandlordModalState("initial");
                        setIsLandlordModalOpen(true);
                      }}
-                     className="px-8 py-3.5 bg-white dark:bg-zinc-900 text-[#4c55a4] hover:bg-zinc-50 dark:hover:bg-zinc-800 border border-[#4c55a4]/20 dark:border-[#4c55a4]/30 rounded-xl font-bold transition-all shadow-sm shadow-[#4c55a4]/5 flex items-center justify-center gap-2 whitespace-nowrap"
+                     className="px-8 py-3.5 bg-[#4c55a4] hover:bg-[#3d4484] text-white rounded-xl font-extrabold transition-all shadow-md shadow-[#4c55a4]/20 flex items-center justify-center gap-2 whitespace-nowrap active:scale-95"
                   >
+                     <Phone className="w-4 h-4" />
                      {t("apartment_details.contact_landlord")}
                   </button>
-                ) : (
-                  <div className="flex flex-col items-center sm:items-end">
-                    <button 
-                       onClick={() => {
-                         setLandlordModalState("options");
-                         setIsLandlordModalOpen(true);
-                       }}
-                       className="group px-6 py-3 bg-white dark:bg-zinc-900 border-2 border-[#4c55a4] hover:bg-[#4c55a4]/5 rounded-xl font-black text-[#4c55a4] text-2xl transition-all shadow-sm shadow-[#4c55a4]/10 flex items-center gap-4 whitespace-nowrap"
-                    >
-                       +972 50-123-4567
-                       <span className="flex items-center justify-center w-8 h-8 rounded-full bg-[#4c55a4] text-white shadow-sm group-hover:scale-110 transition-transform animate-vibrate">
-                          <Phone className="w-4 h-4" />
-                       </span>
-                    </button>
-                    <p className="text-sm text-zinc-500 mt-3 font-medium flex items-center gap-1.5">
-                       {t("apartment_details.click_view_options")} <ArrowRightLeft className="w-3.5 h-3.5 rotate-90 sm:rotate-0" />
-                    </p>
-                  </div>
-                )}
-            </div>
+              </div>
+            )}
 
             {/* Map Section */}
             <div className="bg-white dark:bg-zinc-900 rounded-3xl p-6 md:p-8 border border-zinc-200 dark:border-zinc-800 shadow-sm">
@@ -339,6 +323,41 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
                 <div>
                   <label className="block text-sm font-bold text-zinc-700 dark:text-zinc-300 mb-1.5">{t("apartment_details.phone_number")}</label>
                   <input required type="tel" placeholder="+1 (555) 000-0000" className="w-full px-4 py-3 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#4c55a4]/50 transition-all" />
+                </div>
+
+                {/* Offer Price Input Fields (Min & Max) */}
+                <div>
+                  <label className="block text-sm font-bold text-zinc-700 dark:text-zinc-300 mb-1.5">
+                    {t("apartment_details.offer_price")}
+                  </label>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-semibold text-zinc-500 dark:text-zinc-400 mb-1">
+                        {t("apartment_details.min_offer")}
+                      </label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-2.5 text-zinc-400 font-bold text-sm">₪</span>
+                        <input 
+                          type="number" 
+                          placeholder="Min ₪"
+                          className="w-full pl-8 pr-3 py-2.5 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#4c55a4]/50 transition-all text-sm font-semibold" 
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-zinc-500 dark:text-zinc-400 mb-1">
+                        {t("apartment_details.max_offer")}
+                      </label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-2.5 text-zinc-400 font-bold text-sm">₪</span>
+                        <input 
+                          type="number" 
+                          placeholder="Max ₪"
+                          className="w-full pl-8 pr-3 py-2.5 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#4c55a4]/50 transition-all text-sm font-semibold" 
+                        />
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
                 {availableDates.length > 0 && (
@@ -434,73 +453,69 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
 
       {/* Landlord Contact Modal */}
       {isLandlordModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-900/40 backdrop-blur-sm">
-          <div className="bg-white dark:bg-zinc-900 rounded-3xl shadow-2xl w-full max-w-md overflow-hidden border border-zinc-200 dark:border-zinc-800 animate-in fade-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-zinc-950/60 backdrop-blur-md animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-zinc-900 rounded-3xl shadow-2xl w-full max-w-md overflow-hidden border border-zinc-200/80 dark:border-zinc-800 animate-in zoom-in-95 duration-200 relative">
+            {/* Ambient Background Blur Glow */}
+            <div className="absolute -top-16 -right-16 w-48 h-48 rounded-full bg-gradient-to-br from-[#4c55a4]/20 via-indigo-500/10 to-transparent blur-2xl pointer-events-none" />
+
             {/* Modal Header */}
-            <div className="px-6 py-5 border-b border-zinc-100 dark:border-zinc-800 flex items-center justify-between">
-              <h3 className="font-bold text-xl text-zinc-900 dark:text-white flex items-center gap-2">
-                <Phone className="w-5 h-5 text-[#4c55a4]" /> {t("apartment_details.contact_landlord")}
+            <div className="px-6 py-4 border-b border-zinc-100 dark:border-zinc-800/80 flex items-center justify-between bg-zinc-50/50 dark:bg-zinc-900/50 relative z-10">
+              <h3 className="font-extrabold text-lg text-zinc-900 dark:text-white flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-[#4c55a4]/10 dark:bg-[#4c55a4]/20 flex items-center justify-center text-[#4c55a4] dark:text-[#6b75c8]">
+                  <Phone className="w-4 h-4" />
+                </div>
+                {t("apartment_details.contact_landlord")}
               </h3>
               <button 
                 onClick={() => setIsLandlordModalOpen(false)}
-                className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full transition-colors text-zinc-500"
+                className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full transition-colors text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
-            
-            {/* Modal Body */}
-            <div className="p-6">
-               {landlordModalState === "initial" && (
-                 <div className="py-4">
-                    <h3 className="text-[28px] font-bold text-[#5c70a8] mb-4 leading-tight">{t("apartment_details.before_close")}</h3>
-                    <p className="text-[#555a64] dark:text-zinc-400 mb-10 leading-relaxed text-[17px]">
-                       {t("apartment_details.remind_host")} <span className="font-bold text-[#5c70a8]">{t("apartment_details.shabbos_rent")}</span>, {t("apartment_details.maintain_site")}
-                    </p>
-                    <button 
-                      onClick={() => {
-                        setIsNumberRevealed(true);
-                        setIsLandlordModalOpen(false);
-                      }}
-                      className="w-full py-4 bg-[#758bc6] hover:bg-[#5c70a8] text-white rounded-[14px] text-[19px] font-medium transition-all shadow-md shadow-[#758bc6]/20"
-                    >
-                      {t("apartment_details.show_number")}
-                    </button>
-                 </div>
-               )}
+              {/* Modal Body */}
+            <div className="p-6 relative z-10">
+               <div className="py-1">
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#4c55a4]/10 dark:bg-[#4c55a4]/20 text-[#4c55a4] dark:text-[#8892eb] text-xs font-extrabold tracking-wide uppercase mb-3">
+                    <Sparkles className="w-3.5 h-3.5" /> Direct Contact
+                  </div>
 
-               {landlordModalState === "options" && (
-                 <div className="py-2">
-                    <h4 className="text-center font-bold text-lg text-zinc-900 dark:text-white mb-4">{t("apartment_details.contact_owner")}</h4>
-                    
-                    <div className="bg-zinc-50 dark:bg-zinc-800/50 p-4 rounded-xl border border-zinc-200 dark:border-zinc-700 mb-6 flex items-center justify-between">
-                       <div>
-                         <p className="text-sm text-zinc-500 font-bold uppercase tracking-wider mb-1">{t("apartment_details.apartment_code")}</p>
-                         <p className="text-xl font-bold text-zinc-900 dark:text-white tracking-wide">APT-{id}</p>
-                       </div>
-                       <button onClick={() => navigator.clipboard.writeText(`APT-${id}`)} className="p-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg shadow-sm hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors" title="Copy Code">
-                         <Copy className="w-5 h-5 text-zinc-500" />
-                       </button>
-                    </div>
+                  {/* Subtle Reminder Box */}
+                  <div className="bg-gradient-to-br from-zinc-50 via-blue-50/40 to-indigo-50/30 dark:from-zinc-800/40 dark:via-zinc-800/20 dark:to-zinc-800/10 p-3.5 rounded-2xl border border-zinc-200/60 dark:border-zinc-800 mb-5 text-xs text-zinc-600 dark:text-zinc-300 leading-relaxed shadow-inner">
+                     {t("apartment_details.remind_host")}{" "}
+                     <span className="font-extrabold text-[#4c55a4] dark:text-[#8892eb] underline decoration-2 underline-offset-2">
+                       {t("apartment_details.shabbos_rent")}
+                     </span>
+                     , {t("apartment_details.maintain_site")}
+                  </div>
 
-                    <div className="space-y-3">
-                       <a 
-                         href="tel:+972501234567"
-                         className="w-full py-4 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-900 dark:text-white rounded-xl font-bold transition-all flex items-center justify-center gap-2 text-lg"
-                       >
-                         <Phone className="w-5 h-5" /> {t("apartment_details.call_hotline")}
-                       </a>
-                       <a 
-                         href="https://wa.me/972501234567"
-                         target="_blank"
-                         rel="noopener noreferrer"
-                         className="w-full py-4 bg-[#25D366] hover:bg-[#20bd5a] text-white rounded-xl font-bold transition-all shadow-md shadow-[#25D366]/20 flex items-center justify-center gap-2 text-lg"
-                       >
-                         <MessageCircle className="w-5 h-5" /> {t("apartment_details.whatsapp")}
-                       </a>
-                    </div>
-                 </div>
-               )}
+                  <div className="bg-zinc-50 dark:bg-zinc-800/50 p-4 rounded-2xl border border-zinc-200 dark:border-zinc-700 mb-5 flex items-center justify-between">
+                     <div>
+                       <p className="text-xs text-zinc-500 font-bold uppercase tracking-wider mb-0.5">{t("apartment_details.apartment_code")}</p>
+                       <p className="text-xl font-black text-[#4c55a4] dark:text-[#8892eb] tracking-wide">APT-{id}</p>
+                     </div>
+                     <button onClick={() => navigator.clipboard.writeText(`APT-${id}`)} className="p-2.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-xl shadow-sm hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-all active:scale-95 text-zinc-600 dark:text-zinc-300" title="Copy Code">
+                       <Copy className="w-5 h-5" />
+                     </button>
+                  </div>
+
+                  <div className="space-y-3">
+                     <a 
+                       href="tel:+972501234567"
+                       className="w-full py-3.5 bg-[#4c55a4] hover:bg-[#3d4484] text-white rounded-2xl font-extrabold transition-all shadow-lg shadow-[#4c55a4]/25 flex items-center justify-center gap-2.5 text-base active:scale-[0.98]"
+                     >
+                       <Phone className="w-5 h-5" /> {t("apartment_details.call_hotline")}
+                     </a>
+                     <a 
+                       href="https://wa.me/972501234567"
+                       target="_blank"
+                       rel="noopener noreferrer"
+                       className="w-full py-3.5 bg-[#25D366] hover:bg-[#20bd5a] text-white rounded-2xl font-extrabold transition-all shadow-md shadow-[#25D366]/20 flex items-center justify-center gap-2.5 text-base active:scale-[0.98]"
+                     >
+                       <MessageCircle className="w-5 h-5" /> {t("apartment_details.whatsapp")}
+                     </a>
+                  </div>
+               </div>
             </div>
           </div>
         </div>

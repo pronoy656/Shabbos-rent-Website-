@@ -15,6 +15,7 @@ export const mockBaseApartments: ApartmentData[] = [
     guests: 8,
     isSwapAvailable: true,
     verified: true,
+    isAvailable: true,
   },
   {
     id: "2",
@@ -29,6 +30,7 @@ export const mockBaseApartments: ApartmentData[] = [
     guests: 6,
     isSwapAvailable: false,
     verified: true,
+    isAvailable: false,
   },
   {
     id: "3",
@@ -43,6 +45,7 @@ export const mockBaseApartments: ApartmentData[] = [
     guests: 10,
     isSwapAvailable: true,
     verified: false,
+    isAvailable: true,
   },
   {
     id: "4",
@@ -57,6 +60,7 @@ export const mockBaseApartments: ApartmentData[] = [
     guests: 2,
     isSwapAvailable: false,
     verified: true,
+    isAvailable: false,
   },
   {
     id: "5",
@@ -71,6 +75,7 @@ export const mockBaseApartments: ApartmentData[] = [
     guests: 8,
     isSwapAvailable: true,
     verified: true,
+    isAvailable: true,
   },
   {
     id: "6",
@@ -85,6 +90,7 @@ export const mockBaseApartments: ApartmentData[] = [
     guests: 4,
     isSwapAvailable: false,
     verified: false,
+    isAvailable: false,
   },
 ];
 
