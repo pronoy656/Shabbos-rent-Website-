@@ -1,4 +1,8 @@
 {
+  "brand": {
+    "title": "שבת",
+    "tagline": "פשוט להרגיש את הדרך"
+  },
   "nav": {
     "home": "בית",
     "apartments": "דירות",
@@ -325,7 +329,7 @@
     "upcoming_dates": "תאריכים זמינים קרובים לנכס זה.",
     "before_close": "לפני שאתה סוגר... 🙏",
     "remind_host": "אנא הזכר למארח שהגעת דרך",
-    "shabbos_rent": "Shabbos Rent",
+    "shabbos_rent": "Shabos Rent",
     "maintain_site": "כדי שנוכל להמשיך לתחזק ולשפר את האתר הטוב ביותר עבורך.",
     "action_required": "נדרשת פעולה",
     "no_listing": "לא נמצאה רשומה פעילה",

@@ -128,7 +128,7 @@ export default function CreateListingModal({ isOpen, onClose, onSave, isEditMode
                 Woohoo! Apartment<br/>Submitted Successfully!
               </h2>
               <p className="text-lg text-zinc-600 dark:text-zinc-300 max-w-lg mb-8 font-medium">
-                Thank you for adding your amazing apartment to ShabbosRent. Get ready to welcome some guests!
+                Thank you for adding your amazing apartment to Shabos Rent. Get ready to welcome some guests!
               </p>
               <button 
                 onClick={() => setModalStep("payment")}
@@ -155,7 +155,7 @@ export default function CreateListingModal({ isOpen, onClose, onSave, isEditMode
             
             <div className="bg-white/80 dark:bg-zinc-900/80 backdrop-blur-sm border border-zinc-200 dark:border-zinc-800 rounded-2xl p-6 w-full max-w-sm mb-10 text-left shadow-sm">
               <div className="flex justify-between items-center mb-4 pb-4 border-b border-zinc-100 dark:border-zinc-800">
-                <span className="font-bold text-zinc-700 dark:text-zinc-300">ShabbosRent Yearly</span>
+                <span className="font-bold text-zinc-700 dark:text-zinc-300">Shabos Rent Yearly</span>
                 <span className="font-black text-2xl text-[#4c55a4] dark:text-indigo-400">₪28</span>
               </div>
               <div className="space-y-3">

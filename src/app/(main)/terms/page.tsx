@@ -17,12 +17,12 @@ export default function TermsPage() {
           <div className="prose prose-zinc dark:prose-invert max-w-none prose-headings:font-bold prose-headings:text-zinc-900 dark:prose-headings:text-white prose-p:text-zinc-600 dark:prose-p:text-zinc-400 prose-a:text-[#4c55a4] hover:prose-a:text-[#3d4484]">
             <h2>1. Acceptance of Terms</h2>
             <p>
-              By accessing and using ShabbosRent (the "Service"), you accept and agree to be bound by the terms and provision of this agreement. In addition, when using these particular services, you shall be subject to any posted guidelines or rules applicable to such services.
+              By accessing and using Shabos Rent (the "Service"), you accept and agree to be bound by the terms and provision of this agreement. In addition, when using these particular services, you shall be subject to any posted guidelines or rules applicable to such services.
             </p>
 
             <h2>2. Description of Service</h2>
             <p>
-              ShabbosRent provides an online platform that connects hosts who have accommodations to rent or swap with guests seeking to rent or swap such accommodations, primarily catering to the Shabbat and Yom Tov observant community.
+              Shabos Rent provides an online platform that connects hosts who have accommodations to rent or swap with guests seeking to rent or swap such accommodations, primarily catering to the Shabbat and Yom Tov observant community.
             </p>
 
             <h2>3. User Responsibilities & Conduct</h2>
@@ -43,16 +43,16 @@ export default function TermsPage() {
 
             <h2>5. Disclaimers</h2>
             <p>
-              If you choose to use the Site, Application, Services or Collective Content, you do so at your sole risk. You acknowledge and agree that ShabbosRent does not have an obligation to conduct background checks on any Member, including, but not limited to, Guests and Hosts, but may conduct such background checks in its sole discretion.
+              If you choose to use the Site, Application, Services or Collective Content, you do so at your sole risk. You acknowledge and agree that Shabos Rent does not have an obligation to conduct background checks on any Member, including, but not limited to, Guests and Hosts, but may conduct such background checks in its sole discretion.
             </p>
 
             <h2>6. Limitation of Liability</h2>
             <p>
-              You acknowledge and agree that, to the maximum extent permitted by law, the entire risk arising out of your access to and use of the Site, Application, Services and Collective Content, your listing or booking of any accommodations via the Site, Application and Services, and any contact you have with other users of ShabbosRent whether in person or online remains with you.
+              You acknowledge and agree that, to the maximum extent permitted by law, the entire risk arising out of your access to and use of the Site, Application, Services and Collective Content, your listing or booking of any accommodations via the Site, Application and Services, and any contact you have with other users of Shabos Rent whether in person or online remains with you.
             </p>
 
             <p className="mt-8">
-              If you have any questions about these Terms, please contact us at <a href="mailto:terms@shabbosrent.com">terms@shabbosrent.com</a>.
+              If you have any questions about these Terms, please contact us at <a href="mailto:terms@shabosrent.com">terms@shabosrent.com</a>.
             </p>
           </div>
         </div>

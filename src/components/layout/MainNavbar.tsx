@@ -54,17 +54,21 @@ export default function MainNavbar() {
     <>
       <header className="sticky top-0 z-50 w-full bg-white/80 backdrop-blur-md border-b border-zinc-100 dark:bg-zinc-950/80 dark:border-zinc-800">
         <div className="container mx-auto px-4 h-20 flex items-center justify-between">
-          {/* Logo */}
-          <Link href="/" className="flex items-center gap-2">
-            {/* A simple placeholder logo icon similar to the design */}
-            <div className="flex -space-x-1">
-               <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-xs">
-                  S
-               </div>
+          {/* Logo & Branding */}
+          <Link href="/" className="flex items-center gap-3 group">
+            <img
+              src="/launchericon-192x192.png"
+              alt="Shabos Rent Logo"
+              className="w-10 h-10 object-contain shrink-0 transition-transform group-hover:scale-105"
+            />
+            <div className="flex flex-col justify-center">
+              <span className="text-2xl font-extrabold tracking-tight text-zinc-900 dark:text-white leading-none">
+                {t("brand.title")}
+              </span>
+              <span className="text-[11px] font-semibold text-zinc-500 dark:text-zinc-400 tracking-tight mt-1 leading-none">
+                {t("brand.tagline")}
+              </span>
             </div>
-            <span className="text-xl font-bold tracking-tight text-zinc-900 dark:text-white">
-              ShabbosRent
-            </span>
           </Link>
 
           {/* Desktop Navigation */}

@@ -946,7 +946,7 @@ export default function UserDashboardPage() {
                       
                       <div className="space-y-4">
                         <p className="text-[15px] text-zinc-600 dark:text-zinc-300 leading-relaxed">
-                          <span className="font-bold text-[#002f5d] dark:text-indigo-400">1. Share:</span> Copy your unique link and send it to potential apartment owners who might want to list their property on ShabbosRent.
+                          <span className="font-bold text-[#002f5d] dark:text-indigo-400">1. Share:</span> Copy your unique link and send it to potential apartment owners who might want to list their property on Shabos Rent.
                         </p>
                         <p className="text-[15px] text-zinc-600 dark:text-zinc-300 leading-relaxed">
                           <span className="font-bold text-[#002f5d] dark:text-indigo-400">2. Sign Up:</span> The owner must register using your link. You'll see them appear in your registered stats.
@@ -1010,7 +1010,7 @@ export default function UserDashboardPage() {
                           <span className="text-xs font-medium text-zinc-500 whitespace-nowrap">Yesterday, 10:45 AM</span>
                         </div>
                         <p className="text-sm text-zinc-600 dark:text-zinc-300">
-                          Great news! Your apartment listing <strong>Luxury Penthouse with Kosher Kitchen</strong> has been verified and is now live on ShabbosRent.
+                          Great news! Your apartment listing <strong>Luxury Penthouse with Kosher Kitchen</strong> has been verified and is now live on Shabos Rent.
                         </p>
                       </div>
                     </div>

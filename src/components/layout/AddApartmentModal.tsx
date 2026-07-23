@@ -40,7 +40,7 @@ export default function AddApartmentModal({ isOpen, onClose }: AddApartmentModal
             How It Works
           </h2>
           <p className="text-zinc-600 dark:text-zinc-400 mb-8">
-            Adding your apartment to ShabbosRent is simple and free. Here is what you need to know:
+            Adding your apartment to Shabos Rent is simple and free. Here is what you need to know:
           </p>
 
           <div className="space-y-6">

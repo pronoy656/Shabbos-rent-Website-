@@ -50,17 +50,18 @@ export default function SignupPage() {
           {/* Premium Text Overlay */}
           <div className="absolute inset-0 flex flex-col justify-end p-12 lg:p-20 z-10">
             {/* Logo */}
-            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-white/10 backdrop-blur-md shadow-2xl mb-8 border border-white/20">
-              <svg className="h-8 w-8 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-                <polyline points="9 22 9 12 15 12 15 22" />
-              </svg>
+            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-white/10 backdrop-blur-md shadow-2xl mb-8 border border-white/20 p-2">
+              <img
+                src="/launchericon-192x192.png"
+                alt="Shabos Rent Logo"
+                className="w-full h-full object-contain"
+              />
             </div>
             
             <h1 className="text-5xl lg:text-6xl font-extrabold tracking-tight text-white mb-6 leading-tight">
               Join <br/>
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-white to-zinc-400">
-                ShabbosRent.
+                Shabos Rent.
               </span>
             </h1>
             <p className="text-lg text-zinc-200 max-w-lg font-medium leading-relaxed">
@@ -75,14 +76,13 @@ export default function SignupPage() {
         <div className="mx-auto w-full max-w-md lg:w-[480px]">
           
           {/* Brand Logo */}
-          <Link href="/" className="inline-flex items-center gap-2 mb-10 group">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#4c55a4] text-white shadow-lg shadow-[#4c55a4]/20 transition-transform group-hover:scale-105">
-              <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-                <polyline points="9 22 9 12 15 12 15 22" />
-              </svg>
-            </div>
-            <span className="text-xl font-bold tracking-tight text-zinc-900 dark:text-white">ShabbosRent</span>
+          <Link href="/" className="inline-flex items-center gap-2.5 mb-10 group">
+            <img
+              src="/launchericon-192x192.png"
+              alt="Shabos Rent Logo"
+              className="w-10 h-10 object-contain transition-transform group-hover:scale-105"
+            />
+            <span className="text-xl font-bold tracking-tight text-zinc-900 dark:text-white">Shabos Rent</span>
           </Link>
 
           <div>

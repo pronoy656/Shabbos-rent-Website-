@@ -65,8 +65,14 @@ export default function AdminLayout({
       {/* Sidebar */}
       <aside className="fixed inset-y-0 left-0 w-72 border-r border-zinc-200 bg-white dark:border-zinc-800 dark:bg-[#121212] hidden md:flex flex-col z-10 text-zinc-600 dark:text-zinc-300">
         <div className="flex h-16 shrink-0 items-center px-6 border-b border-zinc-200 dark:border-zinc-800 sticky top-0 bg-white dark:bg-[#121212] z-10">
-          <Link href="/dashboard" className="flex items-center gap-2 font-bold text-xl tracking-tight text-zinc-900 dark:text-white">
-            {t("admin.sidebar_structure")} <span className="text-zinc-500 dark:text-zinc-400 font-medium text-sm ml-1">({t("admin.final")})</span>
+          <Link href="/dashboard" className="flex items-center gap-2.5 font-bold text-xl tracking-tight text-zinc-900 dark:text-white">
+            <img
+              src="/launchericon-192x192.png"
+              alt="Shabos Rent Logo"
+              className="w-7 h-7 object-contain"
+            />
+            <span>Shabos Rent</span>
+            <span className="text-zinc-500 dark:text-zinc-400 font-medium text-xs ml-1 bg-zinc-100 dark:bg-zinc-800 px-2 py-0.5 rounded-md">Admin</span>
           </Link>
         </div>
         <nav className="p-4 flex flex-col flex-1 overflow-y-auto">

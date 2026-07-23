@@ -12,15 +12,20 @@ export default function MainFooter() {
           
           {/* Brand Info */}
           <div className="space-y-4">
-            <Link href="/" className="flex items-center gap-2 mb-4">
-              <div className="flex -space-x-1">
-                 <div className="w-8 h-8 bg-[#4c55a4] rounded-lg flex items-center justify-center text-white font-bold text-xs">
-                    S
-                 </div>
+            <Link href="/" className="flex items-center gap-3 mb-4 group">
+              <img
+                src="/launchericon-192x192.png"
+                alt="Shabos Rent Logo"
+                className="w-10 h-10 object-contain shrink-0 transition-transform group-hover:scale-105"
+              />
+              <div className="flex flex-col justify-center">
+                <span className="text-2xl font-extrabold tracking-tight text-white leading-none">
+                  {t("brand.title")}
+                </span>
+                <span className="text-xs font-semibold text-indigo-200/80 tracking-tight mt-1 leading-none">
+                  {t("brand.tagline")}
+                </span>
               </div>
-              <span className="text-xl font-bold tracking-tight text-white">
-                ShabbosRent
-              </span>
             </Link>
             <p className="text-indigo-100 text-sm leading-relaxed max-w-xs">
               {t("footer.about")}
@@ -106,7 +111,7 @@ export default function MainFooter() {
               <li className="flex items-center gap-3">
                 <Mail className="w-5 h-5 text-[#8a94e8]" />
                 <span className="text-indigo-200 text-sm font-medium">
-                  support@shabbosrent.com
+                  support@shabosrent.com
                 </span>
               </li>
             </ul>

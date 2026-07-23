@@ -17,7 +17,7 @@ export default function PrivacyPage() {
           <div className="prose prose-zinc dark:prose-invert max-w-none prose-headings:font-bold prose-headings:text-zinc-900 dark:prose-headings:text-white prose-p:text-zinc-600 dark:prose-p:text-zinc-400 prose-a:text-[#4c55a4] hover:prose-a:text-[#3d4484]">
             <h2>1. Introduction</h2>
             <p>
-              Welcome to ShabbosRent. We respect your privacy and are committed to protecting your personal data. This privacy policy will inform you about how we look after your personal data when you visit our website and tell you about your privacy rights and how the law protects you.
+              Welcome to Shabos Rent. We respect your privacy and are committed to protecting your personal data. This privacy policy will inform you about how we look after your personal data when you visit our website and tell you about your privacy rights and how the law protects you.
             </p>
 
             <h2>2. The Data We Collect About You</h2>
