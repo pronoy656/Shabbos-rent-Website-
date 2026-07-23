@@ -47,6 +47,7 @@ export default function MainNavbar() {
   const navLinks = [
     { href: "/", label: t("nav.home") || "Home" },
     { href: "/search", label: t("nav.apartments") },
+    { href: "/ambassador/dashboard", label: "Ambassador Program" },
     { href: "/about", label: t("nav.about") },
   ];
 

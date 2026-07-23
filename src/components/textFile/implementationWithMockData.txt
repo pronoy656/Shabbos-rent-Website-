@@ -1,0 +1,543 @@
+হ্যাঁ, এখন তোমার requirement একদম clear। তুমি এখন backend বানাতে চাচ্ছো না—তুমি আগে frontend-এ পুরো Ambassador Program-এর complete business flow-টা hardcoded/mock data দিয়ে simulate করতে চাচ্ছো, যাতে:
+
+পুরো business logic visualise করতে পারো
+Ambassador কীভাবে কাজ করে সেটা বুঝতে পারো
+Admin → Ambassador → Owner → Listing → Rental → Commission → Payout flow দেখতে পারো
+সব possible states test করতে পারো
+Backend তৈরি হলে শুধু mock data/API logic replace করতে পারো
+
+এটা আসলে খুব ভালো approach।
+
+তোমার Frontend-এর জন্য সঠিক Approach
+
+তুমি frontend-এ একটি Business Logic Simulator বানাবে।
+
+Mock Data
+    ↓
+Frontend Business Logic
+    ↓
+UI State
+    ↓
+User Action
+    ↓
+State Update
+    ↓
+UI Update
+
+Backend আসার পর:
+
+API Response
+    ↓
+Same UI
+    ↓
+Same Business Flow
+
+অর্থাৎ UI নতুন করে বানাতে হবে না।
+
+পুরো Frontend Flow
+Step 1 — Ambassador Create
+
+Admin বা mock data থেকে Ambassador থাকবে।
+
+const ambassador = {
+  id: "amb-001",
+  name: "Moshe Cohen",
+  referralCode: "MOSHE50",
+  defaultModel: "A",
+  recruitedBy: null,
+};
+
+UI:
+
+Moshe Cohen
+Referral Code: MOSHE50
+Default Model: A
+
+Referral Link:
+
+/list?ref=MOSHE50
+Step 2 — Owner Referral Link দিয়ে আসে
+
+Frontend-এ URL:
+
+/list?ref=MOSHE50
+
+তারপর:
+
+localStorage.setItem("referralCode", "MOSHE50");
+
+এখন owner listing flow-এ ঢুকবে।
+
+Step 3 — Owner Apartment List করে
+
+Mock listing:
+
+const listing = {
+  id: "listing-001",
+  apartmentName: "Jerusalem Apartment",
+  ownerName: "David Cohen",
+  ownerPhone: "0501234567",
+  ownerEmail: "david@email.com",
+};
+
+Listing create হওয়ার পরে frontend নিজে attribution তৈরি করবে:
+
+const attribution = {
+  listingId: "listing-001",
+  ambassadorId: "amb-001",
+  model: null,
+  method: "link",
+  modelDeadline: "2026-07-30",
+};
+
+এখন Ambassador dashboard-এ:
+
+Needs Attention
+
+Jerusalem Apartment
+
+Model not set
+6 days remaining
+
+[Model A] [Model B]
+Step 4 — Ambassador Model Select করবে
+
+Ambassador click করল:
+
+[Model A]
+
+Frontend mock logic:
+
+function selectModel(model) {
+  attribution.model = model;
+  attribution.modelSetAt = new Date();
+}
+
+তারপর UI:
+
+Model A
+
+এবং:
+
+Needs Attention
+
+থেকে apartment disappear করবে।
+
+Step 5 — Listing Commission তৈরি হবে
+
+Model A হলে:
+
+Listing Commission
++₪15
+
+Model B হলে:
+
+Listing Commission
++₪25
+
+Frontend mock:
+
+const commission = {
+  type: "listing",
+  amount: model === "A" ? 15 : 25,
+  status: "pending",
+};
+
+তুমি UI-তে দেখবে:
+
+Commissions
+
+Listing Commission
+Jerusalem Apartment
+₪15
+Pending
+Step 6 — Listing Payment Clear হলে
+
+তুমি frontend-এ একটি mock action রাখবে:
+
+[Mark Listing Fee as Paid]
+
+Click করলে:
+
+Listing Fee Cleared
+        ↓
+Commission Approved
+
+UI:
+
+₪15
+Approved
+
+এখানে backend আসার পর এই button থাকবে না।
+
+Backend নিজে payment status থেকে commission approve করবে।
+
+কিন্তু frontend development-এর জন্য button রাখা খুব useful।
+
+Step 7 — Rental Create করো
+
+Apartment detail page-এ:
+
+[Simulate Rental]
+
+Click করলে:
+
+Rental Confirmed
+
+এখন model অনুযায়ী commission তৈরি হবে।
+
+Model A
+Rental 1 → ₪25
+Rental 2 → ₪25
+Rental 3 → ₪25
+
+কিন্তু শুধু 12-month window-এর মধ্যে।
+
+Model B
+Rental 1 → ₪40
+
+তারপর:
+
+Rental 2 → No commission
+
+এটা frontend-এ clearly visible করা উচিত।
+
+Apartment Detail Page-এ Simulation
+
+আমি এমন UI রাখতাম:
+
+Jerusalem Apartment
+────────────────────────
+
+Model: A
+
+Listing Date:
+July 20, 2026
+
+Rental Window:
+Active until July 20, 2027
+
+Commission Earned:
+₪65
+
+────────────────────────
+
+Commission History
+
+Listing       ₪15   Approved
+Rental        ₪25   Paid
+Rental        ₪25   Pending
+
+────────────────────────
+
+Developer Simulation
+
+[Simulate Rental]
+[Delete Listing]
+[Refund Listing]
+
+এটা তোমাকে পুরো business logic বুঝতে সাহায্য করবে।
+
+Step 8 — Reversal Flow
+
+ধরো rental commission:
+
++₪25
+Paid
+
+এখন:
+
+[Mark Rental Invalid]
+
+click করলে:
+
+Original:
++₪25
+
+Reversal:
+-₪25
+
+UI:
+
+Rental Commission
++₪25
+Approved
+
+Reversal
+-₪25
+Reversed
+Reason: Invalid rental
+
+Original row delete হবে না।
+
+Step 9 — Manual Claim Flow
+
+Ambassador:
+
+[Link Apartment Manually]
+
+click করবে।
+
+Form:
+
+Owner Phone
+Owner Email
+Model A / B
+
+তারপর frontend mock matching করবে:
+
+if phone/email matches listing
+
+তাহলে:
+
+Attribution Created
+
+না হলে:
+
+No matching listing
+Step 10 — First Claim Wins
+
+তুমি frontend-এ ২ জন Ambassador রাখবে:
+
+Moshe
+David
+
+দুজনই একই apartment claim করার চেষ্টা করবে।
+
+প্রথমজন:
+
+Moshe → Success
+
+দ্বিতীয়জন:
+
+David → Rejected
+Reason: Already claimed
+
+এটি UI-তে test করা খুব গুরুত্বপূর্ণ।
+
+Step 11 — 30-Day Claim Window
+
+Mock listing date change করার option রাখো:
+
+Listing Created:
+[Date Picker]
+
+তারপর:
+
+[Try Manual Claim]
+
+যদি:
+
+Today - Listing Date > 30 days
+
+তাহলে:
+
+This listing can no longer be claimed.
+
+Backend আসার পর frontend নিজে calculation করবে না।
+
+কিন্তু development phase-এ এই logic রাখা যাবে।
+
+Step 12 — Sub-Ambassador Flow
+
+Mock:
+
+Moshe
+   ↓ recruited
+David
+
+David apartment list করল:
+
+Apartment 1
+Apartment 2
+Apartment 3
+
+Moshe commission:
+
+3 × ₪5 = ₪15
+
+UI:
+
+My Sub-Ambassadors
+
+David Cohen
+Apartments Listed: 3
+Earned: ₪15
+
+Commission ledger:
+
+Sub-referral
+Apartment 1
++₪5
+Step 13 — Payout Flow
+
+Mock commissions:
+
+Approved:
+₪450
+
+Button:
+
+[Request Payout]
+
+Click:
+
+Payout Requested
+
+Then:
+
+Approved Balance: ₪0
+Payout Status: Pending
+
+Admin:
+
+Payout Requests
+
+Moshe Cohen
+₪450
+
+[Approve Payment]
+
+Admin approve করলে:
+
+Payout → Paid
+
+Ambassador dashboard:
+
+Payout History
+₪450
+Paid
+আমি Frontend-এ ৩টি Layer রাখতাম
+Layer 1: Mock Database
+/mock
+  ambassadors.ts
+  listings.ts
+  attributions.ts
+  commissions.ts
+  payouts.ts
+Layer 2: Mock Business Services
+/services
+  ambassadorService.ts
+  attributionService.ts
+  commissionService.ts
+  payoutService.ts
+
+Example:
+
+setAttributionModel();
+claimApartment();
+createRental();
+reverseCommission();
+requestPayout();
+approvePayout();
+Layer 3: UI
+/components
+  AmbassadorDashboard
+  ApartmentList
+  CommissionTable
+  PayoutSection
+
+UI সরাসরি data modify করবে না।
+
+বরং:
+
+Button
+   ↓
+Service Function
+   ↓
+Mock Data Update
+   ↓
+UI Refresh
+Backend আসার পর কী হবে?
+
+এখন:
+
+mockCommissionService.createRental();
+
+Backend integration-এর পর:
+
+api.post("/rentals");
+
+কিন্তু:
+
+UI
+
+প্রায় একই থাকবে।
+
+এটাই তোমার লক্ষ্য হওয়া উচিত।
+
+তোমার জন্য Best Development Plan
+
+আমি এই order-এ build করতাম:
+
+Phase 1
+
+Static mock data
+
+Phase 2
+
+Referral link capture
+
+Phase 3
+
+Owner listing simulation
+
+Phase 4
+
+Attribution creation
+
+Phase 5
+
+Model A/B selection
+
+Phase 6
+
+Listing commission
+
+Phase 7
+
+Rental simulation
+
+Phase 8
+
+Rental commission rules
+
+Phase 9
+
+Reversal
+
+Phase 10
+
+Manual claim
+
+Phase 11
+
+Sub-ambassador
+
+Phase 12
+
+Payout
+
+Phase 13
+
+Admin control panel
+
+সবচেয়ে গুরুত্বপূর্ণ কথা
+
+তুমি এখন frontend-এ business logic hardcode করে ফেলছো না—তুমি এটাকে simulate করছো।
+
+তাই code structure এমন হওয়া উচিত:
+
+Mock Data
+    ↓
+Business Service
+    ↓
+UI
+
+পরে:
+
+API
+    ↓
+Business Service Interface
+    ↓
+UI

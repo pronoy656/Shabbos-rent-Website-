@@ -54,6 +54,7 @@ export default function AdminLayout({
     { name: t("admin.nav.advertisements"), href: "/dashboard/advertisements", icon: ImageIcon, color: "text-purple-500" },
     { name: t("admin.nav.alerts"), href: "/dashboard/alerts", icon: BellRing, color: "text-orange-600" },
     { name: t("admin.nav.payments"), href: "/dashboard/payments", icon: CreditCard, color: "text-green-600" },
+    { name: "Ambassadors", href: "/dashboard/ambassadors", icon: Users, color: "text-indigo-600" },
   ];
 
   function classNames(...classes: string[]) {

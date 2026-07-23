@@ -1,0 +1,837 @@
+
+
+আমি তোমাকে এটাকে UI architecture + frontend business-flow architecture হিসেবে বুঝাচ্ছি।
+
+প্রথমে Core Concept বুঝি
+
+এই system-এ মূল entity হবে:
+
+Ambassador
+    ↓
+Referral / Attribution
+    ↓
+Apartment Listing
+    ↓
+Model A / Model B
+    ↓
+Rental Events
+    ↓
+Commission Ledger
+    ↓
+Payout
+
+এখন গুরুত্বপূর্ণ বিষয় হলো:
+
+Ambassador নিজে কোনো apartment-এর মালিক না-ও হতে পারে
+
+একজন Ambassador:
+
+Ambassador A
+   │
+   ├── Apartment 1 → Owner X → Model A
+   ├── Apartment 2 → Owner Y → Model B
+   └── Apartment 3 → Owner Z → Model A
+
+তাই frontend-এ Ambassador-কে শুধু একটা user হিসেবে দেখালে হবে না।
+
+তাকে system-এর মধ্যে referral owner / commission beneficiary হিসেবে ধরতে হবে।
+
+পুরো System-এর ৪টি আলাদা User Context
+
+আমি frontend-কে ৪টি context-এ ভাগ করতাম:
+
+1. Public / Owner Listing Flow
+2. Ambassador Portal
+3. Admin Ambassador Management
+4. Existing Owner Dashboard Integration
+
+এই চারটা আলাদা হলেও একে অপরের সাথে connected থাকবে।
+
+1. Public / Owner Listing Flow
+
+এখান থেকেই Ambassador system শুরু হবে।
+
+ধরো Ambassador-এর link:
+
+shabbosrent.co.il/list?ref=MOSHE50
+
+Owner link-এ click করল।
+
+Step 1: Referral Capture
+
+Frontend প্রথমেই:
+
+?ref=MOSHE50
+
+capture করবে।
+
+তারপর:
+
+localStorage / cookie
+
+এ save করবে।
+
+Frontend-এর কাজ:
+
+Referral Code Found
+        ↓
+Save Referral Context
+        ↓
+Continue Listing Flow
+
+এখানে UI-তে referral code দেখানো জরুরি নয়।
+
+Owner-এর জন্য flow normal থাকবে।
+
+Listing Flow-এর ভিতরে Referral Context
+
+ধরো listing flow:
+
+Step 1: Property Information
+        ↓
+Step 2: Owner Information
+        ↓
+Step 3: Photos
+        ↓
+Step 4: Availability
+        ↓
+Step 5: Payment
+        ↓
+Step 6: Publish
+
+প্রত্যেক step-এ referral code frontend-এর internal state/localStorage-এ থাকবে।
+
+শেষে:
+
+Create Listing
+
+API request-এর সময়:
+
+{
+  "listingData": {},
+  "referralCode": "MOSHE50"
+}
+
+অথবা backend existing referral context থেকে attribution তৈরি করবে।
+
+Frontend-এর কাজ শুধু referral context carry করা।
+
+Listing Created হওয়ার পর কী হবে?
+
+যদি personal referral link থেকে listing হয়:
+
+Owner creates listing
+        ↓
+Listing Created
+        ↓
+Attribution Created
+        ↓
+Model = null
+        ↓
+7-day deadline starts
+
+Ambassador Dashboard:
+
+Needs Attention
+────────────────────────
+
+New apartment needs a model
+
+Apartment: Jerusalem Apartment
+Days remaining: 6 days
+
+[Model A]     [Model B]
+2. Ambassador Portal
+
+আমি Ambassador Portal-কে একটি single dashboard হিসেবে বানাতাম।
+
+কিন্তু সবকিছু এক screen-এ গাদাগাদি করতাম না।
+
+Recommended structure:
+Ambassador Portal
+│
+├── Overview
+├── My Apartments
+├── Commissions
+├── My Referrals
+├── Payouts
+└── Settings
+
+Mobile-first হওয়ায় mobile-এ bottom navigation ব্যবহার করা যেতে পারে:
+
+Overview | Apartments | Earnings | More
+
+আর desktop-এ sidebar।
+
+Ambassador Dashboard: Overview
+
+Dashboard-এর top-এ থাকবে:
+
+שלום, משה
+Ambassador Dashboard
+
+তারপর prominent referral link:
+
+Your Referral Link
+────────────────────────────
+
+shabbosrent.co.il/list?ref=MOSHE50
+
+[Copy Link] [Share]
+
+এটি গুরুত্বপূর্ণ কারণ client বলেছে এটি highest-traffic element।
+
+তাই এটাকে dashboard-এর একদম নিচে লুকানো যাবে না।
+
+Summary Cards
+
+তার নিচে:
+
+┌──────────────┐ ┌──────────────┐
+│ Apartments   │ │ Rentals      │
+│ 24            │ │ 12           │
+└──────────────┘ └──────────────┘
+
+┌──────────────┐ ┌──────────────┐
+│ Pending      │ │ Approved     │
+│ ₪180         │ │ ₪450         │
+└──────────────┘ └──────────────┘
+
+এগুলো backend summary API থেকে আসবে।
+
+Frontend নিজে:
+
+Apartment count
+
+বা:
+
+Total commission
+
+calculate করবে না।
+
+Needs Attention — এটা সবচেয়ে Important UX
+
+এটা conditional section।
+
+যদি কোনো pending action না থাকে:
+
+Needs Attention → Hide
+
+যদি থাকে:
+
+Needs Attention
+
+একদম top-এ থাকবে।
+
+Case 1: Model Not Set
+Model selection required
+
+Jerusalem Apartment
+
+6 days remaining
+
+[Choose Model A]
+[Choose Model B]
+
+Click করলে:
+
+Confirmation
+      ↓
+API Request
+      ↓
+Success
+      ↓
+Apartment status updated
+
+Frontend নিজে deadline calculate করবে না।
+
+Backend থেকে API response:
+
+{
+  "model": null,
+  "modelDeadline": "...",
+  "daysRemaining": 6
+}
+
+Frontend শুধু display করবে।
+
+Case 2: Reversed Commission
+Commission Reversed
+
+₪25 Rental Commission
+
+Reason:
+Rental payment was not completed
+
+[View Commission]
+Case 3: Rejected Claim
+Claim Rejected
+
+Apartment already claimed by another ambassador.
+
+[View Details]
+3. My Apartments
+
+এটি Ambassador-এর মূল operational page।
+
+Mobile-এ table না করে card-based layout ভালো হবে।
+
+Desktop-এ table।
+
+Desktop
+Apartment | Owner | Linked | Method | Model | Status | Earned
+
+Example:
+
+Jerusalem Apartment
+Owner: David Cohen
+Linked: July 20, 2026
+Method: Personal Link
+Model: A
+Status: Active
+Earned: ₪65
+Mobile Card
+┌─────────────────────────┐
+│ Jerusalem Apartment     │
+│ David Cohen             │
+│                         │
+│ Model A                 │
+│ Linked: Jul 20, 2026   │
+│ Via: Personal Link      │
+│                         │
+│ Earned to date: ₪65     │
+│                         │
+│ Rental window ends:     │
+│ July 20, 2027           │
+│                         │
+│ [View Details]          │
+└─────────────────────────┘
+Apartment Detail Drawer / Page
+
+আমি প্রতিটি apartment-এর জন্য detail view রাখতাম।
+
+Apartment Details
+────────────────────────
+
+Apartment Information
+
+Attribution
+  Ambassador: Moshe
+  Method: Personal Link
+  Linked At: July 20
+
+Commission Model
+  Model A
+
+Model A Window
+  Active until July 20, 2027
+
+Commission History
+  Listing       ₪15   Approved
+  Rental        ₪25   Paid
+  Rental        ₪25   Pending
+
+এখানে Ambassador বুঝতে পারবে:
+
+“আমি এই apartment থেকে কেন কত টাকা earn করেছি?”
+
+4. Commissions
+
+এখানে আসলে একটা financial ledger তৈরি হবে।
+
+এটি শুধু “earnings list” নয়।
+
+কারণ reversal hide করা যাবে না।
+
+Example
+Listing Commission
+Apartment A
++₪15
+Approved
+Rental Commission
+Apartment A
++₪25
+Paid
+Reversal
+Apartment A
+-₪25
+Reversed
+Reason: Rental invalid
+
+UI:
+
++₪15  Listing     Approved
++₪25  Rental      Paid
+-₪25  Reversal    Reversed
+
+এখানে:
+
+All
+Pending
+Approved
+Paid
+Reversed
+
+filter থাকবে।
+
+5. Manual Link Apartment
+
+এটি আলাদা prominent action হতে পারে।
+
+[+ Link Apartment Manually]
+
+Click করলে:
+
+Link Apartment
+────────────────────────
+
+Owner Phone
+[______________]
+
+Owner Email
+[______________]
+
+Commission Model
+○ Model A
+○ Model B
+
+[Submit]
+Error State
+Already Claimed
+This apartment has already been claimed by another ambassador.
+No Matching Listing
+No matching listing found for this owner.
+Expired
+This listing is outside the 30-day attribution window.
+
+এগুলো inline দেখাবে।
+
+6. My Sub-Ambassadors
+
+এখানে hierarchy দেখানো যায়:
+
+My Network
+────────────────
+
+Moshe
+  │
+  ├── David
+  │     ├── Apartment 1
+  │     ├── Apartment 2
+  │     └── Apartment 3
+  │
+  └── Daniel
+        └── Apartment 4
+
+তবে যেহেতু one-level deep, UI-তে এটাকে complex MLM tree বানানোর দরকার নেই।
+
+Better:
+
+David Cohen
+Apartments listed: 8
+Your earnings: ₪40
+
+[View Apartments]
+7. Payout Page
+
+এখানে তিনটি জিনিস:
+
+Approved Balance
+Request Payout
+Payout History
+
+Example:
+
+Available for payout
+
+₪450
+
+[Request Payout]
+
+Payout history:
+
+July 10, 2026
+₪300
+Paid
+Reference: PAY-1023
+
+যদি minimum threshold এখনো confirmed না হয়, তাহলে frontend-এ hardcode করবে না।
+
+Backend থেকে আসবে:
+
+{
+  "canRequestPayout": true,
+  "approvedBalance": 450,
+  "minimumRequired": 100
+}
+
+অথবা:
+
+{
+  "canRequestPayout": false,
+  "reason": "Minimum payout threshold not reached"
+}
+
+Frontend শুধু display করবে।
+
+8. Settings
+Default Model
+─────────────
+
+○ Model A
+○ Model B
+
+[Save]
+
+এখানে অবশ্যই warning থাকবে:
+
+This setting applies only to future referrals. Existing apartment models will not change.
+
+এটি খুব গুরুত্বপূর্ণ UX।
+
+এখন Admin Side
+
+Ambassador system-এর জন্য Admin-এ আলাদা module থাকা উচিত।
+
+Admin
+│
+├── Ambassadors
+├── Ambassador Applications
+├── Attribution Management
+├── Commission Review
+└── Payout Management
+Admin: Ambassador List
+Ambassadors
+────────────────────────────────
+
+Name | Phone | Referral Code | Listed | Earned | Status
+
+Example:
+
+Moshe Cohen
+MOSHE50
+24 Apartments
+₪1,240
+Active
+
+Filters:
+
+Active
+Inactive
+Pending Approval
+Admin: Ambassador Detail
+
+Admin একটি Ambassador-এর complete view পাবে:
+
+Ambassador Profile
+────────────────────────
+
+Name
+Phone
+Referral Code
+
+Default Model: A
+
+Contract Signed:
+July 1, 2026
+
+Rate Locked Until:
+July 1, 2027
+
+তারপর:
+
+Apartments
+Commissions
+Sub-Ambassadors
+Payouts
+Admin: Attribution Management
+
+এখানে সবচেয়ে গুরুত্বপূর্ণ কাজ হবে।
+
+Attribution Management
+
+Admin search করবে:
+
+Apartment
+Owner Phone
+Owner Email
+Ambassador
+
+তারপর:
+
+Apartment X
+────────────────
+
+Current Ambassador:
+Moshe
+
+Current Model:
+Model A
+
+Method:
+Personal Link
+
+[Change Ambassador]
+[Change Model]
+Relink করার সময় Confirmation
+
+কারণ relink করলে business impact আছে।
+
+তাই:
+
+Are you sure?
+
+Changing attribution may affect future commissions.
+
+[Cancel]
+[Confirm Relink]
+
+Frontend শুধু confirmation নেবে।
+
+Actual eligibility backend decide করবে।
+
+Admin: Commission Review
+Commission Review
+────────────────────────
+
+Listing
+Apartment A
+₪15
+Pending
+
+[Approve]
+[Reverse]
+
+Rental:
+
+Rental Commission
+Apartment B
+₪25
+Pending
+
+[Approve]
+[Reject / Reverse]
+
+এখানে UI-তে status transition backend থেকে permission অনুযায়ী আসা উচিত।
+
+Frontend hardcode করবে না:
+
+if status === pending then show approve
+
+এর বদলে API response ideally বলবে:
+
+{
+  "status": "pending",
+  "availableActions": ["approve", "reverse"]
+}
+
+এটি বেশি scalable।
+
+Owner Dashboard-এ কী পরিবর্তন লাগবে?
+
+Owner-এর জন্য Ambassador system visible না-ও হতে পারে।
+
+কিন্তু listing-এর backend attribution-এর কারণে Owner-এর listing flow-তে:
+
+Referral Context
+
+থাকবে।
+
+Owner dashboard-এ সাধারণত:
+
+My Apartment
+
+দেখাবে।
+
+Ambassador details দেখানো দরকার নেই, unless business specifically wants it।
+
+সবচেয়ে গুরুত্বপূর্ণ: Frontend Business Logic কীভাবে Implement করবে?
+
+এখানে আমার recommended architecture:
+
+UI
+ ↓
+Feature Hook
+ ↓
+API Service
+ ↓
+Backend Business Logic
+ ↓
+Database
+
+Example:
+
+Model A Button
+      ↓
+useSetAttributionModel()
+      ↓
+POST /attributions/:id/model
+      ↓
+Backend validates:
+  - Is ambassador owner?
+  - Is deadline valid?
+  - Is model still unset?
+  - Is attribution active?
+      ↓
+Database update
+      ↓
+Frontend refreshes data
+
+Frontend কখনো নিজে বলবে না:
+
+if daysRemaining > 0
+
+তারপর model set করে দিলাম।
+
+Backend-ই final authority।
+
+Frontend-এ কী Hardcode করা যাবে?
+Hardcode করা যাবে:
+Label: Model A
+Label: Model B
+Status display text
+Icon
+Layout
+Color
+Hardcode করা যাবে না:
+₪15
+₪25
+₪40
+7 days
+30 days
+12 months
+First rental only
+Can request payout?
+Can claim apartment?
+
+কারণ এগুলো business rules এবং future-এ change হতে পারে।
+
+Backend থেকে configuration/response হিসেবে আসা উচিত।
+
+Recommended API-Driven UI Model
+
+Frontend-এ এই ধরনের response খুব useful হবে:
+
+{
+  "listingId": "123",
+  "ambassador": {
+    "id": "a1",
+    "name": "Moshe"
+  },
+  "attribution": {
+    "method": "link",
+    "model": null,
+    "modelDeadline": "2026-07-30",
+    "canChooseModel": true,
+    "daysRemaining": 6
+  },
+  "availableActions": [
+    "choose_model"
+  ]
+}
+
+তখন frontend:
+
+model === null
++
+canChooseModel === true
+
+দেখে UI দেখাবে।
+
+আমি এই Project-এ State-Based UI বানাতাম
+
+প্রতিটি entity-এর state থাকবে।
+
+Attribution
+unattributed
+      ↓
+attributed_model_pending
+      ↓
+model_locked
+Commission
+pending
+   ↓
+approved
+   ↓
+paid
+
+অথবা:
+
+pending
+   ↓
+reversed
+Payout
+requested
+   ↓
+processing
+   ↓
+paid
+
+অথবা:
+
+rejected
+
+Frontend state অনুযায়ী UI render করবে।
+
+Final Architecture
+
+আমার মতে পুরো system-এর frontend flow হবে:
+
+                 ┌──────────────────┐
+                 │  Ambassador Link │
+                 └────────┬─────────┘
+                          ↓
+                 ┌──────────────────┐
+                 │  Owner Listing   │
+                 │      Flow        │
+                 └────────┬─────────┘
+                          ↓
+                 ┌──────────────────┐
+                 │   Attribution    │
+                 │  Model: A/B/null │
+                 └────────┬─────────┘
+                          ↓
+                 ┌──────────────────┐
+                 │ Apartment Listed │
+                 └────────┬─────────┘
+                          ↓
+                 ┌──────────────────┐
+                 │ Rental Confirmed │
+                 └────────┬─────────┘
+                          ↓
+                 ┌──────────────────┐
+                 │ Commission Ledger│
+                 └────────┬─────────┘
+                          ↓
+                 ┌──────────────────┐
+                 │      Payout      │
+                 └──────────────────┘
+আমার মতে তোমার এখন UI design করার সঠিক order হবে:
+Phase 1 — Ambassador Overview
+Referral link
+Summary cards
+Needs Attention
+Quick actions
+Phase 2 — My Apartments
+Apartment list
+Model state
+Attribution method
+Window status
+Earned amount
+Phase 3 — Commission Ledger
+Listing
+Rental
+Sub-referral
+Reversal
+Filters
+Phase 4 — Manual Attribution
+Phone
+Email
+Model selection
+Error states
+Phase 5 — Sub-Ambassadors
+Recruited ambassadors
+Listed apartments
+₪5 earnings
+Phase 6 — Payout & Settings
+Phase 7 — Admin Ambassador Management

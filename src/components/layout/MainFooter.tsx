@@ -58,6 +58,11 @@ export default function MainFooter() {
                 </Link>
               </li>
               <li>
+                <Link href="/ambassador/register" className="text-indigo-200 hover:text-white text-sm font-medium transition-colors">
+                  Become an Ambassador
+                </Link>
+              </li>
+              <li>
                 <Link href="/contact" className="text-indigo-200 hover:text-white text-sm font-medium transition-colors">
                   {t("footer.contact_us")}
                 </Link>

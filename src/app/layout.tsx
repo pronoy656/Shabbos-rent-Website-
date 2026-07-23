@@ -14,6 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://shabosrent.com"),
   title: "Shabos Rent | Find, Stay & Swap Apartments",
   description: "The premier platform for discovering and managing short-term rentals and apartment swaps for Shabbos and Yom Tov.",
   icons: {

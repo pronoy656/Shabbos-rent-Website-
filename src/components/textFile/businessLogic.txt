@@ -1,0 +1,1307 @@
+হ্যাঁ, বুঝেছি। ShabbosRent-এর Ambassador Program-এর সম্পূর্ণ business logic specification। Frontend implement করার আগে প্রতিটা rule, state, calculation, edge case পরিষ্কারভাবে বোঝা দরকার।
+
+আমি নিচে section-by-section এবং line-by-line সহজ বাংলায় explain করছি—যাতে তুমি frontend-এর কোন অংশে কী implement করতে হবে পরিষ্কার বুঝতে পারো।
+
+1. Ambassador Program-এর মূল Business Model
+
+একজন Ambassador:
+
+নতুন apartment owner-কে ShabbosRent-এ apartment list করাবে।
+Apartment list হলে commission পাবে।
+সেই apartment ভবিষ্যতে rent হলে আবার commission পাবে।
+যদি একজন ambassador অন্য ambassador recruit করে, তাহলে সেই recruited ambassador-এর listed apartment থেকেও sub-referral commission পাবে।
+Example
+
+Ambassador Moshe একজন owner-কে ShabbosRent-এ আনলো।
+
+Moshe
+  ↓
+Owner
+  ↓
+Apartment Listed
+
+Moshe পাবে:
+
+Apartment Listed → Listing Commission
+Apartment Rented → Rental Commission
+
+আর Moshe যদি David-কে ambassador হিসেবে recruit করে:
+
+Moshe
+  ↓
+David (Sub-Ambassador)
+  ↓
+Apartment Listed
+
+তাহলে Moshe পাবে:
+
+₪5 per apartment listed by David
+2. Commission Models
+
+সবচেয়ে গুরুত্বপূর্ণ বিষয়:
+
+Commission model ambassador অনুযায়ী নয়, apartment অনুযায়ী।
+
+অর্থাৎ একজন ambassador-এর সব apartment একই model-এর হবে না।
+
+Example
+Ambassador: Moshe
+
+Apartment A → Model A
+Apartment B → Model B
+Apartment C → Model A
+Apartment D → Model B
+
+তাই frontend-এ ambassador profile-এ শুধু একটি model রাখলে হবে না।
+
+Model অবশ্যই রাখতে হবে:
+
+Attribution
+  └── model: A | B
+Model A
+Event	Commission
+Apartment Listed	₪15
+Rental	₪25
+Rental Rule
+
+Apartment list হওয়ার পর ১২ মাসের মধ্যে যতবার rental হবে, প্রত্যেকবার ambassador ₪25 পাবে।
+
+Example:
+
+Apartment Listed: January 1, 2026
+12-month window ends: December 31, 2026
+
+এই সময়ে:
+
+Rental 1 → ₪25
+Rental 2 → ₪25
+Rental 3 → ₪25
+
+Total:
+
+Listing = ₪15
+Rentals = ₪75
+Total = ₪90
+
+Important: Model A-তে rental commission একবারের জন্য নয়।
+
+Model B
+Event	Commission
+Apartment Listed	₪25
+First Rental	₪40
+
+এখানে:
+
+Apartment Listed → ₪25
+First Rental Ever → ₪40
+
+তারপর apartment যতবার rent হোক:
+
+Rental 1 → ₪40
+Rental 2 → No commission
+Rental 3 → No commission
+Model B-এর গুরুত্বপূর্ণ বিষয়
+
+কোনো time limit নেই।
+
+অর্থাৎ apartment list করার ২ বছর পর প্রথম rental হলেও ambassador ₪40 পাবে।
+
+3. Sub-Ambassador Commission
+
+একজন ambassador অন্য ambassador recruit করতে পারবে।
+
+Example:
+
+Ambassador A
+    ↓ recruits
+Ambassador B
+    ↓ lists apartment
+Apartment X
+
+Ambassador A পাবে:
+
+₪5
+
+প্রতি apartment listed-এর জন্য।
+
+কিন্তু:
+
+A → B → C
+
+এভাবে দ্বিতীয় level-এ commission যাবে না।
+
+শুধু:
+
+Direct Recruit = Yes
+
+এক level deep।
+
+4. Rate Lock
+
+এটি খুব গুরুত্বপূর্ণ।
+
+Ambassador contract sign করার সময় যে rate ছিল, সেই rate ১২ মাসের জন্য locked থাকবে।
+
+Example:
+
+Contract Signed:
+January 1, 2026
+
+Rate Locked Until:
+January 1, 2027
+
+যদি তখন rate হয়:
+
+Model A Listing = ₪15
+Model A Rental = ₪25
+
+পরে admin config পরিবর্তন করলেও:
+
+Model A Listing = ₪20
+Model A Rental = ₪30
+
+পুরনো ambassador-এর rate পরিবর্তন হবে না।
+
+তাই commission earn করার সময়:
+Current Config থেকে rate নেওয়া যাবে না
+
+বরং:
+
+Rate Locked Amount
+        ↓
+Commission Record
+        ↓
+amount = ₪15 / ₪25 / etc.
+Database-এ
+ambassador:
+  rates
+  contract_signed_at
+  rate_locked_until
+
+এবং commission তৈরি হওয়ার সময়:
+
+commission.amount = locked rate
+
+পরবর্তীতে rate পরিবর্তন হলেও পুরনো commission change হবে না।
+
+5. Apartment কীভাবে Ambassador-এর সাথে Link হবে?
+
+দুইটি প্রধান উপায় আছে।
+
+Method 1: Personal Referral Link
+
+Ambassador-এর একটি personal link থাকবে।
+
+Example:
+
+shabbosrent.co.il/list?ref=MOSHE50
+
+Owner এই link দিয়ে site-এ আসে।
+
+তারপর owner apartment list করে।
+
+Flow:
+Ambassador
+    ↓
+Referral Link
+    ↓
+Owner visits website
+    ↓
+ref=MOSHE50 stored
+    ↓
+Owner lists apartment
+    ↓
+Apartment created
+    ↓
+Attribution created
+Referral Code
+
+প্রত্যেক ambassador-এর:
+
+Unique referral code
+
+থাকবে।
+
+Example:
+
+MOSHE50
+
+Rules:
+
+Unique
+Case-insensitive
+Permanent
+কখনো reuse করা যাবে না
+
+অর্থাৎ:
+
+moshe50
+MOSHE50
+Moshe50
+
+সব একই ambassador-এর code হিসেবে কাজ করবে।
+
+Referral Persistence
+
+Owner যখন referral link দিয়ে আসে:
+
+?ref=MOSHE50
+
+এই referral information client-side save করতে হবে।
+
+যেমন:
+
+Cookie
+
+অথবা:
+
+localStorage
+
+তারপর owner পুরো listing flow-এর মধ্যে বিভিন্ন page-এ গেলেও referral code থাকতে হবে।
+
+Example:
+
+Landing Page
+   ↓
+Apartment Details
+   ↓
+Owner Information
+   ↓
+Payment
+   ↓
+Listing Created
+
+প্রতিটি step-এ:
+
+MOSHE50
+
+হারিয়ে যাওয়া যাবে না।
+
+Listing তৈরি হওয়ার সময়:
+
+listing.referral_code
+
+অথবা backend attribution process-এ referral code ব্যবহার হবে।
+
+Personal Link-এর বিশেষ Case
+
+Owner referral link দিয়ে apartment list করল।
+
+কিন্তু ambassador তখনো model select করেনি।
+
+তখন:
+
+Apartment → Model Not Set
+
+Dashboard-এ দেখাবে:
+
+Model not set
+
+এবং একটি countdown থাকবে:
+
+6 days remaining
+5 days remaining
+4 days remaining
+...
+6. Model Selection Deadline
+
+Owner ambassador-এর referral link দিয়ে আসার পর:
+
+7 days
+
+সময় থাকবে model নির্বাচন করার জন্য।
+
+Example:
+
+Owner arrives:
+July 1
+
+Deadline:
+July 8
+
+এই সময়ের মধ্যে ambassador:
+
+Model A
+
+অথবা:
+
+Model B
+
+select করতে পারবে।
+
+Frontend-এ দরকার:
+
+Needs Attention
+  └── Apartment X
+      ├── 6 days remaining
+      ├── Model A
+      └── Model B
+যদি 7 দিনের মধ্যে ambassador model select না করে?
+
+তাহলে:
+
+Ambassador Default Model
+
+automatically apply হবে।
+
+Example:
+
+Ambassador Default Model = Model A
+
+Deadline পার হয়ে গেলে:
+
+Apartment Model = Model A
+Default Model
+
+প্রত্যেক ambassador profile-এ:
+
+default_model: A | B
+
+থাকবে।
+
+Ambassador এটি যেকোনো সময় change করতে পারবে।
+
+কিন্তু গুরুত্বপূর্ণ:
+
+Default model change করলে পুরনো apartment-এর model পরিবর্তন হবে না।
+
+Example:
+
+January:
+Default Model = A
+
+Apartment 1 → A
+
+February:
+Default Model changed to B
+
+Apartment 1 → Still A
+Apartment 2 → B
+
+অর্থাৎ default model:
+
+Future referrals only
+7. Manual Link
+
+Ambassador dashboard থেকে manually owner claim করতে পারবে।
+
+Form:
+
+Owner Phone
+Owner Email
+Model Selector
+
+Example:
+
+Phone: +972...
+Email: owner@email.com
+Model: A
+
+তারপর system matching listing খুঁজবে।
+
+Manual Claim-এর Possible Error
+Case 1: Apartment already claimed
+
+যদি অন্য ambassador আগে claim করে থাকে:
+
+Already claimed
+
+দেখাবে।
+
+Ambassador claim করতে পারবে না।
+
+Case 2: No matching listing
+
+যদি owner-এর matching listing না থাকে:
+
+No matching listing found
+Case 3: Listing 30 দিনের বেশি পুরনো
+
+Listing তৈরি হওয়ার পর:
+
+30 days
+
+পর্যন্ত claim করা যাবে।
+
+তারপর:
+
+Permanently unattributable
+
+অর্থাৎ 30 দিনের পরে ambassador আর claim করতে পারবে না।
+
+8. Admin Linking
+
+Admin যেকোনো apartment:
+
+Link
+
+অথবা:
+
+Relink
+
+করতে পারবে।
+
+Admin:
+
+Ambassador select করতে পারবে
+Model select করতে পারবে
+Existing attribution পরিবর্তন করতে পারবে
+
+এটি ambassador-এর normal permission-এর বাইরে।
+
+9. Attribution Rules
+
+প্রত্যেক apartment-এর জন্য:
+
+One Ambassador Only
+
+অর্থাৎ:
+
+Apartment
+   ↓
+Ambassador A
+
+এটি একই সময়ে:
+
+Ambassador B
+
+এরও হতে পারবে না।
+
+First Claim Wins
+
+Example:
+
+10:00 AM → Ambassador A claims
+10:05 AM → Ambassador B claims
+
+Result:
+
+A = Successful
+B = Rejected
+
+B-এর claim:
+
+Rejected
+
+হবে এবং admin-এর কাছে visible হবে।
+
+Phone Number Normalization
+
+Matching করার আগে phone number normalize করতে হবে।
+
+Example:
+
++972 50 123 4567
+
+এবং:
+
+050-123-4567
+
+দুটিকে একই phone number হিসেবে recognize করতে হবে।
+
+Backend-এ ideally:
+
+normalized_phone
+
+রাখা উচিত।
+
+10. Commission States
+
+Commission-এর lifecycle:
+
+pending
+   ↓
+approved
+   ↓
+paid
+
+এছাড়াও:
+
+reversed
+
+থাকতে পারে।
+
+Pending
+
+Commission তৈরি হয়েছে, কিন্তু এখনো approve হয়নি।
+
+Example:
+
+Listing Commission
+₪15
+Status: Pending
+Approved
+
+Commission verify হয়েছে এবং payout-এর জন্য eligible।
+
+₪15
+Status: Approved
+Paid
+
+Ambassador-কে payment করা হয়েছে।
+
+₪15
+Status: Paid
+Reversed
+
+আগে commission তৈরি হয়েছিল, কিন্তু পরে invalid হয়ে গেছে।
+
+Commission delete করা যাবে না।
+
+Example:
+
+Original Commission:
++₪15
+
+Reversal:
+-₪15
+
+Ledger:
+
++₪15
+-₪15
+-----
+₪0
+
+এটি audit-এর জন্য গুরুত্বপূর্ণ।
+
+Commission কখন Reverse হবে?
+Case 1: Listing fee clear হয়নি
+
+Owner-এর listing fee:
+
+₪28
+
+clear না হলে ambassador-এর listing commission reverse হবে।
+
+Case 2: Listing deleted/refunded
+
+যদি apartment listing delete করা হয় অথবা refund হয়:
+
+Listing Commission → Reversed
+Case 3: False rental report
+
+Owner self-report করল:
+
+Rental happened
+
+তারপর commission তৈরি হলো।
+
+পরে জানা গেল rental সত্যি হয়নি।
+
+তাহলে:
+
+Rental Commission → Reversed
+11. Rental Commission কীভাবে Trigger হবে?
+
+Ambassador commission নিজে আলাদা rental system তৈরি করবে না।
+
+Existing confirmed rental record ব্যবহার করবে।
+
+Business logic:
+
+Confirmed Rental
+      ↓
+₪50 ShabbosRent Billing
+      ↓
+Ambassador Rental Commission
+
+অর্থাৎ যে rental record থেকে ShabbosRent-এর ₪50 billing হয়, সেই confirmed rental record থেকেই ambassador commission trigger হবে।
+
+Owner Self-Reporting
+
+Rental owner self-report করবে।
+
+যদি:
+
+Owner reports rental
+
+তাহলে rental record তৈরি হবে।
+
+কিন্তু:
+
+ShabbosRent payment না পেলে
+
+ambassador-ও payment পাবে না।
+
+অর্থাৎ:
+
+No successful payment
+       ↓
+No ambassador rental commission
+12. Ambassador Dashboard
+
+Dashboard mobile-first হতে হবে।
+
+কারণ বেশিরভাগ ambassador:
+
+Mobile Browser
+
+দিয়ে check করবে।
+
+Header Summary
+
+Dashboard-এর উপরে summary cards:
+
+Apartments Listed
+Rentals
+Pending Balance
+Approved Balance
+
+Example:
+
+Apartments Listed: 24
+Rentals: 12
+Pending Balance: ₪180
+Approved Balance: ₪450
+13. Needs Attention Section
+
+এটি dashboard-এর top-এ pinned থাকবে।
+
+কিন্তু:
+
+Relevant issue না থাকলে section দেখানো হবে না।
+
+Example 1: Model Pending
+Needs Attention
+
+Apartment:
+Luxury Apartment
+
+Model not set
+
+6 days remaining
+
+[Model A] [Model B]
+
+এক click-এ model select করা যাবে।
+
+Example 2: Reversed Commission
+Commission Reversed
+
+Amount: ₪25
+Reason: Rental payment was not completed
+Example 3: Rejected Claim
+Claim Rejected
+
+Reason:
+Apartment was already claimed by another ambassador
+14. My Apartments Table
+
+প্রত্যেক attributed apartment এখানে থাকবে।
+
+Columns:
+
+Apartment
+Owner
+Date Linked
+How Linked
+
+Possible values:
+
+Link
+Manual
+Admin
+Model
+
+Possible:
+
+A
+B
+Model Not Set
+Status
+Earned To Date
+Model A-এর বিশেষ UI
+
+Model A apartment-এর জন্য:
+
+12-month window end date
+
+দেখাতে হবে।
+
+Example:
+
+Listed:
+Jan 1, 2026
+
+Rental commission window ends:
+Dec 31, 2026
+
+UI:
+
+Model A
+Rental commission active until Dec 31, 2026
+15. Commissions Table
+
+প্রত্যেক commission আলাদা row হবে।
+
+Columns:
+
+Type
+
+Possible:
+
+Listing
+Rental
+Sub-referral
+Source Apartment
+Amount
+Status
+Date
+Status Filter
+
+Filter:
+
+All
+Pending
+Approved
+Paid
+Reversed
+Reversal আলাদা Row হবে
+
+Original commission hide করা যাবে না।
+
+Example:
+
+Type	Amount	Status
+Rental	₪25	Approved
+Reversal	-₪25	Reversed
+
+এতে complete ledger দেখা যাবে।
+
+16. My Link & Code
+
+এটি dashboard-এর সবচেয়ে গুরুত্বপূর্ণ এবং high-traffic section।
+
+Prominent রাখতে হবে।
+
+Example:
+
+Your Referral Link
+
+shabbosrent.co.il/list?ref=MOSHE50
+
+[Copy]
+
+এছাড়াও:
+
+Referral Code:
+MOSHE50
+
+Share buttons:
+
+WhatsApp
+Copy Link
+Other Share Options
+
+Mobile-এ এই section সহজে access করা উচিত।
+
+17. Manual Apartment Link Form
+
+Form:
+
+Owner Phone
+Owner Email
+Model Selector
+Submit
+
+Model required:
+
+A
+B
+Inline Errors
+
+Error page-level alert না হয়ে form-এর কাছেই দেখাতে হবে।
+
+Already Claimed
+This apartment is already claimed by another ambassador.
+No Matching Listing
+No matching listing was found.
+Outside 30-Day Window
+This apartment can no longer be claimed because the 30-day attribution window has expired.
+18. My Sub-Ambassadors
+
+এখানে ambassador দেখতে পারবে:
+
+আমি কাদের recruit করেছি
+
+Example:
+
+David
+Apartments Listed: 8
+Commission Earned: ₪40
+
+Calculation:
+
+8 × ₪5 = ₪40
+19. Settings
+
+Settings-এ:
+
+Default Model
+
+এবং:
+
+Payout Details
+
+থাকবে।
+
+Default model change:
+
+Future referrals only
+
+পুরনো apartment-এর model change হবে না।
+
+20. Payout
+
+Ambassador:
+
+Request Payout
+
+করতে পারবে।
+
+Dashboard-এ দেখাবে:
+
+Approved Balance
+
+এবং:
+
+Payout History
+
+Example:
+
+Approved Balance: ₪500
+
+[Request Payout]
+
+Payout history:
+
+₪300
+Paid
+July 10, 2026
+21. Hebrew RTL
+
+পুরো Ambassador dashboard:
+
+Hebrew
+
+এবং:
+
+RTL
+
+support করবে।
+
+Frontend-এ:
+
+direction: rtl;
+
+ধরনের layout consideration লাগবে।
+
+Important:
+
+Text alignment
+Table direction
+Icons
+Arrow direction
+Dropdown alignment
+Modal positioning
+
+সব RTL অনুযায়ী হতে হবে।
+
+22. Brand Colors
+
+Primary colors:
+
+#4A70A7
+#7FB77E
+
+এই colors ব্যবহার করা যাবে:
+
+Primary button
+Active state
+Summary cards
+Status indicators
+Referral section
+CTA
+23. Data Model
+Ambassador
+ambassador
+
+Fields:
+
+phone
+
+Normalized phone number।
+
+referral_code
+
+Unique।
+
+default_model
+
+A অথবা B।
+
+rates
+
+Locked commission rates।
+
+contract_signed_at
+
+Contract signing date।
+
+rate_locked_until
+
+Rate lock শেষ হওয়ার তারিখ।
+
+recruited_by
+
+যে ambassador তাকে recruit করেছে।
+
+status
+
+যেমন:
+
+active
+inactive
+Attribution
+
+এটি সবচেয়ে গুরুত্বপূর্ণ database structure।
+
+attribution
+
+Fields:
+
+listing_id
+
+কোন apartment-এর attribution।
+
+ambassador_id
+
+কোন ambassador-এর।
+
+model
+A
+B
+null
+
+Model null হতে পারে যদি এখনো ambassador select না করে।
+
+model_set_at
+
+কখন model set হয়েছে।
+
+model_deadline
+
+7-day deadline।
+
+method
+
+Possible:
+
+link
+manual
+admin
+attributed_at
+
+কখন attribution হয়েছে।
+
+সবচেয়ে গুরুত্বপূর্ণ Structural Point
+
+এই model:
+
+Ambassador
+   └── Model
+
+এভাবে রাখা যাবে না।
+
+কারণ একই ambassador-এর:
+
+Apartment A → Model A
+Apartment B → Model B
+
+হতে পারে।
+
+সঠিক structure:
+
+Ambassador
+    │
+    ├── Attribution 1 → Model A
+    ├── Attribution 2 → Model B
+    └── Attribution 3 → Model A
+
+তাই:
+
+model
+
+থাকবে:
+
+attribution
+
+record-এর মধ্যে।
+
+Commission
+
+Fields:
+
+ambassador_id
+type
+
+Possible:
+
+listing
+rental
+sub-referral
+source_listing_id
+
+কোন apartment থেকে commission এসেছে।
+
+source_rental_id
+
+কোন rental থেকে এসেছে।
+
+amount
+
+Earn করার সময় locked amount copy হবে।
+
+status
+pending
+approved
+paid
+reversed
+earned_at
+payout_id
+
+যদি payout-এর মধ্যে paid হয়।
+
+reversal_of
+
+কোন original commission reverse করা হয়েছে।
+
+Payout
+payout
+
+Fields:
+
+ambassador_id
+total
+status
+requested_at
+paid_at
+reference
+
+Payment reference।
+
+24. Scheduled Job
+
+একটি scheduled job থাকবে।
+
+প্রতিদিন বা নির্দিষ্ট interval-এ:
+
+Find model_deadline < now
+
+তারপর:
+
+model is null
+
+হলে:
+
+attribution.model
+=
+ambassador.default_model
+
+কিন্তু:
+
+default_model
+
+সেই সময়ের current default হবে।
+
+Example:
+
+July 1:
+Default = A
+
+Owner arrives
+
+July 5:
+Default changed to B
+
+July 8:
+Deadline passes
+
+Apartment → B
+
+কারণ deadline-এর সময় current default model B।
+
+25. Backend Logic কোথায় থাকবে?
+
+Client খুব পরিষ্কারভাবে বলেছে:
+
+Business logic database trigger অথবা frontend-এ রাখা যাবে না।
+
+সঠিক structure:
+
+Frontend
+    ↓
+Clean API
+    ↓
+Backend Business Logic
+    ↓
+Database
+
+Frontend শুধু:
+
+Display
+Input
+API Request
+
+করবে।
+
+Frontend নিজে calculate করবে না:
+
+commission amount
+model deadline
+eligibility
+claim winner
+
+এসব backend-এর responsibility।
+
+26. যেসব বিষয় Client এখনো Confirm করতে বলেছে
+
+এগুলো এখনো final business decision নয়।
+
+1. Model A-এর 12 months
+
+Client জানতে চাইছে:
+
+12-month period কি listing date থেকে শুরু হবে?
+
+Expected logic:
+
+Listing Date
+     ↓
+12 months
+     ↓
+Rental commission window ends
+2. Listing Renewal
+
+Apartment পরের বছর আবার:
+
+₪28
+
+দিয়ে renew করলে ambassador কি আবার listing commission পাবে?
+
+এটি এখনো unclear।
+
+3. Delete and Relist
+
+Owner apartment delete করে আবার relist করলে:
+
+New commission?
+
+নাকি:
+
+Duplicate হিসেবে reject?
+
+এটি client-এর confirmation দরকার।
+
+4. নিজের Apartment
+
+Ambassador কি নিজের apartment list করে commission earn করতে পারবে?
+
+এখনো সিদ্ধান্ত হয়নি।
+
+5. Minimum Payout Threshold
+
+যেমন:
+
+Minimum ₪100
+
+না হলে payout request করা যাবে না?
+
+এটি এখনো নির্ধারিত নয়।
+
+6. Invoice
+
+Ambassador payout নেওয়ার আগে:
+
+Invoice submit
+
+করবে কি না?
+
+এটিও pending decision।
+
+7. Listing Commission Auto-Approval
+
+Client জানতে চাইছে:
+
+₪28 listing payment cleared
+
+হলেই কি:
+
+Listing Commission → Approved
+
+হয়ে যাবে?
+
+এবং শুধু:
+
+Rental Commission
+
+manual review হবে?
+
+এটিও final confirmation দরকার।
+
+Frontend-এর জন্য আমার মতে মূল Screens
+
+তোমার frontend implementation-এর জন্য মোটামুটি এই structure হবে:
+
+/ambassador/dashboard
+
+Sections:
+
+Header Summary
+Needs Attention
+My Referral Link & Code
+My Apartments
+Commissions
+Manual Link Apartment
+My Sub-Ambassadors
+Payout
+Settings
+Important Frontend States
+
+তোমাকে অবশ্যই এই states handle করতে হবে:
+
+Model Not Set
+Model A
+Model B
+Pending Commission
+Approved Commission
+Paid Commission
+Reversed Commission
+Rejected Claim
+Expired 30-Day Claim
+7-Day Model Selection Countdown
+Empty States
+Loading States
+Error States
+সবচেয়ে গুরুত্বপূর্ণ takeaway
+
+এই পুরো system-এর core logic হলো:
+
+Ambassador
+    ↓
+Attribution
+    ↓
+Apartment-specific Model
+    ↓
+Listing / Rental Events
+    ↓
+Commission Ledger
+    ↓
+Payout
+
+এবং সবচেয়ে গুরুত্বপূর্ণ rule:
+
+Commission model ambassador-এর profile-এর property নয়। Model attribution/apartment-এর property।
+
+তাই frontend-এও তুমি ambassador-এর জন্য একটি global model ধরে UI বানাবে না। প্রতিটি apartment/attribution অনুযায়ী model দেখাতে হবে।

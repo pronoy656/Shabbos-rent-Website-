@@ -1,0 +1,198 @@
+আমার মতে সবচেয়ে ভালো এবং নিরাপদ Flow
+
+আমি self-signup + admin approval flow recommend করব।
+
+Flow:
+Ambassador
+    ↓
+Sign Up / Apply
+    ↓
+Admin Review
+    ↓
+Admin Approves
+    ↓
+Ambassador Account Activated
+    ↓
+Referral Code Generated
+    ↓
+Referral Link Available
+    ↓
+Ambassador Can Start Recruiting
+Example:
+1. Moshe visits ShabbosRent
+          ↓
+2. Clicks "Become an Ambassador"
+          ↓
+3. Creates account / submits application
+          ↓
+4. Admin reviews application
+          ↓
+5. Admin approves Moshe
+          ↓
+6. System creates unique code:
+   MOSHE50
+          ↓
+7. Moshe logs in
+          ↓
+8. Ambassador Dashboard
+কেন Admin Approval রাখা ভালো?
+
+কারণ এখানে:
+
+contract_signed_at
+rate_locked_until
+rates
+payout_details
+
+এর মতো financial information আছে।
+
+তাই যে কেউ সরাসরি ambassador হয়ে গেলে সমস্যা হতে পারে।
+
+আমার recommended status:
+
+pending
+   ↓
+approved / active
+   ↓
+suspended
+   ↓
+inactive
+Ambassador নিজে Account Create করবে
+
+Frontend flow:
+
+/ambassador/register
+
+Form:
+
+Name
+Phone
+Email
+Password
+
+তারপর:
+
+Application Submitted
+
+UI:
+
+Your ambassador application has been submitted.
+
+We'll review your application and notify you once approved.
+Admin Side
+
+Admin Dashboard:
+
+Ambassador Applications
+────────────────────────
+
+Moshe Cohen
+Phone
+Email
+Applied: July 23, 2026
+
+[Approve]
+[Reject]
+
+Admin Approve করলে:
+
+status = active
+
+তারপর:
+
+Referral Code = MOSHE50
+
+generate হবে।
+
+কিন্তু একটা বিষয়: Referral Code কখন Generate হবে?
+
+দুটি option আছে।
+
+Option A — Signup-এর সময়
+Signup
+  ↓
+MOSHE50 generated
+  ↓
+Pending Approval
+
+কিন্তু approval না হওয়া পর্যন্ত link কাজ করবে না।
+
+Option B — Approval-এর সময়
+Signup
+  ↓
+Pending
+  ↓
+Admin Approves
+  ↓
+MOSHE50 generated
+
+আমি Option B recommend করব।
+
+কারণ active ambassador হওয়ার পরেই code তৈরি হবে।
+
+Recruited By কীভাবে কাজ করবে?
+
+যদি Moshe অন্য একজনকে recruit করে:
+
+Moshe
+  ↓
+Referral Code
+  ↓
+David joins as Ambassador
+
+তাহলে:
+
+David.recruited_by = Moshe.id
+
+কিন্তু David-এর account creation flow হবে:
+
+David
+  ↓
+Sign Up
+  ↓
+recruited_by = Moshe
+  ↓
+Admin Approval
+
+তারপর:
+
+Moshe
+  ↓
+David's listed apartment
+  ↓
+₪5 sub-referral commission
+তোমার Frontend-এর জন্য তাহলে Correct Flow হবে
+┌─────────────────────┐
+│ Become Ambassador   │
+└──────────┬──────────┘
+           ↓
+┌─────────────────────┐
+│ Ambassador Signup   │
+└──────────┬──────────┘
+           ↓
+┌─────────────────────┐
+│ Pending Approval    │
+└──────────┬──────────┘
+           ↓
+     Admin Review
+           ↓
+      ┌────┴────┐
+      ↓         ↓
+   Approve     Reject
+      ↓
+┌─────────────────────┐
+│ Account Activated   │
+└──────────┬──────────┘
+           ↓
+┌─────────────────────┐
+│ Referral Code       │
+│ Generated           │
+└──────────┬──────────┘
+           ↓
+┌─────────────────────┐
+│ Ambassador Dashboard│
+└─────────────────────┘
+তাই তোমার প্রশ্নের সরাসরি উত্তর:
+
+Ambassador নিজে signup করে account create করবে—এটাই বেশি logical।
+তবে Admin approval-এর পর account active হবে এবং referral program-এ কাজ করতে পারবে—এটা আমার মতে সবচেয়ে ভালো business flow।
