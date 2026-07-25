@@ -187,6 +187,7 @@ export default function UserDashboardPage() {
 
   // Renter Dashboard State
   const [selectedContactBooking, setSelectedContactBooking] = useState<any>(null);
+  const [allRenterBookings, setAllRenterBookings] = useState(mockRenterBookings);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -194,6 +195,30 @@ export default function UserDashboardPage() {
       setEmailBookingsState(localStorage.getItem("emailBookings") !== "false");
       setEmailPromosState(localStorage.getItem("emailPromos") !== "false");
       setEmailNewsletterState(localStorage.getItem("emailNewsletter") !== "false");
+
+      const savedStr = localStorage.getItem("user_booking_history");
+      if (savedStr) {
+        try {
+          const savedBookings = JSON.parse(savedStr);
+          const formattedSaved = savedBookings.map((b: any) => ({
+            id: b.id,
+            refCode: b.confirmationCode || b.refCode || "SR-8492",
+            apartmentId: b.apartmentId || "1",
+            title: b.title || "Beautiful Apartment in Jerusalem",
+            location: b.address || "Rehavia, Jerusalem",
+            image: b.image || "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&q=80",
+            dateRange: b.dates || "Oct 13 - 15, 2026",
+            hostName: b.hostName || "Moshe & Chaim Estates",
+            hostPhone: b.hostPhone || "+972 54-123-4567",
+            hostEmail: b.hostEmail || "owner@shabbosrent.com",
+            totalPrice: b.amount ? parseInt(b.amount.replace(/[^0-9]/g, '')) : 4500,
+            status: b.status || "Confirmed",
+          }));
+          setAllRenterBookings([...formattedSaved, ...mockRenterBookings]);
+        } catch (e) {
+          console.error(e);
+        }
+      }
     }
   }, []);
 
@@ -222,7 +247,23 @@ export default function UserDashboardPage() {
       }
       
       let initialTabSet = false;
+
+      const urlParams = new URLSearchParams(window.location.search);
+      const tabParam = urlParams.get("tab");
+      if (tabParam) {
+        const targetTab = (tabParam === "history" || tabParam === "booking" || tabParam === "bookings") ? "bookings" : tabParam;
+        setActiveTab(targetTab);
+        sessionStorage.setItem("dashboardTab", targetTab);
+        initialTabSet = true;
+      }
       
+      if (localStorage.getItem("pendingBookingsAction") === "true") {
+        setActiveTab("bookings");
+        sessionStorage.setItem("dashboardTab", "bookings");
+        localStorage.removeItem("pendingBookingsAction");
+        initialTabSet = true;
+      }
+
       if (localStorage.getItem("pendingSwapAction") === "true") {
         setActiveTab("swap");
         sessionStorage.setItem("dashboardTab", "swap");
@@ -1091,7 +1132,7 @@ export default function UserDashboardPage() {
 
                 {/* Bookings List */}
                 <div className="space-y-6">
-                  {mockRenterBookings.map(booking => (
+                  {allRenterBookings.map(booking => (
                       <div key={booking.id} className="bg-white dark:bg-zinc-900 rounded-3xl border border-zinc-200 dark:border-zinc-800 p-6 md:p-8 shadow-sm flex flex-col lg:flex-row lg:items-center justify-between gap-6 hover:shadow-md transition-shadow">
                         <div className="flex flex-col sm:flex-row items-start gap-5">
                           <div className="w-full sm:w-36 h-28 rounded-2xl overflow-hidden bg-zinc-100 dark:bg-zinc-800 shrink-0 relative">

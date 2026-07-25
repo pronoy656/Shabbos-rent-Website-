@@ -9,7 +9,7 @@ import { ApartmentData } from "@/types";
 import { 
   MapPin, BedDouble, Bath, Users, Star, ArrowRightLeft, 
   ShieldCheck, CalendarCheck, Wifi, Tent, Monitor, ChefHat, X, Mail, Sparkles,
-  Coffee, Tv, Snowflake, Car, WashingMachine, Phone, MessageCircle, Copy, ChevronDown, Home, Footprints, Check, LockKeyhole
+  Coffee, Tv, Snowflake, Car, WashingMachine, Phone, MessageCircle, Copy, ChevronDown, Home, Footprints, Check, LockKeyhole, CheckCircle2, Navigation
 } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
 import { mockBaseApartments } from "@/data/mockData";
@@ -63,6 +63,59 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
 
   const [isUnavailableModalOpen, setIsUnavailableModalOpen] = useState(false);
   const [isNotified, setIsNotified] = useState(false);
+
+  const [isConfirmationModalOpen, setIsConfirmationModalOpen] = useState(false);
+  const [isSelectWeekModalOpen, setIsSelectWeekModalOpen] = useState(false);
+  const [selectedAgreedWeek, setSelectedAgreedWeek] = useState(mockAvailableDates[0].date);
+  const [confirmedShabbosDate, setConfirmedShabbosDate] = useState("");
+  const [activeConfirmationCode, setActiveConfirmationCode] = useState("");
+  const [isConfCopied, setIsConfCopied] = useState(false);
+
+  const handleStartRenterConfirm = () => {
+    setIsLandlordModalOpen(false);
+    setIsSelectWeekModalOpen(true);
+  };
+
+  const executeRenterConfirm = (targetWeek: string) => {
+    const userEmail = typeof window !== "undefined" ? localStorage.getItem("userEmail") || "renter@example.com" : "renter@example.com";
+    const currentWeek = targetWeek || "Oct 13 - 15";
+    const codeKey = `confirm_${userEmail}_apt${id}_${currentWeek.replace(/[^a-zA-Z0-9]/g, "")}`;
+    
+    let code = typeof window !== "undefined" ? localStorage.getItem(codeKey) : null;
+    if (!code) {
+      const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+      let rand = "";
+      for (let i = 0; i < 8; i++) {
+        rand += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+      code = `CONF-${rand}`;
+      if (typeof window !== "undefined") {
+        localStorage.setItem(codeKey, code);
+        const existingBookingsStr = localStorage.getItem("user_booking_history");
+        const existingBookings = existingBookingsStr ? JSON.parse(existingBookingsStr) : [];
+        const newBooking = {
+          id: `b-conf-${Date.now()}`,
+          apartmentId: id,
+          title: "Beautiful Apartment in Jerusalem",
+          address: "Ramban St 14, Rehavia, Jerusalem, Israel",
+          dates: currentWeek,
+          confirmationCode: code,
+          hostName: "Moshe & Chaim Estates",
+          hostPhone: "+972 54-123-4567",
+          hostEmail: "owner@shabbosrent.com",
+          status: "Confirmed",
+          amount: "₪4,500",
+          image: galleryImages[0]
+        };
+        localStorage.setItem("user_booking_history", JSON.stringify([newBooking, ...existingBookings]));
+      }
+    }
+    
+    setActiveConfirmationCode(code);
+    setConfirmedShabbosDate(currentWeek);
+    setIsSelectWeekModalOpen(false);
+    setIsConfirmationModalOpen(true);
+  };
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -596,55 +649,228 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
                 <X className="w-5 h-5" />
               </button>
             </div>
-              {/* Modal Body */}
-            <div className="p-6 relative z-10">
-               <div className="py-1">
-                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#4c55a4]/10 dark:bg-[#4c55a4]/20 text-[#4c55a4] dark:text-[#8892eb] text-xs font-extrabold tracking-wide uppercase mb-3">
-                    <Sparkles className="w-3.5 h-3.5" /> Direct Contact
-                  </div>
 
-                  {/* Subtle Reminder Box */}
-                  <div className="bg-gradient-to-br from-zinc-50 via-blue-50/40 to-indigo-50/30 dark:from-zinc-800/40 dark:via-zinc-800/20 dark:to-zinc-800/10 p-3.5 rounded-2xl border border-zinc-200/60 dark:border-zinc-800 mb-5 text-xs text-zinc-600 dark:text-zinc-300 leading-relaxed shadow-inner">
-                     {t("apartment_details.remind_host")}{" "}
-                     <span className="font-extrabold text-[#4c55a4] dark:text-[#8892eb] underline decoration-2 underline-offset-2">
-                       {t("apartment_details.shabbos_rent")}
-                     </span>
-                     , {t("apartment_details.maintain_site")}
-                  </div>
+            {/* Modal Body */}
+            <div className="p-6 relative z-10 space-y-4">
+              
+              {/* Apartment Code Box */}
+              <div className="bg-zinc-50 dark:bg-zinc-800/50 p-3.5 rounded-2xl border border-zinc-200 dark:border-zinc-700 flex items-center justify-between">
+                 <div>
+                   <p className="text-xs text-zinc-500 font-bold uppercase tracking-wider mb-0.5">{t("apartment_details.apartment_code")}</p>
+                   <p className="text-lg font-black text-[#4c55a4] dark:text-[#8892eb] tracking-wide">APT-{id}</p>
+                 </div>
+                 <button 
+                   onClick={() => {
+                     navigator.clipboard.writeText(`APT-${id}`);
+                     setIsCopied(true);
+                     setTimeout(() => setIsCopied(false), 2000);
+                   }} 
+                   className="px-3 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-xl shadow-sm hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-all active:scale-95 text-zinc-700 dark:text-zinc-200 text-xs font-bold flex items-center gap-1.5" 
+                   title="Copy Code"
+                 >
+                   {isCopied ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />} Copy Code
+                 </button>
+              </div>
 
-                  <div className="bg-zinc-50 dark:bg-zinc-800/50 p-4 rounded-2xl border border-zinc-200 dark:border-zinc-700 mb-5 flex items-center justify-between">
-                     <div>
-                       <p className="text-xs text-zinc-500 font-bold uppercase tracking-wider mb-0.5">{t("apartment_details.apartment_code")}</p>
-                       <p className="text-xl font-black text-[#4c55a4] dark:text-[#8892eb] tracking-wide">APT-{id}</p>
-                     </div>
-                     <button onClick={() => navigator.clipboard.writeText(`APT-${id}`)} className="p-2.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-xl shadow-sm hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-all active:scale-95 text-zinc-600 dark:text-zinc-300" title="Copy Code">
-                       <Copy className="w-5 h-5" />
-                     </button>
-                  </div>
+              {/* DIRECT OWNER CONTACT */}
+              <div>
+                 <p className="text-xs font-extrabold text-zinc-500 uppercase tracking-wider mb-2.5">DIRECT OWNER CONTACT</p>
+                 
+                 {/* Row 1: Call Owner & WhatsApp Owner in SAME ROW */}
+                 <div className="grid grid-cols-2 gap-3 mb-3">
+                    <a 
+                      href="tel:+972541234567"
+                      className="w-full py-3 bg-[#4c55a4] hover:bg-[#3d4484] text-white rounded-xl font-extrabold transition-all shadow-md shadow-[#4c55a4]/20 flex items-center justify-center gap-2 text-xs sm:text-sm active:scale-[0.98]"
+                    >
+                      <Phone className="w-4 h-4" /> Call Owner
+                    </a>
+                    <a 
+                      href="https://wa.me/972541234567"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="w-full py-3 bg-[#25D366] hover:bg-[#20bd5a] text-white rounded-xl font-extrabold transition-all shadow-md shadow-[#25D366]/20 flex items-center justify-center gap-2 text-xs sm:text-sm active:scale-[0.98]"
+                    >
+                      <MessageCircle className="w-4 h-4" /> WhatsApp Owner
+                    </a>
+                 </div>
 
-                  <div className="space-y-3">
-                     <a 
-                       href="tel:+972501234567"
-                       className="w-full py-3.5 bg-[#4c55a4] hover:bg-[#3d4484] text-white rounded-2xl font-extrabold transition-all shadow-lg shadow-[#4c55a4]/25 flex items-center justify-center gap-2.5 text-base active:scale-[0.98]"
-                     >
-                       <Phone className="w-5 h-5" /> {t("apartment_details.call_hotline")}
-                     </a>
-                     <a 
-                       href="https://wa.me/972501234567"
-                       target="_blank"
-                       rel="noopener noreferrer"
-                       className="w-full py-3.5 bg-[#25D366] hover:bg-[#20bd5a] text-white rounded-2xl font-extrabold transition-all shadow-md shadow-[#25D366]/20 flex items-center justify-center gap-2.5 text-base active:scale-[0.98]"
-                     >
-                       <MessageCircle className="w-5 h-5" /> {t("apartment_details.whatsapp")}
-                     </a>
-                     <a 
-                       href={`mailto:owner@shabbosrent.com?subject=Inquiry%20regarding%20Apartment%20APT-${id}`}
-                       className="w-full py-3.5 bg-white dark:bg-zinc-900 hover:bg-[#4c55a4]/5 dark:hover:bg-indigo-500/10 text-[#4c55a4] dark:text-indigo-300 border-2 border-[#4c55a4] dark:border-indigo-500 rounded-2xl font-extrabold transition-all shadow-sm flex items-center justify-center gap-2.5 text-base active:scale-[0.98]"
-                     >
-                       <Mail className="w-5 h-5 text-[#4c55a4] dark:text-indigo-300" /> Contact by Email
-                     </a>
+                 {/* Row 2: Contact Owner by Email in Next Row */}
+                 <a 
+                   href={`mailto:owner@shabbosrent.com?subject=Inquiry%20regarding%20Apartment%20APT-${id}`}
+                   className="w-full py-3 bg-white dark:bg-zinc-900 hover:bg-[#4c55a4]/5 dark:hover:bg-indigo-500/10 text-[#4c55a4] dark:text-indigo-300 border-2 border-[#4c55a4] dark:border-indigo-500 rounded-xl font-extrabold transition-all shadow-sm flex items-center justify-center gap-2 text-sm active:scale-[0.98]"
+                 >
+                   <Mail className="w-4 h-4 text-[#4c55a4] dark:text-indigo-300" /> Contact Owner by Email
+                 </a>
+              </div>
+
+              {/* Section 2: ShabbosRent Official Support Hotline in Following Row */}
+              <div className="pt-3 border-t border-zinc-100 dark:border-zinc-800 mb-3">
+                 <p className="text-xs font-extrabold text-zinc-500 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                   <ShieldCheck className="w-4 h-4 text-emerald-600" /> SHABBOSRENT OFFICIAL SUPPORT HOTLINE
+                 </p>
+                 <a 
+                   href="tel:+97225007890"
+                   className="w-full py-3 bg-zinc-900 dark:bg-white hover:bg-zinc-800 dark:hover:bg-zinc-200 text-white dark:text-zinc-900 rounded-xl font-extrabold transition-all shadow-md flex items-center justify-center gap-2 text-sm active:scale-[0.98]"
+                 >
+                   <Phone className="w-4 h-4 text-emerald-400 dark:text-emerald-600" /> Call Hotline (+972 2-500-7890)
+                 </a>
+              </div>
+
+              {/* B1 — Renter Confirmation Section */}
+              <div className="pt-3 border-t border-zinc-100 dark:border-zinc-800">
+                <button 
+                  onClick={handleStartRenterConfirm}
+                  className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-extrabold transition-all shadow-md shadow-emerald-600/20 flex items-center justify-center gap-2 text-sm active:scale-[0.98]"
+                >
+                  <CheckCircle2 className="w-5 h-5 text-white" />
+                  I confirmed with the landlord
+                </button>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Option 1 — Select Agreed Shabbos Date Modal */}
+      {isSelectWeekModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-950/60 backdrop-blur-md animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-zinc-900 rounded-3xl shadow-2xl w-full max-w-md overflow-hidden border border-zinc-200 dark:border-zinc-800 animate-in zoom-in-95 duration-200 relative p-6 md:p-8">
+            <button 
+              onClick={() => setIsSelectWeekModalOpen(false)}
+              className="absolute top-4 right-4 p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full transition-colors text-zinc-400"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="w-12 h-12 rounded-2xl bg-[#4c55a4]/10 text-[#4c55a4] flex items-center justify-center mb-4">
+              <CalendarCheck className="w-6 h-6" />
+            </div>
+
+            <h3 className="text-xl font-extrabold text-zinc-900 dark:text-white mb-1">
+              Select Agreed Shabbos Date
+            </h3>
+            <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-6">
+              Which Shabbos date did you agree on with the landlord?
+            </p>
+
+            <div className="space-y-3 mb-6">
+              {mockAvailableDates.map(d => (
+                <div
+                  key={d.id}
+                  onClick={() => setSelectedAgreedWeek(d.date)}
+                  className={`p-4 rounded-2xl border-2 cursor-pointer transition-all flex items-center justify-between ${
+                    selectedAgreedWeek === d.date
+                      ? "border-[#4c55a4] bg-[#4c55a4]/5 dark:bg-[#4c55a4]/10 shadow-sm"
+                      : "border-zinc-200 dark:border-zinc-700 hover:border-zinc-300 dark:hover:border-zinc-600"
+                  }`}
+                >
+                  <div className="text-left">
+                    <p className="font-extrabold text-zinc-900 dark:text-white text-sm">{d.date}</p>
+                    <p className="text-xs text-zinc-500 dark:text-zinc-400">{d.reason}</p>
                   </div>
-               </div>
+                  <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${selectedAgreedWeek === d.date ? "border-[#4c55a4] bg-[#4c55a4]" : "border-zinc-300 dark:border-zinc-600"}`}>
+                    {selectedAgreedWeek === d.date && <Check className="w-3 h-3 text-white stroke-[3]" />}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <button
+              onClick={() => executeRenterConfirm(selectedAgreedWeek)}
+              className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-extrabold transition-all shadow-md shadow-emerald-600/20 flex items-center justify-center gap-2 text-sm active:scale-[0.98]"
+            >
+              <CheckCircle2 className="w-5 h-5" />
+              Confirm Booking & Get Code
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* B2 — Confirmation Modal Page */}
+      {isConfirmationModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-950/60 backdrop-blur-md animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-zinc-900 rounded-3xl shadow-2xl w-full max-w-md overflow-hidden border border-zinc-200 dark:border-zinc-800 animate-in zoom-in-95 duration-200 relative text-center p-6 md:p-8">
+            <button 
+              onClick={() => setIsConfirmationModalOpen(false)}
+              className="absolute top-4 right-4 p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full transition-colors text-zinc-400"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            {/* Success Badge */}
+            <div className="w-16 h-16 rounded-2xl bg-emerald-100 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mx-auto mb-4 shadow-sm">
+              <CheckCircle2 className="w-8 h-8" />
+            </div>
+
+            <h3 className="text-2xl font-black text-zinc-900 dark:text-white mb-1">
+              Booking Confirmed!
+            </h3>
+            <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-6">
+              Your agreement with the host for <strong className="text-zinc-900 dark:text-white">{confirmedShabbosDate}</strong> has been recorded.
+            </p>
+
+            {/* B3 - Confirmation Code Card */}
+            <div className="bg-emerald-50/70 dark:bg-emerald-950/30 p-4 rounded-2xl border border-emerald-200 dark:border-emerald-800/60 mb-4 text-left">
+              <div className="flex justify-between items-center mb-1">
+                <p className="text-xs text-emerald-700 dark:text-emerald-400 font-bold uppercase tracking-wider">
+                  Unique Confirmation Code
+                </p>
+                <span className="text-xs font-bold text-emerald-800 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-900/60 px-2 py-0.5 rounded-md">
+                  {confirmedShabbosDate}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-xl font-black text-emerald-900 dark:text-emerald-200 tracking-wider">
+                  {activeConfirmationCode}
+                </span>
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(activeConfirmationCode);
+                    setIsConfCopied(true);
+                    setTimeout(() => setIsConfCopied(false), 2000);
+                  }}
+                  className="px-3 py-1.5 bg-white dark:bg-zinc-900 border border-emerald-300 dark:border-emerald-700 text-emerald-800 dark:text-emerald-300 rounded-lg text-xs font-bold shadow-sm hover:bg-emerald-100 dark:hover:bg-emerald-900/50 transition-colors flex items-center gap-1"
+                >
+                  {isConfCopied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                  {isConfCopied ? "Copied" : "Copy Code"}
+                </button>
+              </div>
+            </div>
+
+            {/* Address Card */}
+            <div className="bg-zinc-50 dark:bg-zinc-800/50 p-4 rounded-2xl border border-zinc-200 dark:border-zinc-700/60 mb-6 text-left">
+              <p className="text-xs text-zinc-500 font-bold uppercase tracking-wider mb-1 flex items-center gap-1">
+                <MapPin className="w-3.5 h-3.5 text-[#4c55a4]" /> Full Apartment Address
+              </p>
+              <p className="text-sm font-bold text-zinc-900 dark:text-white">
+                Ramban St 14, Rehavia, Jerusalem, Israel
+              </p>
+            </div>
+
+            {/* Waze Link Button */}
+            <div className="space-y-2.5">
+              <a
+                href="https://waze.com/ul?q=Ramban+St+14+Rehavia+Jerusalem&navigate=yes"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full py-3.5 bg-[#33ccff] hover:bg-[#28b8e6] text-zinc-950 font-extrabold rounded-xl shadow-md shadow-[#33ccff]/20 flex items-center justify-center gap-2 text-sm transition-all active:scale-[0.98]"
+              >
+                <Navigation className="w-4 h-4 fill-zinc-950" /> Get Directions with Waze
+              </a>
+
+              <Link
+                href="/user-dashboard?tab=bookings"
+                onClick={() => {
+                  if (typeof window !== "undefined") {
+                    sessionStorage.setItem("dashboardTab", "bookings");
+                    localStorage.setItem("pendingBookingsAction", "true");
+                  }
+                }}
+                className="block w-full py-3 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-900 dark:text-white rounded-xl font-bold text-xs transition-colors"
+              >
+                View in My Booking History
+              </Link>
             </div>
           </div>
         </div>
