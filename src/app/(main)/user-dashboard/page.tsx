@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { PlusCircle, Home, LogOut, Settings, Building, RefreshCw, LayoutDashboard, MapPin, BedDouble, Bath, Users, Info, AlignLeft, CalendarCheck, Eye, Check, User, Heart, Lock, CalendarDays, Edit3, Clock, Phone, Gift, Copy, CheckCircle2, UserPlus, MoreHorizontal, Wallet, Banknote, Lightbulb, Bell } from "lucide-react";
+import { PlusCircle, Home, LogOut, Settings, Building, RefreshCw, LayoutDashboard, MapPin, BedDouble, Bath, Users, Info, AlignLeft, CalendarCheck, Eye, Check, User, Heart, Lock, CalendarDays, Edit3, Clock, Phone, Gift, Copy, CheckCircle2, UserPlus, MoreHorizontal, Wallet, Banknote, Lightbulb, Bell, ShieldCheck, X, MessageCircle, Bookmark, Mail } from "lucide-react";
 import MainNavbar from "@/components/layout/MainNavbar";
 import CreateListingModal from "@/components/layout/CreateListingModal";
 import ChangePasswordModal from "@/components/settings/ChangePasswordModal";
@@ -115,6 +115,51 @@ const SHABBATOT = [
   { id: "vayechi", name: "Vayechi", date: "25/12" }
 ];
 
+const mockRenterBookings = [
+  {
+    id: "b-1",
+    refCode: "SR-8492",
+    apartmentId: "1",
+    title: "Luxury Penthouse with Kosher Kitchen",
+    location: "Rehavia, Jerusalem",
+    image: "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&q=80",
+    dateRange: "Oct 13 - 15, 2024",
+    hostName: "Moshe & Chaim Estates",
+    hostPhone: "+972 54-123-4567",
+    hostEmail: "owner@rehavia-estates.com",
+    totalPrice: 3500,
+    status: "Upcoming",
+  },
+  {
+    id: "b-2",
+    refCode: "SR-7210",
+    apartmentId: "2",
+    title: "Cozy Family Apartment near Kotel",
+    location: "Jewish Quarter, Jerusalem",
+    image: "https://images.unsplash.com/photo-1502672260266-1c1e5088e756?w=800&q=80",
+    dateRange: "Sep 27 - 29, 2024",
+    hostName: "Sarah Cohen",
+    hostPhone: "+972 50-987-6543",
+    hostEmail: "sarah.cohen@jerusalemhomes.com",
+    totalPrice: 1800,
+    status: "Completed",
+  },
+  {
+    id: "b-3",
+    refCode: "SR-5811",
+    apartmentId: "3",
+    title: "Modern Villa with Private Garden",
+    location: "Baka, Jerusalem",
+    image: "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800&q=80",
+    dateRange: "Aug 18 - 20, 2024",
+    hostName: "David Goldstein",
+    hostPhone: "+972 52-444-3322",
+    hostEmail: "david@bakavilla.co.il",
+    totalPrice: 5200,
+    status: "Completed",
+  },
+];
+
 export default function UserDashboardPage() {
   const { t } = useLanguage();
   const router = useRouter();
@@ -132,6 +177,42 @@ export default function UserDashboardPage() {
   const [isEditProfileModalOpen, setIsEditProfileModalOpen] = useState(false);
   const [savedApartments, setSavedApartments] = useState<ApartmentData[]>([]);
   const [isCopied, setIsCopied] = useState(false);
+
+  // Email & Notification Preferences State
+  const [emailOptInState, setEmailOptInState] = useState(true);
+  const [emailBookingsState, setEmailBookingsState] = useState(true);
+  const [emailPromosState, setEmailPromosState] = useState(true);
+  const [emailNewsletterState, setEmailNewsletterState] = useState(true);
+  const [emailSavedToast, setEmailSavedToast] = useState(false);
+
+  // Renter Dashboard State (Favorites & Bookings)
+  const [favoritesSubTab, setFavoritesSubTab] = useState<"all" | "loved">("all");
+  const [bookingFilter, setBookingFilter] = useState<string>("all");
+  const [selectedContactBooking, setSelectedContactBooking] = useState<any>(null);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setEmailOptInState(localStorage.getItem("emailOptIn") !== "false");
+      setEmailBookingsState(localStorage.getItem("emailBookings") !== "false");
+      setEmailPromosState(localStorage.getItem("emailPromos") !== "false");
+      setEmailNewsletterState(localStorage.getItem("emailNewsletter") !== "false");
+    }
+  }, []);
+
+  const handleSaveEmailPreferences = (optIn: boolean, bookings: boolean, promos: boolean, newsletter: boolean) => {
+    setEmailOptInState(optIn);
+    setEmailBookingsState(bookings);
+    setEmailPromosState(promos);
+    setEmailNewsletterState(newsletter);
+
+    localStorage.setItem("emailOptIn", optIn ? "true" : "false");
+    localStorage.setItem("emailBookings", bookings ? "true" : "false");
+    localStorage.setItem("emailPromos", promos ? "true" : "false");
+    localStorage.setItem("emailNewsletter", newsletter ? "true" : "false");
+
+    setEmailSavedToast(true);
+    setTimeout(() => setEmailSavedToast(false), 3000);
+  };
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -221,8 +302,10 @@ export default function UserDashboardPage() {
     !hasListing ? { id: "add", label: t("dashboard.nav.add"), icon: PlusCircle, color: "text-emerald-600" } : null,
     { id: "manage", label: t("dashboard.nav.manage"), icon: Building, color: "text-blue-600" },
     { id: "swap", label: t("dashboard.nav.swap"), icon: RefreshCw, color: "text-indigo-500" },
+    { id: "favorites", label: "Favorites & Saved", icon: Heart, color: "text-pink-500" },
+    { id: "bookings", label: "Booking History", icon: CalendarDays, color: "text-amber-500" },
     { id: "affiliate", label: t("dashboard.nav.affiliate"), icon: Gift, color: "text-purple-500" },
-    { id: "notifications", label: t("dashboard.nav.notifications"), icon: Bell, color: "text-pink-500" },
+    { id: "notifications", label: t("dashboard.nav.notifications"), icon: Bell, color: "text-blue-500" },
     { id: "settings", label: t("dashboard.nav.settings"), icon: Settings, color: "text-zinc-600 dark:text-zinc-400" },
   ].filter(Boolean) as Array<{ id: string, label: string, icon: any, color: string }>;
 
@@ -964,6 +1047,154 @@ export default function UserDashboardPage() {
               </div>
             )}
 
+            {activeTab === "favorites" && (
+              <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-6xl mx-auto">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+                  <div>
+                    <h1 className="text-3xl font-extrabold text-zinc-900 dark:text-white mb-1 flex items-center gap-2.5">
+                      <Heart className="w-7 h-7 text-pink-500 fill-pink-500" /> Favorites & Saved Apartments
+                    </h1>
+                    <p className="text-zinc-500 text-sm">Apartments you have bookmarked or loved for future Shabbos stays.</p>
+                  </div>
+
+                  <div className="flex items-center gap-2 p-1 bg-zinc-100 dark:bg-zinc-800 rounded-xl w-fit">
+                    <button
+                      onClick={() => setFavoritesSubTab("all")}
+                      className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${favoritesSubTab === "all" ? "bg-white dark:bg-zinc-900 text-[#4c55a4] shadow-xs" : "text-zinc-500 hover:text-zinc-900 dark:hover:text-white"}`}
+                    >
+                      All Saved ({savedApartments.length})
+                    </button>
+                    <button
+                      onClick={() => setFavoritesSubTab("loved")}
+                      className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${favoritesSubTab === "loved" ? "bg-white dark:bg-zinc-900 text-pink-500 shadow-xs" : "text-zinc-500 hover:text-zinc-900 dark:hover:text-white"}`}
+                    >
+                      Loved (Top Rated)
+                    </button>
+                  </div>
+                </div>
+
+                {(() => {
+                  const displayList = favoritesSubTab === "loved"
+                    ? savedApartments.filter(a => a.rating >= 4.8)
+                    : savedApartments;
+
+                  if (displayList.length === 0) {
+                    return (
+                      <div className="bg-white dark:bg-zinc-900 rounded-3xl border border-zinc-200 dark:border-zinc-800 p-12 text-center shadow-sm">
+                        <div className="w-20 h-20 bg-pink-50 dark:bg-pink-950/40 rounded-full flex items-center justify-center mx-auto mb-4 border border-pink-100 dark:border-pink-900/50">
+                          <Heart className="w-10 h-10 text-pink-500" />
+                        </div>
+                        <h3 className="text-xl font-bold text-zinc-900 dark:text-white mb-2">No Saved Apartments Yet</h3>
+                        <p className="text-sm text-zinc-500 max-w-md mx-auto mb-6">
+                          Click the heart icon on any apartment card while searching to save it to your personal favorites list.
+                        </p>
+                        <Link
+                          href="/search"
+                          className="inline-flex items-center gap-2 px-6 py-3 bg-[#4c55a4] hover:bg-[#3d4484] text-white font-bold rounded-xl shadow-md shadow-[#4c55a4]/20 transition-all text-sm"
+                        >
+                          Explore Apartments
+                        </Link>
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {displayList.map(apt => (
+                        <ApartmentCard key={apt.id} apartment={apt} />
+                      ))}
+                    </div>
+                  );
+                })()}
+              </div>
+            )}
+
+            {activeTab === "bookings" && (
+              <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-5xl mx-auto">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+                  <div>
+                    <h1 className="text-3xl font-extrabold text-zinc-900 dark:text-white mb-1 flex items-center gap-2.5">
+                      <CalendarDays className="w-7 h-7 text-amber-500" /> Renter Booking History
+                    </h1>
+                    <p className="text-zinc-500 text-sm">View past and upcoming Shabbos apartment stays as a Renter.</p>
+                  </div>
+
+                  <div className="flex items-center gap-2 p-1 bg-zinc-100 dark:bg-zinc-800 rounded-xl w-fit">
+                    {[
+                      { id: "all", label: "All" },
+                      { id: "upcoming", label: "Upcoming" },
+                      { id: "completed", label: "Completed" },
+                    ].map(filter => (
+                      <button
+                        key={filter.id}
+                        onClick={() => setBookingFilter(filter.id)}
+                        className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${bookingFilter === filter.id ? "bg-white dark:bg-zinc-900 text-[#4c55a4] shadow-xs" : "text-zinc-500 hover:text-zinc-900 dark:hover:text-white"}`}
+                      >
+                        {filter.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Bookings List */}
+                <div className="space-y-6">
+                  {mockRenterBookings
+                    .filter(b => bookingFilter === "all" || b.status.toLowerCase() === bookingFilter.toLowerCase())
+                    .map(booking => (
+                      <div key={booking.id} className="bg-white dark:bg-zinc-900 rounded-3xl border border-zinc-200 dark:border-zinc-800 p-6 md:p-8 shadow-sm flex flex-col lg:flex-row lg:items-center justify-between gap-6 hover:shadow-md transition-shadow">
+                        <div className="flex flex-col sm:flex-row items-start gap-5">
+                          <div className="w-full sm:w-36 h-28 rounded-2xl overflow-hidden bg-zinc-100 dark:bg-zinc-800 shrink-0 relative">
+                            <img src={booking.image} alt={booking.title} className="w-full h-full object-cover" />
+                            <div className="absolute top-2 left-2">
+                              <span className={`px-2 py-0.5 text-[10px] font-bold rounded-md text-white shadow-xs ${booking.status === "Upcoming" ? "bg-emerald-600" : "bg-zinc-700"}`}>
+                                {booking.status}
+                              </span>
+                            </div>
+                          </div>
+
+                          <div>
+                            <div className="flex items-center gap-2 text-xs font-bold text-zinc-400 mb-1">
+                              <span>Ref: {booking.refCode}</span>
+                              <span>•</span>
+                              <span>{booking.dateRange}</span>
+                            </div>
+                            <h3 className="text-xl font-bold text-zinc-900 dark:text-white mb-1">{booking.title}</h3>
+                            <p className="text-xs text-zinc-500 dark:text-zinc-400 flex items-center gap-1 mb-3">
+                              <MapPin className="w-3.5 h-3.5" /> {booking.location}
+                            </p>
+                            <div className="flex items-center gap-4 text-xs font-semibold text-zinc-600 dark:text-zinc-300">
+                              <span>Host: <strong>{booking.hostName}</strong></span>
+                              <span>Total: <strong className="text-zinc-900 dark:text-white">₪{booking.totalPrice}</strong></span>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="flex flex-wrap items-center gap-2 pt-4 lg:pt-0 border-t lg:border-t-0 border-zinc-100 dark:border-zinc-800">
+                          <button
+                            onClick={() => setSelectedContactBooking(booking)}
+                            className="px-4 py-2 bg-[#4c55a4] hover:bg-[#3d4484] text-white text-xs font-bold rounded-xl transition-colors shadow-xs"
+                          >
+                            Contact Host
+                          </button>
+                          <Link
+                            href={`/apartments/${booking.apartmentId}`}
+                            className="px-4 py-2 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-900 dark:text-white text-xs font-bold rounded-xl transition-colors"
+                          >
+                            View Apartment
+                          </Link>
+                          <button
+                            onClick={() => alert(`Downloading official receipt for ${booking.refCode}...`)}
+                            className="px-4 py-2 border border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800 text-xs font-bold rounded-xl transition-colors"
+                          >
+                            Receipt
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              </div>
+            )}
+
             {activeTab === "notifications" && (
               <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-4xl mx-auto">
                 <div className="flex items-center justify-between mb-8">
@@ -1047,6 +1278,7 @@ export default function UserDashboardPage() {
                     {[
                       { id: "profile", label: "Profile", icon: User },
                       { id: "security", label: "Security & Password", icon: Lock },
+                      { id: "notifications", label: "Email Preferences", icon: Bell },
                     ].map(tab => (
                       <button 
                         key={tab.id}
@@ -1220,6 +1452,72 @@ export default function UserDashboardPage() {
                         </div>
                       </div>
                     )}
+
+                    {/* Email & Notifications Tab */}
+                    {settingsSubTab === "notifications" && (
+                      <div className="space-y-6">
+                        {emailSavedToast && (
+                          <div className="p-4 bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800 rounded-2xl flex items-center gap-3 text-emerald-800 dark:text-emerald-300 font-semibold text-sm animate-in fade-in slide-in-from-top-2 duration-300">
+                            <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+                            Email preferences saved successfully!
+                          </div>
+                        )}
+
+                        <div className="bg-white dark:bg-zinc-900 rounded-3xl border border-zinc-200 dark:border-zinc-800 p-8 shadow-sm">
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-zinc-100 dark:border-zinc-800 mb-6">
+                            <div>
+                              <h3 className="text-xl font-bold text-zinc-900 dark:text-white flex items-center gap-2">
+                                <Bell className="w-5 h-5 text-[#4c55a4]" /> Email Preferences & Notifications
+                              </h3>
+                              <p className="text-zinc-500 text-sm mt-1">Manage what emails and notifications you receive from Shabos Rent.</p>
+                            </div>
+
+                            <div className="flex items-center gap-2">
+                              {emailOptInState ? (
+                                <span className="inline-flex items-center gap-1.5 px-3.5 py-1 bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 rounded-full text-xs font-bold">
+                                  <CheckCircle2 className="w-3.5 h-3.5" /> Subscribed (Opted In)
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1.5 px-3.5 py-1 bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800 rounded-full text-xs font-bold">
+                                  Unsubscribed from Marketing
+                                </span>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="space-y-6">
+                            {/* Master Toggle */}
+                            <div className="flex items-center justify-between p-4 bg-zinc-50 dark:bg-zinc-800/40 rounded-2xl border border-zinc-200/80 dark:border-zinc-800">
+                              <div>
+                                <h4 className="font-bold text-zinc-900 dark:text-white text-sm">Receive Email Notifications</h4>
+                                <p className="text-xs text-zinc-500 mt-0.5">Master toggle for promotional emails and platform updates</p>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const next = !emailOptInState;
+                                  handleSaveEmailPreferences(next, emailBookingsState, next, next);
+                                }}
+                                className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${emailOptInState ? "bg-[#4c55a4]" : "bg-zinc-300 dark:bg-zinc-700"}`}
+                              >
+                                <span className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out ${emailOptInState ? "translate-x-5" : "translate-x-0"}`} />
+                              </button>
+                            </div>
+
+                            {/* Unsubscribe Footer */}
+                            <div className="pt-6 border-t border-zinc-100 dark:border-zinc-800 flex justify-end">
+                              <button
+                                type="button"
+                                onClick={() => handleSaveEmailPreferences(false, emailBookingsState, false, false)}
+                                className="px-4 py-2 border border-red-200 dark:border-red-800/80 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-xl text-xs font-bold transition-colors"
+                              >
+                                Unsubscribe from Marketing Emails
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -1251,6 +1549,63 @@ export default function UserDashboardPage() {
           }
         }} 
       />
+
+      {selectedContactBooking && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-zinc-900 rounded-3xl p-6 md:p-8 max-w-md w-full border border-zinc-200 dark:border-zinc-800 shadow-2xl relative animate-in fade-in zoom-in-95 duration-200">
+            <button 
+              onClick={() => setSelectedContactBooking(null)} 
+              className="absolute top-4 right-4 p-2 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-12 h-12 rounded-full bg-[#4c55a4]/10 text-[#4c55a4] flex items-center justify-center font-bold text-lg">
+                {selectedContactBooking.hostName.charAt(0)}
+              </div>
+              <div>
+                <h3 className="font-bold text-zinc-900 dark:text-white text-lg">{selectedContactBooking.hostName}</h3>
+                <p className="text-xs text-zinc-500">Host of {selectedContactBooking.title}</p>
+              </div>
+            </div>
+
+            <div className="space-y-3 mb-2">
+              <a
+                href={`tel:${selectedContactBooking.hostPhone}`}
+                className="flex items-center justify-between p-4 bg-zinc-50 dark:bg-zinc-800/50 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-2xl border border-zinc-200/80 dark:border-zinc-700/60 transition-colors text-sm font-semibold text-zinc-900 dark:text-white"
+              >
+                <span className="flex items-center gap-2.5">
+                  <Phone className="w-4 h-4 text-[#4c55a4]" /> Call Host
+                </span>
+                <span className="text-xs text-zinc-500">{selectedContactBooking.hostPhone}</span>
+              </a>
+
+              <a
+                href={`https://wa.me/${selectedContactBooking.hostPhone.replace(/[^0-9]/g, '')}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-between p-4 bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 rounded-2xl border border-emerald-200 dark:border-emerald-800/80 transition-colors text-sm font-semibold text-emerald-900 dark:text-emerald-200"
+              >
+                <span className="flex items-center gap-2.5">
+                  <MessageCircle className="w-4 h-4 text-emerald-600" /> WhatsApp Host
+                </span>
+                <span className="text-xs text-emerald-600 font-bold">Open Chat</span>
+              </a>
+
+              <a
+                href={`mailto:${selectedContactBooking.hostEmail}`}
+                className="flex items-center justify-between p-4 bg-zinc-50 dark:bg-zinc-800/50 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-2xl border border-zinc-200/80 dark:border-zinc-700/60 transition-colors text-sm font-semibold text-zinc-900 dark:text-white"
+              >
+                <span className="flex items-center gap-2.5">
+                  <Mail className="w-4 h-4 text-blue-600" /> Send Email
+                </span>
+                <span className="text-xs text-zinc-500">{selectedContactBooking.hostEmail}</span>
+              </a>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -19,6 +19,9 @@ function SignupFormContent() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [termsAccepted, setTermsAccepted] = useState(false);
+  const [emailOptIn, setEmailOptIn] = useState(true);
+  const [signupError, setSignupError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   // Ambassador Signup State
@@ -42,8 +45,24 @@ function SignupFormContent() {
   const redirectUrl = searchParams.get("redirect");
 
   const handleUserSignup = (role: "user" | "admin") => {
+    setSignupError(null);
+    if (!termsAccepted) {
+      setSignupError("You must agree to the Terms & Conditions and Privacy Policy to create an account.");
+      return;
+    }
+
     setIsLoading(true);
     localStorage.setItem("userRole", role);
+    localStorage.setItem("termsAccepted", "true");
+    localStorage.setItem("termsAcceptedAt", new Date().toISOString());
+    localStorage.setItem("emailOptIn", emailOptIn ? "true" : "false");
+    localStorage.setItem("emailOptInAt", new Date().toISOString());
+
+    // Set default sub-preferences
+    localStorage.setItem("emailBookings", "true");
+    localStorage.setItem("emailPromos", emailOptIn ? "true" : "false");
+    localStorage.setItem("emailNewsletter", emailOptIn ? "true" : "false");
+
     if (role === "user") {
       localStorage.setItem("hasUserListing", "false");
     }
@@ -222,6 +241,62 @@ function SignupFormContent() {
                       {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
                   </div>
+                </div>
+
+                {signupError && (
+                  <div className="p-3 bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-800 rounded-xl text-red-600 dark:text-red-400 text-xs font-semibold">
+                    {signupError}
+                  </div>
+                )}
+
+                {/* Checkboxes Section */}
+                <div className="space-y-3 pt-1">
+                  {/* Terms & Conditions Checkbox (Required) */}
+                  <label className="flex items-start gap-3 cursor-pointer select-none group">
+                    <div className="relative flex items-center justify-center shrink-0 mt-0.5">
+                      <input
+                        type="checkbox"
+                        checked={termsAccepted}
+                        onChange={(e) => {
+                          setTermsAccepted(e.target.checked);
+                          if (e.target.checked) setSignupError(null);
+                        }}
+                        className="peer appearance-none w-4 h-4 border-2 border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-900 checked:bg-[#4c55a4] checked:border-[#4c55a4] transition-colors"
+                      />
+                      <svg className="absolute w-2.5 h-2.5 text-white pointer-events-none opacity-0 peer-checked:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <span className="text-xs text-zinc-600 dark:text-zinc-400 font-medium leading-tight">
+                      I agree to the{" "}
+                      <Link href="/terms" target="_blank" className="font-bold text-[#4c55a4] dark:text-indigo-400 hover:underline">
+                        Terms & Conditions
+                      </Link>{" "}
+                      and{" "}
+                      <Link href="/privacy" target="_blank" className="font-blank text-[#4c55a4] dark:text-indigo-400 hover:underline">
+                        Privacy Policy
+                      </Link>
+                      <span className="text-red-500 ml-0.5">*</span>
+                    </span>
+                  </label>
+
+                  {/* Email Opt-In Checkbox (Optional) */}
+                  <label className="flex items-start gap-3 cursor-pointer select-none group">
+                    <div className="relative flex items-center justify-center shrink-0 mt-0.5">
+                      <input
+                        type="checkbox"
+                        checked={emailOptIn}
+                        onChange={(e) => setEmailOptIn(e.target.checked)}
+                        className="peer appearance-none w-4 h-4 border-2 border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-900 checked:bg-[#4c55a4] checked:border-[#4c55a4] transition-colors"
+                      />
+                      <svg className="absolute w-2.5 h-2.5 text-white pointer-events-none opacity-0 peer-checked:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <span className="text-xs text-zinc-600 dark:text-zinc-400 font-medium leading-tight">
+                      I want to receive email updates, promotional offers, and weekend rental deals.
+                    </span>
+                  </label>
                 </div>
 
                 <button
