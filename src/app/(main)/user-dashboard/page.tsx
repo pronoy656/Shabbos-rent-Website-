@@ -171,6 +171,46 @@ const mockRenterBookings = [
   },
 ];
 
+// Call Log Data Type
+type CallLog = {
+  id: string;
+  callerNumber: string;
+  callerName: string;
+  date: string;
+  time: string;
+};
+
+const mockCallLogs: CallLog[] = [
+  {
+    id: "call-1",
+    callerNumber: "+972 50-***-4321",
+    callerName: "Yosef Levi",
+    date: "Oct 24, 2024",
+    time: "14:30",
+  },
+  {
+    id: "call-2",
+    callerNumber: "+1 (347) ***-9876",
+    callerName: "Miriam Schwartz",
+    date: "Oct 24, 2024",
+    time: "09:15",
+  },
+  {
+    id: "call-3",
+    callerNumber: "+972 52-***-5678",
+    callerName: "Avi Cohen",
+    date: "Oct 23, 2024",
+    time: "18:45",
+  },
+  {
+    id: "call-4",
+    callerNumber: "+44 20-****-1234",
+    callerName: "Rachel Klein",
+    date: "Oct 22, 2024",
+    time: "11:20",
+  },
+];
+
 export default function UserDashboardPage() {
   const { t } = useLanguage();
   const router = useRouter();
@@ -182,6 +222,7 @@ export default function UserDashboardPage() {
   const [manageSubTab, setManageSubTab] = useState("my_listing");
   const [settingsSubTab, setSettingsSubTab] = useState("profile");
   const [isApartmentVisible, setIsApartmentVisible] = useState(true);
+  const [acceptRequestsWhenUnavailable, setAcceptRequestsWhenUnavailable] = useState(false);
   const [selectedShabbatot, setSelectedShabbatot] = useState<string[]>([]);
   const [createdListingDate, setCreatedListingDate] = useState("");
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
@@ -713,6 +754,12 @@ export default function UserDashboardPage() {
                       >
                         {t("dashboard.manage.tabs.calendar")}
                       </button>
+                      <button 
+                        onClick={() => setManageSubTab("call_log")}
+                        className={`px-6 py-2.5 rounded-xl font-bold text-sm transition-all duration-300 ${manageSubTab === "call_log" ? "bg-white dark:bg-zinc-900 text-[#4c55a4] dark:text-indigo-400 shadow-sm" : "text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 hover:bg-zinc-200/50 dark:hover:bg-zinc-800"}`}
+                      >
+                        Call Log
+                      </button>
                     </div>
 
                     <div className="animate-in fade-in zoom-in-95 duration-300 w-full">
@@ -731,6 +778,9 @@ export default function UserDashboardPage() {
                             <div>
                               <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4 mb-2">
                                 <div>
+                                  <div className="inline-flex items-center gap-1.5 px-2.5 py-1 mb-2 bg-[#4c55a4]/10 dark:bg-indigo-900/30 text-[#4c55a4] dark:text-indigo-400 rounded-lg text-xs font-black tracking-widest uppercase">
+                                    <span className="opacity-60">Code:</span> 456
+                                  </div>
                                   <h3 className="text-xl md:text-2xl font-extrabold text-zinc-900 dark:text-white mb-1">Bright luxury apartment in city center</h3>
                                   <p className="text-zinc-500 dark:text-zinc-400 font-medium text-sm md:text-base">Beautiful 4-bedroom apartment with a panoramic view.</p>
                                 </div>
@@ -1204,6 +1254,51 @@ export default function UserDashboardPage() {
                               >
                                 Save Availability
                               </button>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {manageSubTab === "call_log" && (
+                        <div className="flex flex-col gap-6">
+                          <div className="bg-white dark:bg-zinc-900 rounded-3xl border border-zinc-200 dark:border-zinc-800 p-8 shadow-sm w-full">
+                            <div className="mb-8 flex items-start gap-4">
+                              <Phone className="w-7 h-7 text-[#4c55a4] shrink-0 mt-0.5" />
+                              <div>
+                                <h3 className="text-xl font-extrabold text-zinc-900 dark:text-white mb-1">Call Log</h3>
+                                <p className="text-[15px] text-zinc-500">History of hotline calls regarding your property.</p>
+                              </div>
+                            </div>
+                            
+                            <div className="space-y-4">
+                              {mockCallLogs.map((log) => (
+                                <div key={log.id} className="flex items-center justify-between p-4 bg-zinc-50 dark:bg-zinc-800/50 rounded-2xl border border-zinc-100 dark:border-zinc-700/50">
+                                  <div className="flex items-center gap-4">
+                                    <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 bg-[#4c55a4]/10 text-[#4c55a4] dark:bg-indigo-900/30 dark:text-indigo-400">
+                                      <Phone className="w-5 h-5" />
+                                    </div>
+                                    <div>
+                                      <p className="font-bold text-zinc-900 dark:text-white text-base">{log.callerName}</p>
+                                      <p className="text-sm text-zinc-500 font-medium mt-0.5">{log.callerNumber}</p>
+                                    </div>
+                                  </div>
+                                  <div className="text-right">
+                                    <div className="flex items-center gap-2 text-sm font-bold text-zinc-700 dark:text-zinc-300">
+                                      <CalendarDays className="w-4 h-4 text-zinc-400" /> {log.date}
+                                    </div>
+                                    <div className="flex items-center justify-end gap-1.5 text-xs font-medium text-zinc-500 mt-1">
+                                      <Clock className="w-3.5 h-3.5" /> {log.time}
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                              
+                              {mockCallLogs.length === 0 && (
+                                <div className="text-center py-10">
+                                  <Phone className="w-10 h-10 text-zinc-300 mx-auto mb-3" />
+                                  <p className="text-zinc-500">No calls recorded yet.</p>
+                                </div>
+                              )}
                             </div>
                           </div>
                         </div>
@@ -1728,33 +1823,50 @@ export default function UserDashboardPage() {
                         </div>
 
                         {/* Visibility Toggle Card */}
-                        <div className="bg-white dark:bg-zinc-900 rounded-3xl border border-zinc-200 dark:border-zinc-800 p-6 flex items-start justify-between shadow-sm w-full">
-                          <div className="flex items-start gap-4">
-                            <div className="w-12 h-12 rounded-full bg-purple-50 dark:bg-purple-900/20 flex items-center justify-center shrink-0">
-                              <Eye className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+                        <div className="bg-white dark:bg-zinc-900 rounded-3xl border border-zinc-200 dark:border-zinc-800 p-6 flex flex-col shadow-sm w-full gap-4">
+                          <div className="flex items-start justify-between w-full">
+                            <div className="flex items-start gap-4">
+                              <div className="w-12 h-12 rounded-full bg-purple-50 dark:bg-purple-900/20 flex items-center justify-center shrink-0">
+                                <Eye className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+                              </div>
+                              <div>
+                                <h3 className="text-xl font-extrabold text-zinc-900 dark:text-white mb-1">
+                                  {t("dashboard.manage.apartment_status")} {isApartmentVisible ? t("dashboard.manage.visible") : t("dashboard.manage.hidden")}
+                                </h3>
+                                <p className="text-[15px] text-zinc-500 max-w-xl leading-relaxed">
+                                  {t("dashboard.manage.hide_desc")}
+                                </p>
+                              </div>
                             </div>
-                            <div>
-                              <h3 className="text-xl font-extrabold text-zinc-900 dark:text-white mb-1">
-                                {t("dashboard.manage.apartment_status")} {isApartmentVisible ? t("dashboard.manage.visible") : t("dashboard.manage.hidden")}
-                              </h3>
-                              <p className="text-[15px] text-zinc-500 max-w-xl leading-relaxed">
-                                {t("dashboard.manage.hide_desc")}
-                              </p>
+                            <div className="flex items-center gap-4 shrink-0 mt-2">
+                              <span className="text-[15px] font-bold text-zinc-600 dark:text-zinc-400">{isApartmentVisible ? t("dashboard.manage.active") : t("dashboard.manage.hidden")}</span>
+                              <button 
+                                onClick={() => {
+                                  const newVal = !isApartmentVisible;
+                                  setIsApartmentVisible(newVal);
+                                  localStorage.setItem("isApartmentVisible", newVal.toString());
+                                }}
+                                className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors duration-300 focus:outline-none ${isApartmentVisible ? 'bg-[#4c55a4]' : 'bg-zinc-300 dark:bg-zinc-700'}`}
+                              >
+                                <span className={`inline-block h-6 w-6 transform rounded-full bg-white transition-transform duration-300 shadow-sm ${isApartmentVisible ? 'translate-x-7' : 'translate-x-1'}`} />
+                              </button>
                             </div>
                           </div>
-                          <div className="flex items-center gap-4 shrink-0 mt-2">
-                            <span className="text-[15px] font-bold text-zinc-600 dark:text-zinc-400">{isApartmentVisible ? t("dashboard.manage.active") : t("dashboard.manage.hidden")}</span>
-                            <button 
-                              onClick={() => {
-                                const newVal = !isApartmentVisible;
-                                setIsApartmentVisible(newVal);
-                                localStorage.setItem("isApartmentVisible", newVal.toString());
-                              }}
-                              className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors duration-300 focus:outline-none ${isApartmentVisible ? 'bg-[#4c55a4]' : 'bg-zinc-300 dark:bg-zinc-700'}`}
-                            >
-                              <span className={`inline-block h-6 w-6 transform rounded-full bg-white transition-transform duration-300 shadow-sm ${isApartmentVisible ? 'translate-x-7' : 'translate-x-1'}`} />
-                            </button>
-                          </div>
+
+                          {!isApartmentVisible && (
+                            <div className="flex items-center justify-between w-full pt-4 border-t border-zinc-100 dark:border-zinc-800">
+                              <div>
+                                <p className="font-bold text-zinc-900 dark:text-white">Accept Requests When Unavailable</p>
+                                <p className="text-sm text-zinc-500">Allow renters to send requests even when hidden/unavailable</p>
+                              </div>
+                              <button 
+                                onClick={() => setAcceptRequestsWhenUnavailable(!acceptRequestsWhenUnavailable)}
+                                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#4c55a4] ${acceptRequestsWhenUnavailable ? 'bg-[#4c55a4]' : 'bg-zinc-200 dark:bg-zinc-700'}`}
+                              >
+                                <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${acceptRequestsWhenUnavailable ? 'translate-x-6' : 'translate-x-1'}`} />
+                              </button>
+                            </div>
+                          )}
                         </div>
 
                         {/* Merged Bookings Section */}

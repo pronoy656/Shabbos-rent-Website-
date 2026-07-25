@@ -14,6 +14,7 @@ export interface ApartmentData {
   isSwapAvailable: boolean;
   verified: boolean;
   isAvailable?: boolean;
+  acceptRequestsWhenUnavailable?: boolean;
   amenities?: string[];
   lat?: number;
   lng?: number;

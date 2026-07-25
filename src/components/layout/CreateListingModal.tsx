@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { 
   Info, MapPin, Phone, Building, Sparkles, Image as ImageIcon, 
-  UploadCloud, AlignLeft, Check, Plus, X, Search, DollarSign, ChevronDown, PartyPopper, Star
+  UploadCloud, AlignLeft, Check, Plus, X, Search, DollarSign, ChevronDown, PartyPopper, Star, Clock
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 
@@ -20,6 +20,8 @@ export default function CreateListingModal({ isOpen, onClose, onSave, isEditMode
   const [amenities, setAmenities] = useState<string[]>([]);
   const [whatsappEnabled, setWhatsappEnabled] = useState(false);
   const [emailEnabled, setEmailEnabled] = useState(false);
+  const [isAvailable, setIsAvailable] = useState(true);
+  const [acceptRequestsWhenUnavailable, setAcceptRequestsWhenUnavailable] = useState(false);
   const [coverImagePreview, setCoverImagePreview] = useState<string | null>(null);
   const [galleryPreviews, setGalleryPreviews] = useState<string[]>([]);
   const [modalStep, setModalStep] = useState<"form" | "success" | "payment" | "approval">("form");
@@ -40,6 +42,8 @@ export default function CreateListingModal({ isOpen, onClose, onSave, isEditMode
       setAmenities([]);
       setWhatsappEnabled(false);
       setEmailEnabled(false);
+      setIsAvailable(true);
+      setAcceptRequestsWhenUnavailable(false);
       setCoverImagePreview(null);
       setGalleryPreviews([]);
     }
@@ -534,6 +538,49 @@ export default function CreateListingModal({ isOpen, onClose, onSave, isEditMode
                       <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${emailEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
                     </button>
                   </div>
+                </div>
+              </div>
+
+              {/* Availability Settings */}
+              <div className="bg-white dark:bg-zinc-900 rounded-3xl border border-zinc-200 dark:border-zinc-800 overflow-hidden shadow-sm shadow-zinc-200/50 dark:shadow-none">
+                <div className="px-8 py-5 border-b border-zinc-100 dark:border-zinc-800/80 flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-rose-500/10 flex items-center justify-center">
+                    <Clock className="w-5 h-5 text-rose-500" />
+                  </div>
+                  <h2 className="text-xl font-bold text-zinc-900 dark:text-white">Availability Settings</h2>
+                </div>
+                <div className="p-8 space-y-6">
+                  {/* Mark as Available/Unavailable */}
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-bold text-zinc-900 dark:text-white">Listing Availability</p>
+                      <p className="text-sm text-zinc-500">Is your apartment currently available for rent?</p>
+                    </div>
+                    <button 
+                      type="button" 
+                      onClick={() => setIsAvailable(!isAvailable)}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#4c55a4] ${isAvailable ? 'bg-[#4c55a4]' : 'bg-zinc-200 dark:bg-zinc-700'}`}
+                    >
+                      <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${isAvailable ? 'translate-x-6' : 'translate-x-1'}`} />
+                    </button>
+                  </div>
+
+                  {/* Accept Requests when Unavailable */}
+                  {!isAvailable && (
+                    <div className="flex items-center justify-between pt-4 border-t border-zinc-100 dark:border-zinc-800">
+                      <div>
+                        <p className="font-bold text-zinc-900 dark:text-white">Accept Requests When Unavailable</p>
+                        <p className="text-sm text-zinc-500">Allow renters to send requests even when unavailable</p>
+                      </div>
+                      <button 
+                        type="button" 
+                        onClick={() => setAcceptRequestsWhenUnavailable(!acceptRequestsWhenUnavailable)}
+                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#4c55a4] ${acceptRequestsWhenUnavailable ? 'bg-[#4c55a4]' : 'bg-zinc-200 dark:bg-zinc-700'}`}
+                      >
+                        <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${acceptRequestsWhenUnavailable ? 'translate-x-6' : 'translate-x-1'}`} />
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
 

@@ -119,9 +119,14 @@ export default function ApartmentCard({
                 <span>{walkingMinutes} min walk</span>
               </div>
             )}
-            {apartment.isAvailable === false && (
+            {apartment.isAvailable === false && !apartment.acceptRequestsWhenUnavailable && (
               <div className="px-2.5 py-1 bg-red-600/90 backdrop-blur-sm rounded-md shadow-sm flex items-center gap-1.5 text-xs font-bold text-white">
                 Unavailable
+              </div>
+            )}
+            {apartment.isAvailable === false && apartment.acceptRequestsWhenUnavailable && (
+              <div className="px-2.5 py-1 bg-amber-500/90 backdrop-blur-sm rounded-md shadow-sm flex items-center gap-1.5 text-xs font-bold text-white">
+                Currently Unavailable
               </div>
             )}
           </div>

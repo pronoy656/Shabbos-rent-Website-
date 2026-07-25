@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { User, Menu, Settings, LogOut, LayoutDashboard, ChevronDown, Bell, Globe } from "lucide-react";
+import { User, Menu, Settings, LogOut, LayoutDashboard, ChevronDown, Bell, Globe, Building } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import AddApartmentModal from "./AddApartmentModal";
 import { useLanguage } from "@/context/LanguageContext";
@@ -11,6 +11,7 @@ export default function MainNavbar() {
   const pathname = usePathname();
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [userRole, setUserRole] = useState<string | null>(null);
+  const [isOwner, setIsOwner] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isNotifDropdownOpen, setIsNotifDropdownOpen] = useState(false);
   const [isLangDropdownOpen, setIsLangDropdownOpen] = useState(false);
@@ -21,6 +22,7 @@ export default function MainNavbar() {
 
   useEffect(() => {
     setUserRole(localStorage.getItem("userRole"));
+    setIsOwner(localStorage.getItem("hasUserListing") === "true");
 
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -148,6 +150,18 @@ export default function MainNavbar() {
             )}
             {userRole ? (
               <div className="flex items-center gap-4">
+                {isOwner && pathname !== "/user-dashboard" && (
+                  <Link 
+                    href="/user-dashboard"
+                    className="relative hidden md:inline-flex h-10 overflow-hidden rounded-xl p-[2px] focus:outline-none group"
+                  >
+                    <span className="absolute inset-[-1000%] animate-[spin_3s_linear_infinite] bg-[conic-gradient(from_90deg_at_50%_50%,#e4e4e7_0%,#4c55a4_33%,#8b5cf6_66%,#e4e4e7_100%)] dark:bg-[conic-gradient(from_90deg_at_50%_50%,#27272a_0%,#818cf8_33%,#a78bfa_66%,#27272a_100%)] opacity-70 group-hover:opacity-100 transition-opacity duration-300" />
+                    <span className="inline-flex h-full w-full cursor-pointer items-center justify-center gap-2 rounded-[10px] bg-white dark:bg-zinc-900 px-4 py-2 text-sm font-bold text-[#4c55a4] dark:text-indigo-400 hover:bg-zinc-50 dark:hover:bg-zinc-800 backdrop-blur-3xl transition-all shadow-sm">
+                      <Building className="w-4 h-4" />
+                      Manage My Apartment
+                    </span>
+                  </Link>
+                )}
                 {/* Notification Bell */}
                 <div className="relative" ref={notifDropdownRef}>
                   <button

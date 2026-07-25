@@ -46,6 +46,7 @@ export const mockBaseApartments: ApartmentData[] = [
     isSwapAvailable: false,
     verified: true,
     isAvailable: false,
+    acceptRequestsWhenUnavailable: true,
     amenities: ["WiFi", "Air Conditioning", "Kosher Kitchen", "Shabbos Elevator"],
   },
   {
@@ -92,6 +93,7 @@ export const mockBaseApartments: ApartmentData[] = [
     isSwapAvailable: false,
     verified: true,
     isAvailable: false,
+    acceptRequestsWhenUnavailable: false,
     amenities: ["WiFi", "Air Conditioning", "Washing Machine"],
   },
   {

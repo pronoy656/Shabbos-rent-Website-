@@ -353,7 +353,9 @@ export default function SearchWidget({ onSearch }: SearchWidgetProps) {
             baths: 1 + (i % 2),
             guests: 4 + (i % 5) * 2,
             isSwapAvailable: activeTab === "swap",
-            verified: i % 2 === 0
+            verified: i % 2 === 0,
+            isAvailable: i !== 1 && i !== 3, // Item 1 and 3 will be unavailable
+            acceptRequestsWhenUnavailable: i === 1 // Item 1 accepts requests, Item 3 does not
           };
         });
 
@@ -412,8 +414,8 @@ export default function SearchWidget({ onSearch }: SearchWidgetProps) {
                 let walkingMins: number | undefined = undefined;
                 if (destinationAddress.trim()) {
                   const destCoords = getCoordinatesForAddress(destinationAddress);
-                  const aptLat = apt.lat ?? 31.7725;
-                  const aptLng = apt.lng ?? 35.2136;
+                  const aptLat = (apt as any).lat ?? 31.7725;
+                  const aptLng = (apt as any).lng ?? 35.2136;
                   walkingMins = calculateWalkingMinutes(destCoords.lat, destCoords.lng, aptLat, aptLng);
                 }
                 return (

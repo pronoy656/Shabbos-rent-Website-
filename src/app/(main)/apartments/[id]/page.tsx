@@ -236,7 +236,8 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
   // Dynamic Logic: Determine availability based on ID and apartment metadata
   const baseId = id ? id.split("-")[0] : "1";
   const targetApartment = mockBaseApartments.find((a) => a.id === id || a.id === baseId) || similarApartments.find((a) => a.id === id);
-  const isApartmentAvailable = targetApartment ? targetApartment.isAvailable !== false : (id !== "2" && id !== "4" && id !== "6");
+  const isApartmentAvailable = targetApartment ? targetApartment.isAvailable !== false : (id !== "2" && id !== "4" && id !== "6" && id !== "rent-demo-1" && id !== "rent-demo-3" && id !== "swap-demo-1" && id !== "swap-demo-3");
+  const isAcceptingRequests = targetApartment ? targetApartment.acceptRequestsWhenUnavailable : (id === "2" || id === "rent-demo-1" || id === "swap-demo-1");
   const availableDates = isApartmentAvailable ? mockAvailableDates : [];
 
   // Mock Form Submit
@@ -459,7 +460,9 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
                    <p className="text-zinc-600 dark:text-zinc-400">
                      {isApartmentAvailable 
                        ? t("apartment_details.get_in_touch") 
-                       : "You can still send an offer or special request to the owner for future stays."}
+                       : isAcceptingRequests 
+                         ? "This property is currently unavailable, but you can still send a request." 
+                         : "This property is currently unavailable."}
                    </p>
                 </div>
                 {isApartmentAvailable ? (
@@ -1204,19 +1207,23 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
             </h3>
 
             <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-6 leading-relaxed">
-              This apartment is not available for the upcoming week. However, you can send an offer or special request to the owner.
+              {isAcceptingRequests 
+                ? "This property is currently unavailable, but you can still send a request. The owner will contact you if it becomes available for your selected dates."
+                : "This property is currently unavailable and the owner is not accepting requests at this time."}
             </p>
 
             <div className="space-y-3">
-              <button
-                onClick={() => {
-                  setIsUnavailableModalOpen(false);
-                  setIsModalOpen(true);
-                }}
-                className="w-full py-3.5 bg-[#4c55a4] hover:bg-[#3d4484] text-white font-bold rounded-xl text-sm transition-all shadow-md shadow-[#4c55a4]/20 flex items-center justify-center gap-2"
-              >
-                Send Offer / Request
-              </button>
+              {isAcceptingRequests && (
+                <button
+                  onClick={() => {
+                    setIsUnavailableModalOpen(false);
+                    setIsModalOpen(true);
+                  }}
+                  className="w-full py-3.5 bg-[#4c55a4] hover:bg-[#3d4484] text-white font-bold rounded-xl text-sm transition-all shadow-md shadow-[#4c55a4]/20 flex items-center justify-center gap-2"
+                >
+                  Send Offer / Request
+                </button>
+              )}
 
               <Link
                 href="/search"

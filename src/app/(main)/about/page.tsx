@@ -1,5 +1,7 @@
 "use client";
 
+import { useState, useEffect } from "react";
+
 import { Phone, ShieldCheck, Lightbulb, Users, Globe, Clock, Mail, Headset, ArrowRight, Quote, Truck, Package, Star } from "lucide-react";
 import Link from "next/link";
 import MainNavbar from "@/components/layout/MainNavbar";
