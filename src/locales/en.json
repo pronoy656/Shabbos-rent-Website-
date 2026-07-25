@@ -392,8 +392,8 @@
       "tabs": {
         "my_listing": "My Listing",
         "interested": "Interested Request",
-        "report_renter": "Report Renter",
-        "report_history": "Report History",
+        "report_renter": "Report Rented",
+        "report_history": "Rental History",
         "calendar": "Apartment Calendar"
       },
       "active": "Active",

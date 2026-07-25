@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { PlusCircle, Home, LogOut, Settings, Building, RefreshCw, LayoutDashboard, MapPin, BedDouble, Bath, Users, Info, AlignLeft, CalendarCheck, Eye, Check, User, Heart, Lock, CalendarDays, Edit3, Clock, Phone, Gift, Copy, CheckCircle2, UserPlus, MoreHorizontal, Wallet, Banknote, Lightbulb, Bell, ShieldCheck, X, MessageCircle, Bookmark, Mail, Star } from "lucide-react";
+import { PlusCircle, Home, LogOut, Settings, Building, RefreshCw, LayoutDashboard, MapPin, BedDouble, Bath, Users, Info, AlignLeft, CalendarCheck, Eye, Check, User, Heart, Lock, CalendarDays, Edit3, Clock, Phone, Gift, Copy, CheckCircle2, UserPlus, MoreHorizontal, Wallet, Banknote, Lightbulb, Bell, ShieldCheck, X, MessageCircle, Bookmark, Mail, Star, AlertCircle, CreditCard, Receipt, ChevronRight, DollarSign } from "lucide-react";
 import MainNavbar from "@/components/layout/MainNavbar";
 import CreateListingModal from "@/components/layout/CreateListingModal";
 import ChangePasswordModal from "@/components/settings/ChangePasswordModal";
@@ -11,6 +11,17 @@ import EditProfileModal from "@/components/settings/EditProfileModal";
 import ApartmentCard from "@/components/search/ApartmentCard";
 import { ApartmentData } from "@/types";
 import { useLanguage } from "@/context/LanguageContext";
+
+// Report Rented Data Type
+type ReportedRental = {
+  id: string;
+  week: string;       // e.g. "July 31"
+  weekId: string;     // shabbat id
+  parshat: string;    // e.g. "Parshat Eikev"
+  amount: number;     // always 50
+  status: "Paid" | "Pending";
+  reportedAt: string;
+};
 
 // Base Mock Data for all apartments
 const baseApartments: ApartmentData[] = [
@@ -198,6 +209,20 @@ export default function UserDashboardPage() {
   const [reviewTitleInput, setReviewTitleInput] = useState("");
   const [reviewCommentInput, setReviewCommentInput] = useState("");
 
+  // Report Rented State (O4 — P1)
+  const [reportedRentals, setReportedRentals] = useState<ReportedRental[]>([]);
+  const [isReportRentedModalOpen, setIsReportRentedModalOpen] = useState(false);
+  const [selectedRentedWeeks, setSelectedRentedWeeks] = useState<string[]>([]);
+  const [reportRentedStep, setReportRentedStep] = useState<1 | 2>(1);
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [paymentCardNumber, setPaymentCardNumber] = useState("");
+  const [paymentExpiry, setPaymentExpiry] = useState("");
+  const [paymentCVV, setPaymentCVV] = useState("");
+  const [isPaymentProcessing, setIsPaymentProcessing] = useState(false);
+  const [paymentSuccess, setPaymentSuccess] = useState(false);
+  const [reportRentedSuccess, setReportRentedSuccess] = useState(false);
+  const pendingAmount = reportedRentals.filter(r => r.status === "Pending").reduce((sum, r) => sum + r.amount, 0);
+
   const handleOpenReviewModal = (booking: any) => {
     setSelectedBookingForReview(booking);
     setReviewRating(0);
@@ -266,6 +291,82 @@ export default function UserDashboardPage() {
       }
     }
   }, []);
+
+  // Load reportedRentals from localStorage on mount
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("reported_rentals");
+      if (saved) {
+        try { setReportedRentals(JSON.parse(saved)); } catch (e) {}
+      }
+    }
+  }, []);
+
+  // Handler: open Report Rented modal
+  const handleOpenReportRented = () => {
+    setSelectedRentedWeeks([]);
+    setReportRentedStep(1);
+    setReportRentedSuccess(false);
+    setIsReportRentedModalOpen(true);
+  };
+
+  // Handler: confirm rental report
+  const handleConfirmReportRented = () => {
+    const alreadyReportedIds = reportedRentals.map(r => r.weekId);
+    const newRentals: ReportedRental[] = selectedRentedWeeks
+      .filter(wId => !alreadyReportedIds.includes(wId))
+      .map(wId => {
+        const shabbat = SHABBATOT.find(s => s.id === wId);
+        return {
+          id: `rr-${Date.now()}-${wId}`,
+          week: shabbat?.date || wId,
+          weekId: wId,
+          parshat: shabbat?.name || wId,
+          amount: 50,
+          status: "Pending" as const,
+          reportedAt: new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
+        };
+      });
+    const updated = [...newRentals, ...reportedRentals];
+    setReportedRentals(updated);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("reported_rentals", JSON.stringify(updated));
+    }
+    setIsReportRentedModalOpen(false);
+    setReportRentedSuccess(true);
+    setTimeout(() => setReportRentedSuccess(false), 4000);
+  };
+
+  // Handler: open payment modal
+  const handleOpenPayment = () => {
+    setPaymentSuccess(false);
+    setIsPaymentProcessing(false);
+    setIsPaymentModalOpen(true);
+  };
+
+  // Handler: pay now (simulated)
+  const handlePayNow = (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsPaymentProcessing(true);
+    setTimeout(() => {
+      const updated = reportedRentals.map(r =>
+        r.status === "Pending" ? { ...r, status: "Paid" as const } : r
+      );
+      setReportedRentals(updated);
+      if (typeof window !== "undefined") {
+        localStorage.setItem("reported_rentals", JSON.stringify(updated));
+      }
+      setIsPaymentProcessing(false);
+      setPaymentSuccess(true);
+      setTimeout(() => {
+        setPaymentSuccess(false);
+        setIsPaymentModalOpen(false);
+        setPaymentCardNumber("");
+        setPaymentExpiry("");
+        setPaymentCVV("");
+      }, 2500);
+    }, 1800);
+  };
 
   const handleSaveEmailPreferences = (optIn: boolean, bookings: boolean, promos: boolean, newsletter: boolean) => {
     setEmailOptInState(optIn);
@@ -398,6 +499,7 @@ export default function UserDashboardPage() {
   }
 
   return (
+    <>
     <div className="h-screen bg-zinc-50 dark:bg-zinc-950 flex flex-col font-sans">
       <MainNavbar />
       
@@ -743,25 +845,281 @@ export default function UserDashboardPage() {
                       )}
                       
                       {manageSubTab === "report_renter" && (
-                        <div className="bg-white dark:bg-zinc-900 rounded-3xl border border-zinc-200 dark:border-zinc-800 p-12 shadow-sm flex flex-col items-center justify-center text-center w-full">
-                          <div className="w-20 h-20 bg-red-50 dark:bg-red-900/20 rounded-full flex items-center justify-center mb-6">
-                            <Info className="w-10 h-10 text-red-500" />
+                        <div className="flex flex-col gap-6 w-full">
+
+                          {/* Red Debt Bar */}
+                          {pendingAmount > 0 && (
+                            <button
+                              onClick={handleOpenPayment}
+                              className="w-full flex items-center gap-3 px-6 py-4 bg-red-600 hover:bg-red-700 text-white rounded-2xl font-bold text-sm transition-all shadow-lg shadow-red-600/30 animate-pulse"
+                            >
+                              <AlertCircle className="w-5 h-5 shrink-0" />
+                              <span className="flex-1 text-left">
+                                You owe ₪{pendingAmount} for reported rentals — Click here to pay
+                              </span>
+                              <ChevronRight className="w-5 h-5 shrink-0" />
+                            </button>
+                          )}
+
+                          {/* Success Toast */}
+                          {reportRentedSuccess && (
+                            <div className="w-full flex items-center gap-3 px-6 py-4 bg-emerald-600 text-white rounded-2xl font-bold text-sm shadow-lg">
+                              <CheckCircle2 className="w-5 h-5 shrink-0" />
+                              <span>Rental reported successfully! Platform fee of ₪{selectedRentedWeeks.length * 50 || 50} is now due.</span>
+                            </div>
+                          )}
+
+                          {/* Main Question Card */}
+                          <div className="bg-white dark:bg-zinc-900 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-sm w-full overflow-hidden">
+                            {/* Top Banner */}
+                            <div className="px-8 pt-8 pb-6 border-b border-zinc-100 dark:border-zinc-800">
+                              <div className="flex items-start gap-4">
+                                <div className="w-12 h-12 bg-[#4c55a4]/10 dark:bg-[#4c55a4]/20 rounded-2xl flex items-center justify-center shrink-0 mt-0.5">
+                                  <Receipt className="w-6 h-6 text-[#4c55a4]" />
+                                </div>
+                                <div>
+                                  <h3 className="text-xl font-extrabold text-zinc-900 dark:text-white leading-tight mb-1">
+                                    Did you rent out your apartment for a Shabbat weekend?
+                                  </h3>
+                                  <p className="text-zinc-500 dark:text-zinc-400 text-sm leading-relaxed">
+                                    If your apartment was rented for any specific Shabbat week, please report that week here.
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Report a Rental Section */}
+                            <div className="px-8 py-6">
+                              <div className="mb-5">
+                                <h4 className="text-base font-extrabold text-zinc-900 dark:text-white mb-1">Report a Rental</h4>
+                                <p className="text-sm text-zinc-500 dark:text-zinc-400 leading-relaxed">
+                                  Select the Shabbat week your apartment was rented and submit a report.
+                                  A{" "}
+                                  <span className="font-bold text-[#4c55a4] dark:text-indigo-400">₪50 platform fee</span> applies per reported rental.
+                                </p>
+                              </div>
+
+                              <button
+                                onClick={handleOpenReportRented}
+                                id="report-rented-btn"
+                                className="w-full sm:w-auto px-8 py-4 bg-[#4c55a4] hover:bg-[#3d4484] text-white rounded-2xl font-extrabold text-base transition-all shadow-lg shadow-[#4c55a4]/25 hover:shadow-[#4c55a4]/40 hover:scale-[1.01] active:scale-[0.98] flex items-center justify-center gap-2.5"
+                              >
+                                <Receipt className="w-5 h-5" />
+                                Report Rented
+                              </button>
+                            </div>
+
+                            {/* How It Works — Step Flow */}
+                            <div className="mx-8 mb-8 p-4 bg-zinc-50 dark:bg-zinc-800/40 rounded-2xl border border-zinc-100 dark:border-zinc-800">
+                              <p className="text-xs font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider mb-3">How it works</p>
+                              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-2 text-xs font-semibold">
+                                <div className="flex items-center gap-2 text-zinc-700 dark:text-zinc-300">
+                                  <div className="w-5 h-5 rounded-full bg-[#4c55a4] text-white flex items-center justify-center font-black text-[10px] shrink-0">1</div>
+                                  <span>Was your apartment rented?</span>
+                                </div>
+                                <ChevronRight className="w-3.5 h-3.5 text-zinc-400 hidden sm:block" />
+                                <div className="flex items-center gap-2 text-zinc-700 dark:text-zinc-300">
+                                  <div className="w-5 h-5 rounded-full bg-[#4c55a4] text-white flex items-center justify-center font-black text-[10px] shrink-0">2</div>
+                                  <span>Select that Shabbat week</span>
+                                </div>
+                                <ChevronRight className="w-3.5 h-3.5 text-zinc-400 hidden sm:block" />
+                                <div className="flex items-center gap-2 text-zinc-700 dark:text-zinc-300">
+                                  <div className="w-5 h-5 rounded-full bg-[#4c55a4] text-white flex items-center justify-center font-black text-[10px] shrink-0">3</div>
+                                  <span>Click Report Rented</span>
+                                </div>
+                                <ChevronRight className="w-3.5 h-3.5 text-zinc-400 hidden sm:block" />
+                                <div className="flex items-center gap-2 text-zinc-700 dark:text-zinc-300">
+                                  <div className="w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center font-black text-[10px] shrink-0">4</div>
+                                  <span>₪50 fee becomes pending</span>
+                                </div>
+                                <ChevronRight className="w-3.5 h-3.5 text-zinc-400 hidden sm:block" />
+                                <div className="flex items-center gap-2 text-zinc-700 dark:text-zinc-300">
+                                  <div className="w-5 h-5 rounded-full bg-emerald-500 text-white flex items-center justify-center font-black text-[10px] shrink-0">5</div>
+                                  <span>Complete your payment</span>
+                                </div>
+                              </div>
+                            </div>
                           </div>
-                          <h3 className="text-2xl font-bold text-zinc-900 dark:text-white mb-3">{t("dashboard.manage.report_renter_title")}</h3>
-                          <p className="text-zinc-500 max-w-md text-lg mb-8">{t("dashboard.manage.report_renter_desc")}</p>
-                          <button className="px-8 py-3 bg-red-50 hover:bg-red-100 text-red-600 dark:bg-red-900/20 dark:hover:bg-red-900/40 dark:text-red-400 rounded-xl font-bold transition-colors shadow-sm text-lg">
-                            {t("dashboard.manage.file_report")}
-                          </button>
+
+                          {/* Summary Info Cards */}
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            {/* Reported Rentals */}
+                            <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 p-5 shadow-sm">
+                              <div className="flex items-center gap-3 mb-3">
+                                <div className="w-9 h-9 bg-[#4c55a4]/10 dark:bg-[#4c55a4]/20 rounded-xl flex items-center justify-center">
+                                  <Receipt className="w-4.5 h-4.5 text-[#4c55a4]" />
+                                </div>
+                                <span className="text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wide">Reported Rentals</span>
+                              </div>
+                              <div className="text-3xl font-black text-zinc-900 dark:text-white">{reportedRentals.length}</div>
+                              <p className="text-xs text-zinc-500 mt-1">Total rentals you have reported so far</p>
+                            </div>
+
+                            {/* Pending Payment */}
+                            <button
+                              onClick={pendingAmount > 0 ? handleOpenPayment : undefined}
+                              className={`bg-white dark:bg-zinc-900 rounded-2xl border p-5 shadow-sm text-left transition-all ${pendingAmount > 0 ? "border-red-300 dark:border-red-800/60 hover:border-red-400 cursor-pointer hover:shadow-md" : "border-zinc-200 dark:border-zinc-800 cursor-default"}`}
+                            >
+                              <div className="flex items-center gap-3 mb-3">
+                                <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${pendingAmount > 0 ? "bg-red-50 dark:bg-red-900/20" : "bg-emerald-50 dark:bg-emerald-900/20"}`}>
+                                  <CreditCard className={`w-4.5 h-4.5 ${pendingAmount > 0 ? "text-red-600" : "text-emerald-600"}`} />
+                                </div>
+                                <span className="text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wide">Pending Payment</span>
+                              </div>
+                              <div className={`text-3xl font-black ${pendingAmount > 0 ? "text-red-600" : "text-emerald-600"}`}>
+                                ₪{pendingAmount}
+                              </div>
+                              <p className="text-xs text-zinc-500 mt-1">
+                                {pendingAmount > 0 ? "Click to pay now →" : "No pending payments ✓"}
+                              </p>
+                            </button>
+
+                            {/* Rental History Link */}
+                            <button
+                              onClick={() => setManageSubTab("report_history")}
+                              className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 p-5 shadow-sm text-left hover:border-[#4c55a4]/40 hover:shadow-md transition-all group"
+                            >
+                              <div className="flex items-center gap-3 mb-3">
+                                <div className="w-9 h-9 bg-zinc-100 dark:bg-zinc-800 rounded-xl flex items-center justify-center">
+                                  <AlignLeft className="w-4.5 h-4.5 text-zinc-500" />
+                                </div>
+                                <span className="text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wide">Rental History</span>
+                              </div>
+                              <div className="text-3xl font-black text-zinc-900 dark:text-white">{reportedRentals.length}</div>
+                              <p className="text-xs text-zinc-500 mt-1 group-hover:text-[#4c55a4] transition-colors">
+                                View all reported rentals →
+                              </p>
+                            </button>
+                          </div>
+
+                          {/* Quick History Preview */}
+                          {reportedRentals.length > 0 && (
+                            <div className="bg-white dark:bg-zinc-900 rounded-3xl border border-zinc-200 dark:border-zinc-800 p-6 shadow-sm w-full">
+                              <div className="flex items-center justify-between mb-4">
+                                <h4 className="font-bold text-zinc-900 dark:text-white text-sm">Recent Reports</h4>
+                                <button
+                                  onClick={() => setManageSubTab("report_history")}
+                                  className="text-xs text-[#4c55a4] dark:text-indigo-400 font-bold hover:underline"
+                                >
+                                  View all →
+                                </button>
+                              </div>
+                              <div className="space-y-2">
+                                {reportedRentals.slice(0, 3).map(r => (
+                                  <div key={r.id} className="flex items-center justify-between p-3 bg-zinc-50 dark:bg-zinc-800/50 rounded-xl">
+                                    <div>
+                                      <span className="font-bold text-zinc-900 dark:text-white text-sm">{r.week}</span>
+                                      <span className="text-zinc-500 text-xs ml-2">Parshat {r.parshat}</span>
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                      <span className="font-bold text-zinc-700 dark:text-zinc-300 text-sm">₪{r.amount}</span>
+                                      {r.status === "Paid" ? (
+                                        <span className="px-2.5 py-1 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-xs font-bold rounded-lg">✓ Paid</span>
+                                      ) : (
+                                        <button
+                                          onClick={handleOpenPayment}
+                                          className="px-2.5 py-1 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 text-xs font-bold rounded-lg hover:bg-red-200 transition-colors"
+                                        >
+                                          Pay Now
+                                        </button>
+                                      )}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
                         </div>
                       )}
-                      
+
                       {manageSubTab === "report_history" && (
-                        <div className="bg-white dark:bg-zinc-900 rounded-3xl border border-zinc-200 dark:border-zinc-800 p-12 shadow-sm flex flex-col items-center justify-center text-center w-full">
-                          <div className="w-20 h-20 bg-zinc-100 dark:bg-zinc-800 rounded-full flex items-center justify-center mb-6">
-                            <AlignLeft className="w-10 h-10 text-zinc-400" />
+                        <div className="bg-white dark:bg-zinc-900 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-sm w-full overflow-hidden">
+                          <div className="p-6 border-b border-zinc-100 dark:border-zinc-800 flex items-center justify-between">
+                            <div>
+                              <h3 className="text-xl font-bold text-zinc-900 dark:text-white">Rental History</h3>
+                              <p className="text-sm text-zinc-500 mt-0.5">All reported rentals and payment statuses</p>
+                            </div>
+                            {pendingAmount > 0 && (
+                              <button
+                                onClick={handleOpenPayment}
+                                className="px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold text-sm transition-all flex items-center gap-2"
+                              >
+                                <CreditCard className="w-4 h-4" />
+                                Pay ₪{pendingAmount}
+                              </button>
+                            )}
                           </div>
-                          <h3 className="text-2xl font-bold text-zinc-900 dark:text-white mb-3">{t("dashboard.manage.no_report_history")}</h3>
-                          <p className="text-zinc-500 max-w-md text-lg">{t("dashboard.manage.no_report_desc")}</p>
+
+                          {reportedRentals.length === 0 ? (
+                            <div className="p-16 text-center">
+                              <div className="w-16 h-16 bg-zinc-100 dark:bg-zinc-800 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <Receipt className="w-8 h-8 text-zinc-400" />
+                              </div>
+                              <h4 className="text-lg font-bold text-zinc-900 dark:text-white mb-2">No rentals reported yet</h4>
+                              <p className="text-zinc-500 text-sm mb-6">Your reported rentals will appear here.</p>
+                              <button
+                                onClick={() => setManageSubTab("report_renter")}
+                                className="px-6 py-2.5 bg-[#4c55a4] hover:bg-[#3d4484] text-white rounded-xl font-bold text-sm transition-all"
+                              >
+                                Report Your First Rental
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="overflow-x-auto">
+                              <table className="w-full text-sm">
+                                <thead>
+                                  <tr className="bg-zinc-50 dark:bg-zinc-800/50">
+                                    <th className="text-left px-6 py-3.5 font-bold text-zinc-500 dark:text-zinc-400 text-xs uppercase tracking-wider">Week</th>
+                                    <th className="text-left px-6 py-3.5 font-bold text-zinc-500 dark:text-zinc-400 text-xs uppercase tracking-wider">Parshat</th>
+                                    <th className="text-left px-6 py-3.5 font-bold text-zinc-500 dark:text-zinc-400 text-xs uppercase tracking-wider">Reported</th>
+                                    <th className="text-left px-6 py-3.5 font-bold text-zinc-500 dark:text-zinc-400 text-xs uppercase tracking-wider">Status</th>
+                                    <th className="text-right px-6 py-3.5 font-bold text-zinc-500 dark:text-zinc-400 text-xs uppercase tracking-wider">Amount</th>
+                                    <th className="px-6 py-3.5"></th>
+                                  </tr>
+                                </thead>
+                                <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
+                                  {reportedRentals.map(r => (
+                                    <tr key={r.id} className="hover:bg-zinc-50/50 dark:hover:bg-zinc-800/20 transition-colors">
+                                      <td className="px-6 py-4 font-bold text-zinc-900 dark:text-white">{r.week}</td>
+                                      <td className="px-6 py-4 text-zinc-600 dark:text-zinc-400">Parshat {r.parshat}</td>
+                                      <td className="px-6 py-4 text-zinc-500 text-xs">{r.reportedAt}</td>
+                                      <td className="px-6 py-4">
+                                        {r.status === "Paid" ? (
+                                          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-xs font-bold rounded-full">
+                                            <CheckCircle2 className="w-3.5 h-3.5" /> Paid
+                                          </span>
+                                        ) : (
+                                          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 text-xs font-bold rounded-full">
+                                            <AlertCircle className="w-3.5 h-3.5" /> Pending
+                                          </span>
+                                        )}
+                                      </td>
+                                      <td className="px-6 py-4 text-right font-extrabold text-zinc-900 dark:text-white">₪{r.amount}</td>
+                                      <td className="px-6 py-4 text-right">
+                                        {r.status === "Pending" && (
+                                          <button
+                                            onClick={handleOpenPayment}
+                                            className="text-xs font-bold text-[#4c55a4] dark:text-indigo-400 hover:underline"
+                                          >
+                                            Pay Now
+                                          </button>
+                                        )}
+                                      </td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                                <tfoot>
+                                  <tr className="bg-zinc-50 dark:bg-zinc-800/50">
+                                    <td colSpan={4} className="px-6 py-4 font-bold text-zinc-900 dark:text-white text-sm">Total</td>
+                                    <td className="px-6 py-4 text-right font-extrabold text-zinc-900 dark:text-white">
+                                      ₪{reportedRentals.reduce((sum, r) => sum + r.amount, 0)}
+                                    </td>
+                                    <td></td>
+                                  </tr>
+                                </tfoot>
+                              </table>
+                            </div>
+                          )}
                         </div>
                       )}
 
@@ -1767,5 +2125,287 @@ export default function UserDashboardPage() {
         </div>
       )}
     </div>
+
+      {/* ===== Report Rented Modal ===== */}
+      {isReportRentedModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-zinc-900 rounded-3xl shadow-2xl w-full max-w-lg border border-zinc-200 dark:border-zinc-800 overflow-hidden">
+            
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-6 border-b border-zinc-100 dark:border-zinc-800">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-[#4c55a4]/10 dark:bg-[#4c55a4]/20 rounded-xl flex items-center justify-center">
+                  <Receipt className="w-5 h-5 text-[#4c55a4]" />
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-zinc-900 dark:text-white text-lg">Report Rented</h3>
+                  <p className="text-xs text-zinc-500">Step {reportRentedStep} of 2</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsReportRentedModalOpen(false)}
+                className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full transition-colors text-zinc-400"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Step 1: Week Selection */}
+            {reportRentedStep === 1 && (
+              <div className="p-6">
+                <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-5 font-medium">
+                  Which Shabbat week(s) was your apartment rented? Select all that apply.
+                </p>
+                <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
+                  {SHABBATOT.map(shabbat => {
+                    const alreadyReported = reportedRentals.some(r => r.weekId === shabbat.id);
+                    const isSelected = selectedRentedWeeks.includes(shabbat.id);
+                    return (
+                      <button
+                        key={shabbat.id}
+                        disabled={alreadyReported}
+                        onClick={() => {
+                          setSelectedRentedWeeks(prev =>
+                            prev.includes(shabbat.id)
+                              ? prev.filter(id => id !== shabbat.id)
+                              : [...prev, shabbat.id]
+                          );
+                        }}
+                        className={`w-full flex items-center justify-between p-3.5 rounded-xl border-2 text-left transition-all
+                          ${alreadyReported
+                            ? "border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/30 opacity-50 cursor-not-allowed"
+                            : isSelected
+                              ? "border-[#4c55a4] bg-[#4c55a4]/5 dark:bg-[#4c55a4]/10"
+                              : "border-zinc-200 dark:border-zinc-700 hover:border-[#4c55a4]/40"
+                          }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 transition-all
+                            ${isSelected ? "border-[#4c55a4] bg-[#4c55a4]" : "border-zinc-300 dark:border-zinc-600"}`}>
+                            {isSelected && <Check className="w-3 h-3 text-white stroke-[3]" />}
+                          </div>
+                          <div>
+                            <div className="font-bold text-sm text-zinc-900 dark:text-white">{shabbat.date}</div>
+                            <div className="text-xs text-zinc-500">Parshat {shabbat.name}</div>
+                          </div>
+                        </div>
+                        {alreadyReported && (
+                          <span className="text-xs text-zinc-400 font-semibold">Already reported</span>
+                        )}
+                        {isSelected && !alreadyReported && (
+                          <span className="text-xs font-bold text-[#4c55a4]">₪50</span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+                <div className="flex gap-3 mt-6">
+                  <button
+                    onClick={() => setIsReportRentedModalOpen(false)}
+                    className="flex-1 py-3 border border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 rounded-xl font-bold text-sm hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    disabled={selectedRentedWeeks.length === 0}
+                    onClick={() => setReportRentedStep(2)}
+                    className="flex-1 py-3 bg-[#4c55a4] hover:bg-[#3d4484] text-white rounded-xl font-bold text-sm transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  >
+                    Next <ChevronRight className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Step 2: Confirm */}
+            {reportRentedStep === 2 && (
+              <div className="p-6">
+                <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-5 font-medium">
+                  You are reporting <strong className="text-zinc-900 dark:text-white">{selectedRentedWeeks.length} rental{selectedRentedWeeks.length > 1 ? "s" : ""}</strong>. Please review and confirm.
+                </p>
+                
+                {/* Selected weeks list */}
+                <div className="space-y-2 mb-5">
+                  {selectedRentedWeeks.map(wId => {
+                    const shabbat = SHABBATOT.find(s => s.id === wId);
+                    return (
+                      <div key={wId} className="flex items-center justify-between p-3 bg-zinc-50 dark:bg-zinc-800/50 rounded-xl">
+                        <div>
+                          <span className="font-bold text-zinc-900 dark:text-white text-sm">{shabbat?.date}</span>
+                          <span className="text-zinc-500 text-xs ml-2">Parshat {shabbat?.name}</span>
+                        </div>
+                        <span className="font-bold text-[#4c55a4] dark:text-indigo-400">₪50</span>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Total calculation */}
+                <div className="bg-[#4c55a4]/5 dark:bg-[#4c55a4]/10 border-2 border-[#4c55a4]/20 rounded-2xl p-4 mb-6">
+                  <div className="flex flex-col gap-1.5 text-sm mb-3">
+                    {selectedRentedWeeks.map((_, i) => (
+                      <div key={i} className="flex justify-between text-zinc-600 dark:text-zinc-400">
+                        <span>Rental {i + 1} × ₪50</span>
+                        <span>₪50</span>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="flex justify-between font-extrabold text-lg text-zinc-900 dark:text-white pt-2 border-t border-[#4c55a4]/20">
+                    <span>Total Due</span>
+                    <span className="text-[#4c55a4] dark:text-indigo-400">₪{selectedRentedWeeks.length * 50}</span>
+                  </div>
+                </div>
+
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setReportRentedStep(1)}
+                    className="flex-1 py-3 border border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 rounded-xl font-bold text-sm hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors"
+                  >
+                    ← Back
+                  </button>
+                  <button
+                    onClick={handleConfirmReportRented}
+                    className="flex-1 py-3 bg-[#4c55a4] hover:bg-[#3d4484] text-white rounded-xl font-bold text-sm transition-all shadow-md shadow-[#4c55a4]/20"
+                  >
+                    Confirm Report
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ===== Payment Modal ===== */}
+      {isPaymentModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-zinc-900 rounded-3xl shadow-2xl w-full max-w-md border border-zinc-200 dark:border-zinc-800 overflow-hidden">
+            
+            {!paymentSuccess ? (
+              <>
+                {/* Payment Header */}
+                <div className="flex items-center justify-between p-6 border-b border-zinc-100 dark:border-zinc-800">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-red-50 dark:bg-red-900/20 rounded-xl flex items-center justify-center">
+                      <CreditCard className="w-5 h-5 text-red-600" />
+                    </div>
+                    <div>
+                      <h3 className="font-extrabold text-zinc-900 dark:text-white text-lg">Complete Payment</h3>
+                      <p className="text-xs text-zinc-500">Secure platform fee payment</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setIsPaymentModalOpen(false)}
+                    className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full transition-colors text-zinc-400"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+
+                <form onSubmit={handlePayNow} className="p-6 space-y-5">
+                  {/* Amount Due */}
+                  <div className="flex items-center justify-between p-4 bg-red-50 dark:bg-red-900/20 rounded-2xl border border-red-200 dark:border-red-800/50">
+                    <div className="flex items-center gap-2">
+                      <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400" />
+                      <span className="font-bold text-sm text-red-700 dark:text-red-300">Amount Due</span>
+                    </div>
+                    <span className="font-extrabold text-2xl text-red-600 dark:text-red-400">₪{pendingAmount}</span>
+                  </div>
+
+                  {/* Card Number */}
+                  <div>
+                    <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1.5">Credit Card Number</label>
+                    <div className="relative">
+                      <CreditCard className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
+                      <input
+                        type="text"
+                        required
+                        maxLength={19}
+                        value={paymentCardNumber}
+                        onChange={e => {
+                          const val = e.target.value.replace(/\D/g, "").slice(0, 16);
+                          const formatted = val.replace(/(\d{4})/g, "$1 ").trim();
+                          setPaymentCardNumber(formatted);
+                        }}
+                        placeholder="1234 5678 9012 3456"
+                        className="w-full pl-10 pr-4 py-3 bg-zinc-50 dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-700 rounded-xl text-sm font-mono text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-[#4c55a4]"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Expiry + CVV */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1.5">Expiry Date</label>
+                      <input
+                        type="text"
+                        required
+                        maxLength={5}
+                        value={paymentExpiry}
+                        onChange={e => {
+                          const val = e.target.value.replace(/\D/g, "").slice(0, 4);
+                          const formatted = val.length > 2 ? val.slice(0, 2) + "/" + val.slice(2) : val;
+                          setPaymentExpiry(formatted);
+                        }}
+                        placeholder="MM/YY"
+                        className="w-full px-4 py-3 bg-zinc-50 dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-700 rounded-xl text-sm font-mono text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-[#4c55a4]"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1.5">CVV</label>
+                      <input
+                        type="text"
+                        required
+                        maxLength={3}
+                        value={paymentCVV}
+                        onChange={e => setPaymentCVV(e.target.value.replace(/\D/g, "").slice(0, 3))}
+                        placeholder="123"
+                        className="w-full px-4 py-3 bg-zinc-50 dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-700 rounded-xl text-sm font-mono text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-[#4c55a4]"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Security note */}
+                  <p className="text-xs text-zinc-400 text-center flex items-center justify-center gap-1">
+                    <ShieldCheck className="w-3.5 h-3.5" />
+                    <span>Secured & encrypted payment</span>
+                  </p>
+
+                  {/* Pay Button */}
+                  <button
+                    type="submit"
+                    disabled={isPaymentProcessing}
+                    className="w-full py-4 bg-[#4c55a4] hover:bg-[#3d4484] text-white rounded-2xl font-extrabold text-base transition-all shadow-lg shadow-[#4c55a4]/25 disabled:opacity-60 flex items-center justify-center gap-2"
+                  >
+                    {isPaymentProcessing ? (
+                      <>
+                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        Processing...
+                      </>
+                    ) : (
+                      <>
+                        <CreditCard className="w-5 h-5" />
+                        Pay ₪{pendingAmount} Now
+                      </>
+                    )}
+                  </button>
+                </form>
+              </>
+            ) : (
+              /* Payment Success State */
+              <div className="p-8 text-center">
+                <div className="w-20 h-20 bg-emerald-100 dark:bg-emerald-900/30 rounded-full flex items-center justify-center mx-auto mb-5">
+                  <CheckCircle2 className="w-10 h-10 text-emerald-600 dark:text-emerald-400" />
+                </div>
+                <h3 className="text-2xl font-extrabold text-zinc-900 dark:text-white mb-2">Payment Successful!</h3>
+                <p className="text-zinc-500 text-sm mb-2">Your platform fee has been paid.</p>
+                <p className="font-extrabold text-[#4c55a4] dark:text-indigo-400 text-lg">₪{reportedRentals.reduce((sum, r) => sum + r.amount, 0)} paid</p>
+                <p className="text-xs text-zinc-400 mt-4">All rentals are now marked as Paid.</p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </>
   );
 }
