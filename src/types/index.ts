@@ -18,6 +18,10 @@ export interface ApartmentData {
   lat?: number;
   lng?: number;
   address?: string;
+  city?: string;
+  neighborhood?: string;
+  street?: string;
+  houseNumber?: string;
 }
 
 export interface Amenity {

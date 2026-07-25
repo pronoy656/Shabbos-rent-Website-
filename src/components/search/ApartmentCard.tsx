@@ -12,6 +12,46 @@ interface ApartmentCardProps {
   targetDestinationText?: string;
 }
 
+function parseApartmentAddress(apt: ApartmentData) {
+  let city = apt.city;
+  let neighborhood = apt.neighborhood;
+  let street = apt.street;
+  let houseNumber = apt.houseNumber;
+
+  if (!city || !neighborhood) {
+    const parts = (apt.location || "").split(",").map((s) => s.trim());
+    if (parts.length >= 2) {
+      neighborhood = neighborhood || parts[0];
+      city = city || parts[1];
+    } else if (parts.length === 1 && parts[0]) {
+      city = city || parts[0];
+      neighborhood = neighborhood || "Central";
+    }
+  }
+
+  if (apt.address && (!street || !houseNumber)) {
+    const addrParts = apt.address.split(",").map((s) => s.trim());
+    if (addrParts.length >= 1) {
+      const streetStr = addrParts[0];
+      const match = streetStr.match(/^(.*?)(?:\s+(\d+[A-Za-z]?))?$/);
+      if (match) {
+        street = street || match[1];
+        if (match[2]) {
+          houseNumber = houseNumber || match[2];
+        }
+      } else {
+        street = street || streetStr;
+      }
+    }
+  }
+
+  city = city || "Jerusalem";
+  neighborhood = neighborhood || "Katamon";
+  street = street || "HaPalmach Street";
+
+  return { city, neighborhood, street, houseNumber };
+}
+
 export default function ApartmentCard({
   apartment,
   mode,
@@ -21,6 +61,7 @@ export default function ApartmentCard({
   const router = useRouter();
   const { t } = useLanguage();
   const [isSaved, setIsSaved] = useState(false);
+  const addr = parseApartmentAddress(apartment);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -105,9 +146,27 @@ export default function ApartmentCard({
               <h3 className="font-bold text-zinc-900 dark:text-white text-lg line-clamp-1 group-hover:text-blue-600 transition-colors">
                 {apartment.title}
               </h3>
-              <div className="flex items-center gap-1.5 text-sm text-zinc-500 dark:text-zinc-400 mt-1">
-                <MapPin className="w-3.5 h-3.5" />
-                {apartment.location}
+              {/* Location Breakdown with explicit labels */}
+              <div className="mt-2.5 text-xs space-y-1 bg-zinc-50 dark:bg-zinc-800/50 p-2.5 rounded-xl border border-zinc-100 dark:border-zinc-800/80">
+                <div className="flex items-center gap-1.5 text-zinc-900 dark:text-white font-bold">
+                  <MapPin className="w-3.5 h-3.5 text-[#4c55a4] shrink-0" />
+                  <span className="text-zinc-500 dark:text-zinc-400 font-semibold">City:</span>
+                  <span className="font-extrabold text-[#4c55a4] dark:text-indigo-400">{addr.city}</span>
+                </div>
+                <div className="pl-5 flex items-center gap-1.5 text-zinc-700 dark:text-zinc-300 font-medium">
+                  <span className="text-zinc-400 dark:text-zinc-500 font-semibold">Neighborhood:</span>
+                  <span className="font-bold text-zinc-900 dark:text-zinc-100">{addr.neighborhood}</span>
+                </div>
+                <div className="pl-5 flex items-center gap-1.5 text-zinc-600 dark:text-zinc-400 font-medium">
+                  <span className="text-zinc-400 dark:text-zinc-500 font-semibold">Street Name:</span>
+                  <span className="font-semibold text-zinc-800 dark:text-zinc-200">{addr.street}</span>
+                </div>
+                {addr.houseNumber && (
+                  <div className="pl-5 flex items-center gap-1.5 text-zinc-600 dark:text-zinc-400 font-medium">
+                    <span className="text-zinc-400 dark:text-zinc-500 font-semibold">House Number:</span>
+                    <span className="font-extrabold text-zinc-900 dark:text-zinc-100">{addr.houseNumber}</span>
+                  </div>
+                )}
               </div>
               {targetDestinationText && (
                 <div className="mt-1 text-xs font-semibold text-[#4c55a4] dark:text-indigo-400 flex items-center gap-1">

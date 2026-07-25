@@ -264,13 +264,29 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
                  </span>
                </div>
                <h1 className="text-3xl md:text-4xl font-extrabold text-zinc-900 dark:text-white mb-2">
-                 Beautiful Apartment in Jerusalem
+                 {targetApartment?.title || "Beautiful Apartment in Jerusalem"}
                </h1>
-               <div className="flex items-center gap-4 text-sm font-medium text-zinc-600 dark:text-zinc-400">
-                 <div className="flex items-center gap-1.5 hover:underline cursor-pointer">
-                   <MapPin className="w-4 h-4" />
-                   Rehavia, Jerusalem
+               {/* Location Details with explicit labels */}
+               <div className="mt-3 p-3.5 bg-zinc-50 dark:bg-zinc-800/50 rounded-2xl border border-zinc-200 dark:border-zinc-800 text-xs space-y-1 inline-block min-w-[280px]">
+                 <div className="flex items-center gap-1.5 text-zinc-900 dark:text-white font-bold text-sm">
+                   <MapPin className="w-4 h-4 text-[#4c55a4] shrink-0" />
+                   <span className="text-zinc-500 dark:text-zinc-400 font-semibold">City:</span>
+                   <span className="font-extrabold text-[#4c55a4] dark:text-indigo-400">{targetApartment?.city || "Jerusalem"}</span>
                  </div>
+                 <div className="pl-5 flex items-center gap-1.5 text-zinc-700 dark:text-zinc-300 font-medium">
+                   <span className="text-zinc-400 dark:text-zinc-500 font-semibold">Neighborhood:</span>
+                   <span className="font-bold text-zinc-900 dark:text-zinc-100">{targetApartment?.neighborhood || "Rehavia"}</span>
+                 </div>
+                 <div className="pl-5 flex items-center gap-1.5 text-zinc-600 dark:text-zinc-400 font-medium">
+                   <span className="text-zinc-400 dark:text-zinc-500 font-semibold">Street Name:</span>
+                   <span className="font-semibold text-zinc-800 dark:text-zinc-200">{targetApartment?.street || "Ramban Street"}</span>
+                 </div>
+                 {(targetApartment?.houseNumber || baseId === "1") && (
+                   <div className="pl-5 flex items-center gap-1.5 text-zinc-600 dark:text-zinc-400 font-medium">
+                     <span className="text-zinc-400 dark:text-zinc-500 font-semibold">House Number:</span>
+                     <span className="font-extrabold text-zinc-900 dark:text-zinc-100">{targetApartment?.houseNumber || "14"}</span>
+                   </div>
+                 )}
                </div>
              </div>
            </div>
@@ -370,6 +386,34 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
                       >
                          <ArrowRightLeft className="w-4 h-4" /> {t("apartment_details.swap_now")}
                       </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Location Details Breakdown inside About this home */}
+                <div className="mb-6 p-4 bg-zinc-50 dark:bg-zinc-800/40 rounded-2xl border border-zinc-200 dark:border-zinc-800/80">
+                  <h3 className="font-bold text-sm text-zinc-900 dark:text-white mb-2.5 flex items-center gap-2">
+                    <MapPin className="w-4 h-4 text-[#4c55a4]" />
+                    <span>Location Details</span>
+                  </h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+                    <div className="p-2.5 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-100 dark:border-zinc-800">
+                      <span className="block text-zinc-400 dark:text-zinc-500 font-semibold mb-0.5">City</span>
+                      <span className="font-extrabold text-[#4c55a4] dark:text-indigo-400 text-sm">{targetApartment?.city || "Jerusalem"}</span>
+                    </div>
+                    <div className="p-2.5 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-100 dark:border-zinc-800">
+                      <span className="block text-zinc-400 dark:text-zinc-500 font-semibold mb-0.5">Neighborhood</span>
+                      <span className="font-bold text-zinc-900 dark:text-zinc-100 text-sm">{targetApartment?.neighborhood || "Rehavia"}</span>
+                    </div>
+                    <div className="p-2.5 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-100 dark:border-zinc-800">
+                      <span className="block text-zinc-400 dark:text-zinc-500 font-semibold mb-0.5">Street Name</span>
+                      <span className="font-semibold text-zinc-800 dark:text-zinc-200 text-sm">{targetApartment?.street || "Ramban Street"}</span>
+                    </div>
+                    {(targetApartment?.houseNumber || baseId === "1") && (
+                      <div className="p-2.5 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-100 dark:border-zinc-800">
+                        <span className="block text-zinc-400 dark:text-zinc-500 font-semibold mb-0.5">House Number</span>
+                        <span className="font-extrabold text-zinc-900 dark:text-zinc-100 text-sm">{targetApartment?.houseNumber || "14"}</span>
+                      </div>
                     )}
                   </div>
                 </div>
