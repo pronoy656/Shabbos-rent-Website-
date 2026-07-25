@@ -382,10 +382,10 @@ export default function SearchWidget({ onSearch }: SearchWidgetProps) {
                  </p>
                </div>
              
-             <button 
-               onClick={() => setShowMap(!showMap)}
-               className="flex items-center justify-center gap-2 px-6 py-2.5 bg-zinc-900 hover:bg-zinc-800 dark:bg-white dark:hover:bg-zinc-200 text-white dark:text-zinc-900 font-bold rounded-xl shadow-md transition-colors"
-             >
+              <button 
+                onClick={() => setShowMap(!showMap)}
+                className="flex items-center justify-center gap-2 px-6 py-2.5 bg-[#4c55a4] hover:bg-[#3d4484] text-white font-bold rounded-xl shadow-md shadow-[#4c55a4]/20 transition-all duration-200"
+              >
                 <MapPin className="w-4 h-4" />
                 {showMap ? t("search_widget.hide_map") : t("search_widget.show_on_map")}
              </button>
