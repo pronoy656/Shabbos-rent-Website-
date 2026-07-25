@@ -284,11 +284,13 @@
     "properties_swap": "נכסים זמינים להחלפה",
     "places_stay": "מקומות לינה",
     "for_shabbos": "לשבת",
-    "search_placeholder": "חפש לפי מילות מפתח, מיקומים או שמות דירות...",
+    "search_placeholder": "חפש לפי מילות מפתח או שמות דירות...",
+    "destination_placeholder": "יעד או בית כנסת (למשל: הכותל)...",
     "filters": "סינונים",
     "sort_by": "מיין לפי:",
     "sort_options": {
       "recommended": "מומלץ",
+      "shortest_walking": "מרחק הליכה הקצר ביותר",
       "price_low_high": "מחיר: מהנמוך לגבוה",
       "price_high_low": "מחיר: מהגבוה לנמוך",
       "highest_rated": "הדירוג הגבוה ביותר"

@@ -39,6 +39,8 @@ function SignupFormContent() {
     }
   }, [searchParams]);
 
+  const redirectUrl = searchParams.get("redirect");
+
   const handleUserSignup = (role: "user" | "admin") => {
     setIsLoading(true);
     localStorage.setItem("userRole", role);
@@ -46,7 +48,9 @@ function SignupFormContent() {
       localStorage.setItem("hasUserListing", "false");
     }
     setTimeout(() => {
-      if (role === "admin") {
+      if (redirectUrl) {
+        router.push(redirectUrl);
+      } else if (role === "admin") {
         router.push("/dashboard");
       } else {
         router.push("/user-dashboard");

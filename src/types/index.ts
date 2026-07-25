@@ -15,6 +15,9 @@ export interface ApartmentData {
   verified: boolean;
   isAvailable?: boolean;
   amenities?: string[];
+  lat?: number;
+  lng?: number;
+  address?: string;
 }
 
 export interface Amenity {

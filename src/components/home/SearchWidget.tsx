@@ -2,10 +2,12 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Search, MapPin, Calendar, BedDouble, Users, ArrowRightLeft, Home, Navigation, ChevronDown, Bath } from "lucide-react";
+import { Search, MapPin, Calendar, BedDouble, Users, ArrowRightLeft, Home, Navigation, ChevronDown, Bath, Footprints } from "lucide-react";
+import { useEffect } from "react";
 import ApartmentCard from "@/components/search/ApartmentCard";
 import { ApartmentData } from "@/types";
 import { useLanguage } from "@/context/LanguageContext";
+import { getCoordinatesForAddress, calculateWalkingMinutes } from "@/utils/distanceUtils";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -81,6 +83,7 @@ export default function SearchWidget({ onSearch }: SearchWidgetProps) {
   const [maxPrice, setMaxPrice] = useState("");
   const [beds, setBeds] = useState("");
   const [guests, setGuests] = useState("");
+  const [destinationAddress, setDestinationAddress] = useState("");
 
   return (
     <>
@@ -211,6 +214,20 @@ export default function SearchWidget({ onSearch }: SearchWidgetProps) {
       {/* Row 2: Additional Fields & Search Button */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-5 items-end mt-5">
         
+        {/* Target Destination / Shul Address */}
+        <div className="lg:col-span-4 space-y-1.5">
+          <label className="text-xs font-bold text-zinc-900 dark:text-white flex items-center gap-1">
+            <Footprints className="w-3.5 h-3.5 text-[#4c55a4]" /> Target Destination / Shul Address
+          </label>
+          <input 
+            type="text" 
+            placeholder="e.g. Kotel, Great Synagogue, Rehavia..." 
+            value={destinationAddress}
+            onChange={(e) => setDestinationAddress(e.target.value)}
+            className="w-full h-[48px] px-4 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#4c55a4] transition-all text-zinc-900 dark:text-white placeholder-zinc-400 font-medium"
+          />
+        </div>
+
         {/* Price Range */}
         <div className="lg:col-span-3 space-y-1.5">
           <label className="text-xs font-bold text-zinc-900 dark:text-white">Price Range (₪)</label>
@@ -233,26 +250,8 @@ export default function SearchWidget({ onSearch }: SearchWidgetProps) {
           </div>
         </div>
 
-        {/* Beds */}
-        <div className="lg:col-span-3 space-y-1.5">
-          <label className="text-xs font-bold text-zinc-900 dark:text-white">{t("search_widget.beds")}</label>
-          <CustomSelect
-            icon={BedDouble}
-            value={beds}
-            onChange={setBeds}
-            placeholder={t("search_widget.select_beds")}
-            options={[
-              { value: "any", label: t("search_widget.any") },
-              { value: "1", label: t("search_widget.plus_1") },
-              { value: "2", label: t("search_widget.plus_2") },
-              { value: "4", label: t("search_widget.plus_4") },
-              { value: "6", label: t("search_widget.plus_6") },
-            ]}
-          />
-        </div>
-
         {/* Guests */}
-        <div className="lg:col-span-3 space-y-1.5">
+        <div className="lg:col-span-2 space-y-1.5">
           <label className="text-xs font-bold text-zinc-900 dark:text-white">{t("search_widget.guests")}</label>
           <CustomSelect
             icon={Users}
@@ -409,13 +408,24 @@ export default function SearchWidget({ onSearch }: SearchWidgetProps) {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
             {paginatedApartments.length > 0 ? (
-              paginatedApartments.map(apt => (
-                <ApartmentCard 
-                  key={apt.id}
-                  apartment={apt} 
-                  mode={activeTab === "swap" ? "swap" : "rent"}
-                />
-              ))
+              paginatedApartments.map(apt => {
+                let walkingMins: number | undefined = undefined;
+                if (destinationAddress.trim()) {
+                  const destCoords = getCoordinatesForAddress(destinationAddress);
+                  const aptLat = apt.lat ?? 31.7725;
+                  const aptLng = apt.lng ?? 35.2136;
+                  walkingMins = calculateWalkingMinutes(destCoords.lat, destCoords.lng, aptLat, aptLng);
+                }
+                return (
+                  <ApartmentCard 
+                    key={apt.id}
+                    apartment={apt} 
+                    mode={activeTab === "swap" ? "swap" : "rent"}
+                    walkingMinutes={walkingMins}
+                    targetDestinationText={destinationAddress.trim() || undefined}
+                  />
+                );
+              })
             ) : (
               <div className="col-span-full py-12 text-center text-zinc-500">
                 No properties found matching your criteria.

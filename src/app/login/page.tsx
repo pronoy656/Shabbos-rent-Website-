@@ -1,12 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { Mail, Lock, Eye, EyeOff, ArrowRight } from "lucide-react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Mail, Lock, Eye, EyeOff, ArrowRight, LockKeyhole } from "lucide-react";
 
-export default function LoginPage() {
+function LoginFormContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectUrl = searchParams.get("redirect");
+
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -26,7 +29,9 @@ export default function LoginPage() {
     }
     
     setTimeout(() => {
-      if (role === "admin") {
+      if (redirectUrl) {
+        router.push(redirectUrl);
+      } else if (role === "admin") {
         router.push("/dashboard");
       } else {
         router.push("/user-dashboard");
@@ -96,6 +101,18 @@ export default function LoginPage() {
               Enter your details to access your account.
             </p>
           </div>
+
+          {redirectUrl && (
+            <div className="mt-6 p-4 bg-indigo-50 dark:bg-indigo-950/50 border border-indigo-200 dark:border-indigo-800/80 rounded-2xl flex items-center gap-3 text-[#4c55a4] dark:text-indigo-300 shadow-sm">
+              <div className="p-2 bg-[#4c55a4] text-white rounded-xl shrink-0">
+                <LockKeyhole className="w-5 h-5" />
+              </div>
+              <div className="text-xs">
+                <span className="font-bold block text-sm mb-0.5">Login Required</span>
+                Please log in or sign up to view full apartment details.
+              </div>
+            </div>
+          )}
 
           <div className="mt-8">
             <div className="space-y-5">
@@ -201,7 +218,10 @@ export default function LoginPage() {
 
             <p className="mt-8 text-center text-[13px] text-zinc-500 dark:text-zinc-400">
               Don't have an account?{" "}
-              <Link href="/signup" className="font-bold text-zinc-900 dark:text-white hover:underline underline-offset-4">
+              <Link 
+                href={`/signup${redirectUrl ? `?redirect=${encodeURIComponent(redirectUrl)}` : ''}`} 
+                className="font-bold text-zinc-900 dark:text-white hover:underline underline-offset-4"
+              >
                 Sign up for free
               </Link>
             </p>
@@ -210,5 +230,17 @@ export default function LoginPage() {
       </div>
 
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-white dark:bg-black flex items-center justify-center">
+        <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    }>
+      <LoginFormContent />
+    </Suspense>
   );
 }

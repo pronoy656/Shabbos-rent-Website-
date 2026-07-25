@@ -1,11 +1,13 @@
 "use client";
 
-import { MapPin, Navigation, Calendar, BedDouble, Bath, ChevronDown } from "lucide-react";
+import { MapPin, Navigation, Calendar, BedDouble, Bath, ChevronDown, Footprints } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
 
 export interface FilterSidebarProps {
   selectedAmenities?: string[];
+  maxWalkingMinutes?: number;
   onAmenityToggle?: (amenityKey: string) => void;
+  onMaxWalkingMinutesChange?: (minutes: number | undefined) => void;
   onApplyFilters?: () => void;
   onClearFilters?: () => void;
 }
@@ -33,7 +35,9 @@ const AMENITIES_OPTIONS = [
 
 export default function FilterSidebar({
   selectedAmenities = [],
+  maxWalkingMinutes,
   onAmenityToggle,
+  onMaxWalkingMinutesChange,
   onApplyFilters,
   onClearFilters,
 }: FilterSidebarProps) {
@@ -43,7 +47,7 @@ export default function FilterSidebar({
     <div className="bg-white dark:bg-zinc-950 rounded-2xl border border-zinc-200 dark:border-zinc-800 p-6 sticky top-24">
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-lg font-bold text-zinc-900 dark:text-white">{t("filters.title")}</h2>
-        {selectedAmenities.length > 0 && (
+        {(selectedAmenities.length > 0 || maxWalkingMinutes !== undefined) && (
           <button
             onClick={onClearFilters}
             className="text-xs text-[#4c55a4] hover:underline font-semibold"
@@ -89,6 +93,49 @@ export default function FilterSidebar({
               </div>
             </div>
           </div>
+        </div>
+      </div>
+
+      <hr className="border-zinc-100 dark:border-zinc-800 mb-6" />
+
+      {/* Max Walking Distance */}
+      <div className="space-y-4 mb-6">
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-bold text-zinc-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
+            <Footprints className="w-4 h-4 text-[#4c55a4]" /> Max Walking Distance
+          </h3>
+          {maxWalkingMinutes && (
+            <span className="text-xs font-bold text-[#4c55a4] bg-[#4c55a4]/10 px-2 py-0.5 rounded-full">
+              &le; {maxWalkingMinutes} mins
+            </span>
+          )}
+        </div>
+
+        <div className="grid grid-cols-2 gap-2">
+          {[
+            { label: "Any distance", value: undefined },
+            { label: "Under 5 mins", value: 5 },
+            { label: "Under 10 mins", value: 10 },
+            { label: "Under 15 mins", value: 15 },
+            { label: "Under 20 mins", value: 20 },
+            { label: "Under 30 mins", value: 30 },
+          ].map((option) => {
+            const isSelected = maxWalkingMinutes === option.value;
+            return (
+              <button
+                key={option.label}
+                type="button"
+                onClick={() => onMaxWalkingMinutesChange?.(option.value)}
+                className={`px-3 py-2 rounded-xl text-xs font-bold transition-all border text-center ${
+                  isSelected
+                    ? "bg-[#4c55a4] text-white border-[#4c55a4] shadow-sm"
+                    : "bg-zinc-50 dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 border-zinc-200 dark:border-zinc-800 hover:border-[#4c55a4]"
+                }`}
+              >
+                {option.label}
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -192,23 +239,23 @@ export default function FilterSidebar({
             </span>
           )}
         </div>
-        <div className="flex flex-col gap-2.5">
+        <div className="grid grid-cols-2 gap-2.5 gap-x-2">
           {AMENITIES_OPTIONS.map((item) => {
             const isChecked = selectedAmenities.includes(item.key);
             return (
-              <label key={item.key} className="flex items-center gap-3 cursor-pointer group select-none">
-                <div className="relative flex items-center justify-center">
+              <label key={item.key} className="flex items-center gap-2 cursor-pointer group select-none">
+                <div className="relative flex items-center justify-center shrink-0">
                   <input
                     type="checkbox"
                     checked={isChecked}
                     onChange={() => onAmenityToggle?.(item.key)}
-                    className="peer appearance-none w-5 h-5 border-2 border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-900 checked:bg-[#4c55a4] checked:border-[#4c55a4] transition-colors"
+                    className="peer appearance-none w-4 h-4 border-2 border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-900 checked:bg-[#4c55a4] checked:border-[#4c55a4] transition-colors"
                   />
-                  <svg className="absolute w-3 h-3 text-white pointer-events-none opacity-0 peer-checked:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                  <svg className="absolute w-2.5 h-2.5 text-white pointer-events-none opacity-0 peer-checked:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                   </svg>
                 </div>
-                <span className={`text-sm font-medium transition-colors ${isChecked ? 'font-bold text-[#4c55a4] dark:text-indigo-400' : 'text-zinc-700 dark:text-zinc-300 group-hover:text-zinc-900 dark:group-hover:text-white'}`}>
+                <span className={`text-xs font-medium transition-colors line-clamp-1 ${isChecked ? 'font-bold text-[#4c55a4] dark:text-indigo-400' : 'text-zinc-700 dark:text-zinc-300 group-hover:text-zinc-900 dark:group-hover:text-white'}`}>
                   {t(item.labelKey)}
                 </span>
               </label>

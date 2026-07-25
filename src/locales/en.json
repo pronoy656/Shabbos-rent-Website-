@@ -284,11 +284,13 @@
     "properties_swap": "properties available for swap",
     "places_stay": "places to stay",
     "for_shabbos": "for Shabbos",
-    "search_placeholder": "Search by keywords, locations, or apartment names...",
+    "search_placeholder": "Search by keywords or apartment names...",
+    "destination_placeholder": "Target Shul / location (e.g. Kotel)...",
     "filters": "Filters",
     "sort_by": "Sort by:",
     "sort_options": {
       "recommended": "Recommended",
+      "shortest_walking": "Shortest Walking Distance",
       "price_low_high": "Price: Low to High",
       "price_high_low": "Price: High to Low",
       "highest_rated": "Highest Rated"

@@ -1,17 +1,19 @@
 "use client";
 import Link from "next/link";
 import { useState, use, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
+import { useEffect } from "react";
 import MainNavbar from "@/components/layout/MainNavbar";
 import ApartmentCard from "@/components/search/ApartmentCard";
 import { ApartmentData } from "@/types";
 import { 
   MapPin, BedDouble, Bath, Users, Star, ArrowRightLeft, 
   ShieldCheck, CalendarCheck, Wifi, Tent, Monitor, ChefHat, X, Mail, Sparkles,
-  Coffee, Tv, Snowflake, Car, WashingMachine, Phone, MessageCircle, Copy, ChevronDown, Home, Footprints, Check
+  Coffee, Tv, Snowflake, Car, WashingMachine, Phone, MessageCircle, Copy, ChevronDown, Home, Footprints, Check, LockKeyhole
 } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
 import { mockBaseApartments } from "@/data/mockData";
+import { getCoordinatesForAddress, calculateWalkingMinutes, calculateDistanceKm } from "@/utils/distanceUtils";
 
 // Mock Data
 const galleryImages = [
@@ -37,7 +39,12 @@ const similarApartments: ApartmentData[] = [
 
 export default function ApartmentDetailsPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
+  const router = useRouter();
   const { t } = useLanguage();
+  const searchParams = useSearchParams();
+  const isSwapMode = searchParams.get("mode") === "swap";
+
+  const [isAuthChecked, setIsAuthChecked] = useState(false);
   const [activeImage, setActiveImage] = useState(galleryImages[0]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDatesModalOpen, setIsDatesModalOpen] = useState(false);
@@ -45,17 +52,48 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
   const [isLandlordModalOpen, setIsLandlordModalOpen] = useState(false);
   const [landlordModalState, setLandlordModalState] = useState<"initial" | "options">("initial");
   const [isCopied, setIsCopied] = useState(false);
-  
-  const searchParams = useSearchParams();
-  const isSwapMode = searchParams.get("mode") === "swap";
+
   const [isNumberRevealed, setIsNumberRevealed] = useState(false);
   const [isDateDropdownOpen, setIsDateDropdownOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState("");
 
   const [isSwapModalOpen, setIsSwapModalOpen] = useState(false);
   const [swapModalState, setSwapModalState] = useState<"initial" | "contact">("initial");
-  
+  const [destInput, setDestInput] = useState("Great Synagogue, Jerusalem");
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const isLoggedIn = localStorage.getItem("userRole") !== null;
+      if (!isLoggedIn) {
+        const currentPath = `/apartments/${id}${isSwapMode ? '?mode=swap' : ''}`;
+        router.push(`/login?redirect=${encodeURIComponent(currentPath)}`);
+      } else {
+        setIsAuthChecked(true);
+      }
+    }
+  }, [id, isSwapMode, router]);
+
   const hasUserListing = typeof window !== 'undefined' && localStorage.getItem("hasUserListing") === "true";
+
+  if (!isAuthChecked) {
+    return (
+      <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 flex flex-col items-center justify-center p-4">
+        <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-8 max-w-md w-full text-center shadow-xl">
+          <div className="w-12 h-12 border-4 border-[#4c55a4] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <h3 className="text-xl font-bold text-zinc-900 dark:text-white mb-2">Login Required</h3>
+          <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-6">
+            You must be logged in to view apartment details. Redirecting to login page...
+          </p>
+          <a 
+            href={`/login?redirect=${encodeURIComponent(`/apartments/${id}${isSwapMode ? '?mode=swap' : ''}`)}`} 
+            className="inline-block px-6 py-2.5 bg-[#4c55a4] hover:bg-[#3d4484] text-white text-xs font-bold rounded-xl shadow-md transition-colors"
+          >
+            Click here if not redirected
+          </a>
+        </div>
+      </div>
+    );
+  }
 
   const amenitiesList = [
     { icon: Wifi, label: "Fast High-Speed WiFi" },
@@ -250,10 +288,68 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
               </div>
             )}
 
-            {/* Map Section */}
+            {/* Map & Walking Distance Calculator Section */}
             <div className="bg-white dark:bg-zinc-900 rounded-3xl p-6 md:p-8 border border-zinc-200 dark:border-zinc-800 shadow-sm">
-                <h2 className="text-2xl font-bold mb-2 text-zinc-900 dark:text-white">{t("apartment_details.location_map")}</h2>
-                <p className="text-zinc-500 dark:text-zinc-400 mb-6">Rehavia, Jerusalem (Approx. 10 mins walk to city center)</p>
+                <div className="mb-6">
+                  <h2 className="text-2xl font-bold mb-1 text-zinc-900 dark:text-white">{t("apartment_details.location_map")}</h2>
+                  <p className="text-zinc-500 dark:text-zinc-400 text-sm">Ramban St 14, Rehavia, Jerusalem</p>
+                </div>
+
+                {/* Interactive Walking Distance Calculator Card */}
+                {(() => {
+                  const targetCoords = getCoordinatesForAddress(destInput || "Jerusalem");
+                  const aptLat = 31.7745;
+                  const aptLng = 35.2150;
+                  const walkingMins = calculateWalkingMinutes(targetCoords.lat, targetCoords.lng, aptLat, aptLng);
+                  const distanceKm = calculateDistanceKm(targetCoords.lat, targetCoords.lng, aptLat, aptLng);
+
+                  return (
+                    <div className="bg-gradient-to-r from-indigo-50/80 via-blue-50/50 to-indigo-50/80 dark:from-zinc-800/80 dark:to-zinc-800/50 p-5 rounded-2xl border border-indigo-100 dark:border-zinc-700/80 mb-6 shadow-sm">
+                      <h3 className="text-sm font-bold text-zinc-900 dark:text-white mb-1.5 flex items-center gap-2">
+                        <Footprints className="w-4 h-4 text-[#4c55a4]" /> Walking Distance Calculator
+                      </h3>
+                      <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-4">
+                        Enter your target destination (e.g. Shul, Kotel, Great Synagogue, Rehavia) to calculate walking time:
+                      </p>
+                      
+                      <div className="relative mb-4">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                          <MapPin className="h-4 w-4 text-[#4c55a4]" />
+                        </div>
+                        <input 
+                          type="text" 
+                          value={destInput}
+                          onChange={(e) => setDestInput(e.target.value)}
+                          placeholder="e.g. Kotel, Great Synagogue, Rehavia..."
+                          className="w-full pl-9 pr-4 py-2.5 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-700 rounded-xl text-sm font-semibold text-zinc-900 dark:text-white placeholder-zinc-400 outline-none focus:ring-2 focus:ring-[#4c55a4] transition-all shadow-sm"
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-3 border-t border-indigo-100 dark:border-zinc-700/60">
+                        <div className="flex items-center gap-3 bg-white dark:bg-zinc-900 p-3 rounded-xl border border-indigo-100 dark:border-zinc-700/60 shadow-xs">
+                          <div className="p-2.5 bg-[#4c55a4]/10 rounded-xl text-[#4c55a4]">
+                            <Footprints className="w-5 h-5" />
+                          </div>
+                          <div>
+                            <span className="block text-[11px] font-bold text-zinc-400 uppercase tracking-wider">Walking Time</span>
+                            <span className="text-base font-black text-[#4c55a4] dark:text-indigo-400">🚶 {walkingMins} Minutes</span>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-3 bg-white dark:bg-zinc-900 p-3 rounded-xl border border-indigo-100 dark:border-zinc-700/60 shadow-xs">
+                          <div className="p-2.5 bg-[#4c55a4]/10 rounded-xl text-[#4c55a4]">
+                            <MapPin className="w-5 h-5" />
+                          </div>
+                          <div>
+                            <span className="block text-[11px] font-bold text-zinc-400 uppercase tracking-wider">Distance</span>
+                            <span className="text-base font-black text-zinc-900 dark:text-white">📍 {distanceKm} km</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
+
                 <div className="w-full h-[350px] bg-zinc-200 dark:bg-zinc-800 rounded-2xl overflow-hidden relative border border-zinc-200 dark:border-zinc-700">
                     <iframe 
                       width="100%" 
