@@ -581,7 +581,7 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
                         </div>
                         <div className="flex flex-wrap items-center text-xs text-zinc-700 dark:text-zinc-300 font-medium gap-y-2">
                           <span className="flex items-center gap-1 w-1/2"><BedDouble className="w-3.5 h-3.5 text-[#4c55a4]" /> 3 Beds</span>
-                          <span className="flex items-center gap-1 w-1/2"><Bath className="w-3.5 h-3.5 text-[#4c55a4]" /> 2 Baths</span>
+                          <span className="flex items-center gap-1 w-1/2"><Bath className="w-3.5 h-3.5 text-[#4c55a4]" /> 2 Rooms</span>
                           <span className="flex items-center gap-1 w-1/2"><Users className="w-3.5 h-3.5 text-[#4c55a4]" /> 6 Guests</span>
                           <span className="flex items-center gap-1 w-1/2"><Footprints className="w-3.5 h-3.5 text-[#4c55a4]" /> 10m walk</span>
                         </div>
@@ -607,7 +607,7 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
                         </div>
                         <div className="flex flex-wrap items-center text-xs text-zinc-700 dark:text-zinc-300 font-medium gap-y-2">
                           <span className="flex items-center gap-1 w-1/2"><BedDouble className="w-3.5 h-3.5 text-[#4c55a4]" /> 4 Beds</span>
-                          <span className="flex items-center gap-1 w-1/2"><Bath className="w-3.5 h-3.5 text-[#4c55a4]" /> 3 Baths</span>
+                          <span className="flex items-center gap-1 w-1/2"><Bath className="w-3.5 h-3.5 text-[#4c55a4]" /> 3 Rooms</span>
                           <span className="flex items-center gap-1 w-1/2"><Users className="w-3.5 h-3.5 text-[#4c55a4]" /> 8 Guests</span>
                           <span className="flex items-center gap-1 w-1/2"><Footprints className="w-3.5 h-3.5 text-[#4c55a4]" /> 5m walk</span>
                         </div>

@@ -238,7 +238,7 @@
   "apartment_card": {
     "verified": "Verified",
     "beds": "Beds",
-    "baths": "Baths",
+    "baths": "Rooms",
     "guests": "Guests",
     "per_weekend": "/ weekend"
   },
@@ -293,7 +293,7 @@
     "verified_listing": "Verified Listing",
     "about_home": "About this home",
     "beds": "Beds",
-    "baths": "Baths",
+    "baths": "Rooms",
     "guests": "Guests",
     "up_to": "Up to",
     "available_upcoming": "Available for upcoming shabat",
@@ -362,7 +362,7 @@
       "under_review": "Under Review",
       "night": "/ night",
       "beds": "Beds",
-      "baths": "Baths",
+      "baths": "Rooms",
       "guests": "Guests",
       "availability_events": "Availability & Events:",
       "no_dates": "No dates selected yet.",

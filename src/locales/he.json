@@ -238,7 +238,7 @@
   "apartment_card": {
     "verified": "מאומת",
     "beds": "מיטות",
-    "baths": "חדרי רחצה",
+    "baths": "חדרים",
     "guests": "אורחים",
     "per_weekend": "/ סוף שבוע"
   },
@@ -293,7 +293,7 @@
     "verified_listing": "רשומה מאומתת",
     "about_home": "על הבית הזה",
     "beds": "מיטות",
-    "baths": "חדרי רחצה",
+    "baths": "חדרים",
     "guests": "אורחים",
     "up_to": "עד",
     "available_upcoming": "זמין לשבת הקרובה",
@@ -362,7 +362,7 @@
       "under_review": "בבדיקה",
       "night": "/ לילה",
       "beds": "מיטות",
-      "baths": "חדרי רחצה",
+      "baths": "חדרים",
       "guests": "אורחים",
       "availability_events": "זמינות ואירועים:",
       "no_dates": "טרם נבחרו תאריכים.",

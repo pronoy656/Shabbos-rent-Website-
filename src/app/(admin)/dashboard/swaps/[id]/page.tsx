@@ -141,7 +141,7 @@ export default function SwapDetailsPage({ params }: { params: { id: string } }) 
               </div>
               <div className="flex items-center gap-2 bg-zinc-50 dark:bg-zinc-900 px-4 py-2 rounded-lg border border-zinc-100 dark:border-zinc-800/60">
                 <Bath className="h-5 w-5 text-zinc-400" />
-                <span className="font-bold text-zinc-900 dark:text-white">{swap.initiator.apartment.baths} Baths</span>
+                <span className="font-bold text-zinc-900 dark:text-white">{swap.initiator.apartment.baths} Rooms</span>
               </div>
               <div className="flex items-center gap-2 bg-zinc-50 dark:bg-zinc-900 px-4 py-2 rounded-lg border border-zinc-100 dark:border-zinc-800/60">
                 <Users className="h-5 w-5 text-zinc-400" />
@@ -237,7 +237,7 @@ export default function SwapDetailsPage({ params }: { params: { id: string } }) 
               </div>
               <div className="flex items-center gap-2 bg-zinc-50 dark:bg-zinc-900 px-4 py-2 rounded-lg border border-zinc-100 dark:border-zinc-800/60">
                 <Bath className="h-5 w-5 text-zinc-400" />
-                <span className="font-bold text-zinc-900 dark:text-white">{swap.recipient.apartment.baths} Baths</span>
+                <span className="font-bold text-zinc-900 dark:text-white">{swap.recipient.apartment.baths} Rooms</span>
               </div>
               <div className="flex items-center gap-2 bg-zinc-50 dark:bg-zinc-900 px-4 py-2 rounded-lg border border-zinc-100 dark:border-zinc-800/60">
                 <Users className="h-5 w-5 text-zinc-400" />
