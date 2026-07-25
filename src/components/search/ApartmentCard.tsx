@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { MapPin, BedDouble, Bath, Users, ShieldCheck, Heart } from "lucide-react";
+import { MapPin, BedDouble, Bath, Users, Heart } from "lucide-react";
 import { useState, useEffect } from "react";
 import { ApartmentData } from "@/types";
 import { useLanguage } from "@/context/LanguageContext";
@@ -46,19 +46,13 @@ export default function ApartmentCard({ apartment, mode }: { apartment: Apartmen
           />
           
           {/* Top Left Badges */}
-          <div className="absolute top-3 left-3 flex flex-col items-start gap-1.5 z-10">
-            {apartment.verified && (
-              <div className="px-2.5 py-1 bg-green-500/90 backdrop-blur-sm rounded-md shadow-sm flex items-center gap-1.5 text-xs font-bold text-white">
-                <ShieldCheck className="w-3.5 h-3.5" />
-                {t("apartment_card.verified")}
-              </div>
-            )}
-            {apartment.isAvailable === false && (
+          {apartment.isAvailable === false && (
+            <div className="absolute top-3 left-3 flex flex-col items-start gap-1.5 z-10">
               <div className="px-2.5 py-1 bg-red-600/90 backdrop-blur-sm rounded-md shadow-sm flex items-center gap-1.5 text-xs font-bold text-white">
                 Unavailable
               </div>
-            )}
-          </div>
+            </div>
+          )}
 
           {/* Top Right Actions */}
           <div className="absolute top-3 right-3 z-10">
