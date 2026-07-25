@@ -185,9 +185,7 @@ export default function UserDashboardPage() {
   const [emailNewsletterState, setEmailNewsletterState] = useState(true);
   const [emailSavedToast, setEmailSavedToast] = useState(false);
 
-  // Renter Dashboard State (Favorites & Bookings)
-  const [favoritesSubTab, setFavoritesSubTab] = useState<"all" | "loved">("all");
-  const [bookingFilter, setBookingFilter] = useState<string>("all");
+  // Renter Dashboard State
   const [selectedContactBooking, setSelectedContactBooking] = useState<any>(null);
 
   useEffect(() => {
@@ -1049,98 +1047,51 @@ export default function UserDashboardPage() {
 
             {activeTab === "favorites" && (
               <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-6xl mx-auto">
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
-                  <div>
-                    <h1 className="text-3xl font-extrabold text-zinc-900 dark:text-white mb-1 flex items-center gap-2.5">
-                      <Heart className="w-7 h-7 text-pink-500 fill-pink-500" /> Favorites & Saved Apartments
-                    </h1>
-                    <p className="text-zinc-500 text-sm">Apartments you have bookmarked or loved for future Shabbos stays.</p>
-                  </div>
-
-                  <div className="flex items-center gap-2 p-1 bg-zinc-100 dark:bg-zinc-800 rounded-xl w-fit">
-                    <button
-                      onClick={() => setFavoritesSubTab("all")}
-                      className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${favoritesSubTab === "all" ? "bg-white dark:bg-zinc-900 text-[#4c55a4] shadow-xs" : "text-zinc-500 hover:text-zinc-900 dark:hover:text-white"}`}
-                    >
-                      All Saved ({savedApartments.length})
-                    </button>
-                    <button
-                      onClick={() => setFavoritesSubTab("loved")}
-                      className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${favoritesSubTab === "loved" ? "bg-white dark:bg-zinc-900 text-pink-500 shadow-xs" : "text-zinc-500 hover:text-zinc-900 dark:hover:text-white"}`}
-                    >
-                      Loved (Top Rated)
-                    </button>
-                  </div>
+                <div className="mb-8">
+                  <h1 className="text-3xl font-extrabold text-zinc-900 dark:text-white mb-1 flex items-center gap-2.5">
+                    <Heart className="w-7 h-7 text-pink-500 fill-pink-500" /> Favorites & Saved Apartments
+                  </h1>
+                  <p className="text-zinc-500 text-sm">Apartments you have bookmarked or loved for future Shabbos stays.</p>
                 </div>
 
-                {(() => {
-                  const displayList = favoritesSubTab === "loved"
-                    ? savedApartments.filter(a => a.rating >= 4.8)
-                    : savedApartments;
-
-                  if (displayList.length === 0) {
-                    return (
-                      <div className="bg-white dark:bg-zinc-900 rounded-3xl border border-zinc-200 dark:border-zinc-800 p-12 text-center shadow-sm">
-                        <div className="w-20 h-20 bg-pink-50 dark:bg-pink-950/40 rounded-full flex items-center justify-center mx-auto mb-4 border border-pink-100 dark:border-pink-900/50">
-                          <Heart className="w-10 h-10 text-pink-500" />
-                        </div>
-                        <h3 className="text-xl font-bold text-zinc-900 dark:text-white mb-2">No Saved Apartments Yet</h3>
-                        <p className="text-sm text-zinc-500 max-w-md mx-auto mb-6">
-                          Click the heart icon on any apartment card while searching to save it to your personal favorites list.
-                        </p>
-                        <Link
-                          href="/search"
-                          className="inline-flex items-center gap-2 px-6 py-3 bg-[#4c55a4] hover:bg-[#3d4484] text-white font-bold rounded-xl shadow-md shadow-[#4c55a4]/20 transition-all text-sm"
-                        >
-                          Explore Apartments
-                        </Link>
-                      </div>
-                    );
-                  }
-
-                  return (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                      {displayList.map(apt => (
-                        <ApartmentCard key={apt.id} apartment={apt} />
-                      ))}
+                {savedApartments.length === 0 ? (
+                  <div className="bg-white dark:bg-zinc-900 rounded-3xl border border-zinc-200 dark:border-zinc-800 p-12 text-center shadow-sm">
+                    <div className="w-20 h-20 bg-pink-50 dark:bg-pink-950/40 rounded-full flex items-center justify-center mx-auto mb-4 border border-pink-100 dark:border-pink-900/50">
+                      <Heart className="w-10 h-10 text-pink-500" />
                     </div>
-                  );
-                })()}
+                    <h3 className="text-xl font-bold text-zinc-900 dark:text-white mb-2">No Saved Apartments Yet</h3>
+                    <p className="text-sm text-zinc-500 max-w-md mx-auto mb-6">
+                      Click the heart icon on any apartment card while searching to save it to your personal favorites list.
+                    </p>
+                    <Link
+                      href="/search"
+                      className="inline-flex items-center gap-2 px-6 py-3 bg-[#4c55a4] hover:bg-[#3d4484] text-white font-bold rounded-xl shadow-md shadow-[#4c55a4]/20 transition-all text-sm"
+                    >
+                      Explore Apartments
+                    </Link>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {savedApartments.map(apt => (
+                      <ApartmentCard key={apt.id} apartment={apt} />
+                    ))}
+                  </div>
+                )}
               </div>
             )}
 
             {activeTab === "bookings" && (
               <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-5xl mx-auto">
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
-                  <div>
-                    <h1 className="text-3xl font-extrabold text-zinc-900 dark:text-white mb-1 flex items-center gap-2.5">
-                      <CalendarDays className="w-7 h-7 text-amber-500" /> Renter Booking History
-                    </h1>
-                    <p className="text-zinc-500 text-sm">View past and upcoming Shabbos apartment stays as a Renter.</p>
-                  </div>
-
-                  <div className="flex items-center gap-2 p-1 bg-zinc-100 dark:bg-zinc-800 rounded-xl w-fit">
-                    {[
-                      { id: "all", label: "All" },
-                      { id: "upcoming", label: "Upcoming" },
-                      { id: "completed", label: "Completed" },
-                    ].map(filter => (
-                      <button
-                        key={filter.id}
-                        onClick={() => setBookingFilter(filter.id)}
-                        className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${bookingFilter === filter.id ? "bg-white dark:bg-zinc-900 text-[#4c55a4] shadow-xs" : "text-zinc-500 hover:text-zinc-900 dark:hover:text-white"}`}
-                      >
-                        {filter.label}
-                      </button>
-                    ))}
-                  </div>
+                <div className="mb-8">
+                  <h1 className="text-3xl font-extrabold text-zinc-900 dark:text-white mb-1 flex items-center gap-2.5">
+                    <CalendarDays className="w-7 h-7 text-amber-500" /> Booking History
+                  </h1>
+                  <p className="text-zinc-500 text-sm">View all your Shabbos apartment bookings as a Renter.</p>
                 </div>
 
                 {/* Bookings List */}
                 <div className="space-y-6">
-                  {mockRenterBookings
-                    .filter(b => bookingFilter === "all" || b.status.toLowerCase() === bookingFilter.toLowerCase())
-                    .map(booking => (
+                  {mockRenterBookings.map(booking => (
                       <div key={booking.id} className="bg-white dark:bg-zinc-900 rounded-3xl border border-zinc-200 dark:border-zinc-800 p-6 md:p-8 shadow-sm flex flex-col lg:flex-row lg:items-center justify-between gap-6 hover:shadow-md transition-shadow">
                         <div className="flex flex-col sm:flex-row items-start gap-5">
                           <div className="w-full sm:w-36 h-28 rounded-2xl overflow-hidden bg-zinc-100 dark:bg-zinc-800 shrink-0 relative">

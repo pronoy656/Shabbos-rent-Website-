@@ -61,6 +61,9 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
   const [swapModalState, setSwapModalState] = useState<"initial" | "contact">("initial");
   const [destInput, setDestInput] = useState("Great Synagogue, Jerusalem");
 
+  const [isUnavailableModalOpen, setIsUnavailableModalOpen] = useState(false);
+  const [isNotified, setIsNotified] = useState(false);
+
   useEffect(() => {
     if (typeof window !== "undefined") {
       const isLoggedIn = localStorage.getItem("userRole") !== null;
@@ -217,16 +220,31 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
                        {availableDates.length > 0 ? t("apartment_details.available_upcoming") : t("apartment_details.unavailable_upcoming")}
                     </button>
                     {!isSwapMode && (
-                      <button 
-                        onClick={() => setIsModalOpen(true)}
-                        className="w-full sm:w-auto px-6 py-2.5 bg-[#4c55a4] hover:bg-[#3d4484] text-white rounded-xl font-bold transition-all shadow-md shadow-[#4c55a4]/20 text-sm"
-                      >
-                         {t("apartment_details.interested")}
-                      </button>
+                      isApartmentAvailable ? (
+                        <button 
+                          onClick={() => setIsLandlordModalOpen(true)}
+                          className="w-full sm:w-auto px-6 py-2.5 bg-[#4c55a4] hover:bg-[#3d4484] text-white rounded-xl font-bold transition-all shadow-md shadow-[#4c55a4]/20 text-sm"
+                        >
+                           {t("apartment_details.interested")}
+                        </button>
+                      ) : (
+                        <button 
+                          onClick={() => setIsUnavailableModalOpen(true)}
+                          className="w-full sm:w-auto px-6 py-2.5 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-bold transition-all shadow-md shadow-orange-500/20 text-sm flex items-center justify-center gap-1.5"
+                        >
+                           {t("apartment_details.interested")}
+                        </button>
+                      )
                     )}
                     {isSwapMode && (
                       <button 
-                        onClick={() => setIsSwapModalOpen(true)}
+                        onClick={() => {
+                          if (!isApartmentAvailable) {
+                            setIsUnavailableModalOpen(true);
+                          } else {
+                            setIsSwapModalOpen(true);
+                          }
+                        }}
                         className="w-full sm:w-auto px-6 py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl font-bold transition-all shadow-md shadow-amber-500/20 text-sm flex items-center justify-center gap-2"
                       >
                          <ArrowRightLeft className="w-4 h-4" /> {t("apartment_details.swap_now")}
@@ -267,26 +285,35 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
                 </div>
             </div>
 
-
-
-            {/* Contact Landlord Section (Only shown if apartment is available) */}
-            {isApartmentAvailable && (
-              <div className="bg-[#4c55a4]/5 dark:bg-[#4c55a4]/10 rounded-3xl p-6 md:p-8 border border-[#4c55a4]/20 dark:border-[#4c55a4]/30 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-6">
-                  <div>
-                     <h2 className="text-2xl font-bold text-zinc-900 dark:text-white mb-2">{t("apartment_details.like_apartment")}</h2>
-                     <p className="text-zinc-600 dark:text-zinc-400">{t("apartment_details.get_in_touch")}</p>
-                  </div>
+            {/* Contact Landlord Section */}
+            <div className="bg-[#4c55a4]/5 dark:bg-[#4c55a4]/10 rounded-3xl p-6 md:p-8 border border-[#4c55a4]/20 dark:border-[#4c55a4]/30 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+                <div>
+                   <h2 className="text-2xl font-bold text-zinc-900 dark:text-white mb-2">
+                     {isApartmentAvailable ? t("apartment_details.like_apartment") : "Apartment Unavailable for Upcoming Week"}
+                   </h2>
+                   <p className="text-zinc-600 dark:text-zinc-400">
+                     {isApartmentAvailable 
+                       ? t("apartment_details.get_in_touch") 
+                       : "You can still send an offer or special request to the owner for future stays."}
+                   </p>
+                </div>
+                {isApartmentAvailable ? (
                   <button 
-                     onClick={() => {
-                       setIsLandlordModalOpen(true);
-                     }}
+                     onClick={() => setIsLandlordModalOpen(true)}
                      className="px-8 py-3.5 bg-[#4c55a4] hover:bg-[#3d4484] text-white rounded-xl font-extrabold transition-all shadow-md shadow-[#4c55a4]/20 flex items-center justify-center gap-2 whitespace-nowrap active:scale-95"
                   >
                      <Phone className="w-4 h-4" />
                      {t("apartment_details.contact_landlord")}
                   </button>
-              </div>
-            )}
+                ) : (
+                  <button 
+                     onClick={() => setIsUnavailableModalOpen(true)}
+                     className="px-8 py-3.5 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-extrabold transition-all shadow-md shadow-orange-500/20 flex items-center justify-center gap-2 whitespace-nowrap active:scale-95"
+                  >
+                     {t("apartment_details.interested")}
+                  </button>
+                )}
+            </div>
 
             {/* Map & Walking Distance Calculator Section */}
             <div className="bg-white dark:bg-zinc-900 rounded-3xl p-6 md:p-8 border border-zinc-200 dark:border-zinc-800 shadow-sm">
@@ -610,6 +637,12 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
                      >
                        <MessageCircle className="w-5 h-5" /> {t("apartment_details.whatsapp")}
                      </a>
+                     <a 
+                       href={`mailto:owner@shabbosrent.com?subject=Inquiry%20regarding%20Apartment%20APT-${id}`}
+                       className="w-full py-3.5 bg-white dark:bg-zinc-900 hover:bg-[#4c55a4]/5 dark:hover:bg-indigo-500/10 text-[#4c55a4] dark:text-indigo-300 border-2 border-[#4c55a4] dark:border-indigo-500 rounded-2xl font-extrabold transition-all shadow-sm flex items-center justify-center gap-2.5 text-base active:scale-[0.98]"
+                     >
+                       <Mail className="w-5 h-5 text-[#4c55a4] dark:text-indigo-300" /> Contact by Email
+                     </a>
                   </div>
                </div>
             </div>
@@ -766,9 +799,60 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
                      >
                        <MessageCircle className="w-5 h-5" /> {t("apartment_details.whatsapp")}
                      </a>
+                     <a 
+                       href={`mailto:owner@shabbosrent.com?subject=Swap%20Inquiry%20(SWP-8472)%20for%20Apartment%20APT-${id}`}
+                       className="w-full py-4 bg-white dark:bg-zinc-900 hover:bg-[#4c55a4]/5 dark:hover:bg-indigo-500/10 text-[#4c55a4] dark:text-indigo-300 border-2 border-[#4c55a4] dark:border-indigo-500 rounded-xl font-bold transition-all shadow-sm flex items-center justify-center gap-2 text-lg"
+                     >
+                       <Mail className="w-5 h-5 text-[#4c55a4] dark:text-indigo-300" /> Contact by Email
+                     </a>
                   </div>
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Unavailable Apartment Interceptor Modal */}
+      {isUnavailableModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-zinc-900 rounded-3xl p-6 md:p-8 max-w-md w-full border border-zinc-200 dark:border-zinc-800 shadow-2xl relative text-center animate-in fade-in zoom-in-95 duration-200">
+            <button 
+              onClick={() => setIsUnavailableModalOpen(false)}
+              className="absolute top-4 right-4 p-2 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="w-16 h-16 rounded-2xl bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800/80 text-amber-600 flex items-center justify-center mx-auto mb-5 shadow-sm">
+              <LockKeyhole className="w-8 h-8 text-amber-600 dark:text-amber-400" />
+            </div>
+
+            <h3 className="text-xl md:text-2xl font-extrabold text-zinc-900 dark:text-white mb-2">
+              Apartment Not Available for Upcoming Week
+            </h3>
+
+            <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-6 leading-relaxed">
+              This apartment is not available for the upcoming week. However, you can send an offer or special request to the owner.
+            </p>
+
+            <div className="space-y-3">
+              <button
+                onClick={() => {
+                  setIsUnavailableModalOpen(false);
+                  setIsModalOpen(true);
+                }}
+                className="w-full py-3.5 bg-[#4c55a4] hover:bg-[#3d4484] text-white font-bold rounded-xl text-sm transition-all shadow-md shadow-[#4c55a4]/20 flex items-center justify-center gap-2"
+              >
+                Send Offer / Request
+              </button>
+
+              <Link
+                href="/search"
+                className="block w-full py-3 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-900 dark:text-white font-bold rounded-xl text-sm transition-colors"
+              >
+                Browse Other Available Apartments
+              </Link>
             </div>
           </div>
         </div>
