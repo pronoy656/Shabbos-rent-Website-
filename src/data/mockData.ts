@@ -16,6 +16,7 @@ export const mockBaseApartments: ApartmentData[] = [
     isSwapAvailable: true,
     verified: true,
     isAvailable: true,
+    amenities: ["WiFi", "Air Conditioning", "Parking", "Kosher Kitchen", "Washing Machine", "Balcony"],
   },
   {
     id: "2",
@@ -31,6 +32,7 @@ export const mockBaseApartments: ApartmentData[] = [
     isSwapAvailable: false,
     verified: true,
     isAvailable: false,
+    amenities: ["WiFi", "Air Conditioning", "Kosher Kitchen", "Shabbos Elevator"],
   },
   {
     id: "3",
@@ -46,6 +48,7 @@ export const mockBaseApartments: ApartmentData[] = [
     isSwapAvailable: true,
     verified: false,
     isAvailable: true,
+    amenities: ["WiFi", "Air Conditioning", "Parking", "Washing Machine", "Kosher Kitchen", "Balcony"],
   },
   {
     id: "4",
@@ -61,6 +64,7 @@ export const mockBaseApartments: ApartmentData[] = [
     isSwapAvailable: false,
     verified: true,
     isAvailable: false,
+    amenities: ["WiFi", "Air Conditioning", "Washing Machine"],
   },
   {
     id: "5",
@@ -76,6 +80,7 @@ export const mockBaseApartments: ApartmentData[] = [
     isSwapAvailable: true,
     verified: true,
     isAvailable: true,
+    amenities: ["WiFi", "Air Conditioning", "Parking", "Kosher Kitchen", "Shabbos Elevator"],
   },
   {
     id: "6",
@@ -91,6 +96,7 @@ export const mockBaseApartments: ApartmentData[] = [
     isSwapAvailable: false,
     verified: false,
     isAvailable: false,
+    amenities: ["WiFi", "Parking", "Washing Machine", "Balcony"],
   },
 ];
 

@@ -14,6 +14,7 @@ export interface ApartmentData {
   isSwapAvailable: boolean;
   verified: boolean;
   isAvailable?: boolean;
+  amenities?: string[];
 }
 
 export interface Amenity {

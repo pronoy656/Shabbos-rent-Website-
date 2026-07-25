@@ -257,11 +257,24 @@
       "studio": "סטודיו"
     },
     "amenities_list": {
+      "wifi": "WiFi",
+      "air_conditioning": "מיזוג אוויר",
+      "parking": "חניה",
+      "washing_machine": "מכונת כביסה",
       "kosher_kitchen": "מטבח כשר",
       "shabbos_elevator": "מעלית שבת",
+      "shabbos_plata": "פלטת שבת",
+      "hot_water_urn": "מיחם שבת",
+      "shabbos_clock": "שעון שבת",
       "balcony": "מרפסת",
-      "parking": "חניה",
-      "wheelchair": "נגישות לכיסא גלגלים"
+      "sukkah_balcony": "מרפסת לסוכה",
+      "private_garden": "גינה פרטית",
+      "baby_crib": "עריסת תינוק",
+      "wheelchair": "נגישות לכיסא גלגלים",
+      "sea_view": "נוף לים",
+      "swimming_pool": "בריכה",
+      "towels_linen": "מגבות ומצעים",
+      "coffee_machine": "מכונת קפה"
     }
   },
   "search_page": {

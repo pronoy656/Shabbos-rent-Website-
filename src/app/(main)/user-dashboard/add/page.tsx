@@ -200,7 +200,40 @@ export default function AddApartmentPage() {
                 <p className="text-xs text-zinc-500">Adding specific amenities helps guests find your property more easily and sets clear expectations for their stay.</p>
               </div>
               
-              <label className="block text-xs font-bold text-zinc-500 mb-1.5 uppercase">Add Amenity</label>
+              <label className="block text-xs font-bold text-zinc-500 mb-1.5 uppercase">Quick Select Amenities</label>
+              <div className="flex flex-wrap gap-2 mb-4 max-h-56 overflow-y-auto pr-1">
+                {[
+                  "WiFi", "Air Conditioning", "Parking", "Washing Machine", 
+                  "Kosher Kitchen", "Shabbos Elevator", "Shabbos Plata", "Hot Water Urn", 
+                  "Shabbos Clock", "Balcony", "Sukkah Balcony", "Private Garden", 
+                  "Baby Crib", "Wheelchair Accessible", "Sea View", "Swimming Pool", 
+                  "Towels & Linen", "Coffee Machine"
+                ].map((preset) => {
+                  const isSelected = amenities.includes(preset);
+                  return (
+                    <button
+                      key={preset}
+                      type="button"
+                      onClick={() => {
+                        if (isSelected) {
+                          handleRemoveAmenity(preset);
+                        } else {
+                          setAmenities([...amenities, preset]);
+                        }
+                      }}
+                      className={`px-3 py-1 rounded-lg text-xs font-bold transition-all border ${
+                        isSelected
+                          ? "bg-[#4c55a4] text-white border-[#4c55a4]"
+                          : "bg-zinc-50 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border-zinc-200 dark:border-zinc-700 hover:border-[#4c55a4]"
+                      }`}
+                    >
+                      {isSelected ? "✓ " : "+ "}{preset}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <label className="block text-xs font-bold text-zinc-500 mb-1.5 uppercase">Add Custom Amenity</label>
               <div className="flex gap-2 mb-6">
                 <input 
                   type="text" 
@@ -219,7 +252,7 @@ export default function AddApartmentPage() {
               </div>
 
               <div>
-                <h3 className="text-sm font-bold text-zinc-900 dark:text-white mb-3">Added Amenities</h3>
+                <h3 className="text-sm font-bold text-zinc-900 dark:text-white mb-3">Added Amenities ({amenities.length})</h3>
                 <div className="flex flex-wrap gap-2">
                   {amenities.map((item, idx) => (
                     <div key={idx} className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 rounded-full text-xs font-semibold border border-blue-100 dark:border-blue-800/30">

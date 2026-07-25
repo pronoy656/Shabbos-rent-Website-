@@ -314,14 +314,47 @@ export default function CreateListingModal({ isOpen, onClose, onSave, isEditMode
                   <p className="text-sm text-zinc-500 mt-1">Specific amenities help guests find your property easily and set clear expectations.</p>
                 </div>
                 
-                <label className="block text-xs font-black text-zinc-400 mb-2 uppercase tracking-wider">Add Amenity</label>
+                <label className="block text-xs font-black text-zinc-400 mb-2 uppercase tracking-wider">Quick Select Amenities</label>
+                <div className="flex flex-wrap gap-2 mb-6 max-h-56 overflow-y-auto pr-1">
+                  {[
+                    "WiFi", "Air Conditioning", "Parking", "Washing Machine", 
+                    "Kosher Kitchen", "Shabbos Elevator", "Shabbos Plata", "Hot Water Urn", 
+                    "Shabbos Clock", "Balcony", "Sukkah Balcony", "Private Garden", 
+                    "Baby Crib", "Wheelchair Accessible", "Sea View", "Swimming Pool", 
+                    "Towels & Linen", "Coffee Machine"
+                  ].map((preset) => {
+                    const isSelected = amenities.includes(preset);
+                    return (
+                      <button
+                        key={preset}
+                        type="button"
+                        onClick={() => {
+                          if (isSelected) {
+                            handleRemoveAmenity(preset);
+                          } else {
+                            setAmenities(prev => [...prev, preset]);
+                          }
+                        }}
+                        className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all border ${
+                          isSelected
+                            ? "bg-[#4c55a4] text-white border-[#4c55a4] shadow-sm"
+                            : "bg-zinc-50 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border-zinc-200 dark:border-zinc-700 hover:border-[#4c55a4]"
+                        }`}
+                      >
+                        {isSelected ? "✓ " : "+ "}{preset}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <label className="block text-xs font-black text-zinc-400 mb-2 uppercase tracking-wider">Add Custom Amenity</label>
                 <div className="flex flex-col sm:flex-row gap-3 mb-8">
                   <input 
                     type="text" 
                     value={amenityInput}
                     onChange={(e) => setAmenityInput(e.target.value)}
                     onKeyDown={handleAddAmenity}
-                    placeholder="Type an amenity (e.g. High-speed WiFi) and press Enter" 
+                    placeholder="Type an amenity (e.g. Swimming Pool) and press Enter" 
                     className="flex-1 px-4 py-3.5 bg-zinc-50/80 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-2xl text-[15px] text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:bg-white dark:focus:bg-zinc-900 focus:ring-4 focus:ring-[#4c55a4]/10 focus:border-[#4c55a4] outline-none transition-all duration-200" 
                   />
                   <button 
@@ -333,7 +366,7 @@ export default function CreateListingModal({ isOpen, onClose, onSave, isEditMode
                 </div>
 
                 <div>
-                  <h3 className="text-sm font-bold text-zinc-800 dark:text-zinc-200 mb-3">Included Amenities</h3>
+                  <h3 className="text-sm font-bold text-zinc-800 dark:text-zinc-200 mb-3">Included Amenities ({amenities.length})</h3>
                   {amenities.length === 0 ? (
                     <div className="flex items-center gap-2 text-sm text-zinc-500 dark:text-zinc-400 py-1 font-medium">
                       <Info className="w-4 h-4" />

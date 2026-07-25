@@ -115,6 +115,8 @@ function SearchContent() {
   const { t } = useLanguage();
   const [dummyVisible, setDummyVisible] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+  const [selectedAmenities, setSelectedAmenities] = useState<string[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -123,6 +125,15 @@ function SearchContent() {
       setDummyVisible(hasListing && isVisible);
     }
   }, []);
+
+  const handleAmenityToggle = (amenityKey: string) => {
+    setSelectedAmenities(prev =>
+      prev.includes(amenityKey)
+        ? prev.filter(item => item !== amenityKey)
+        : [...prev, amenityKey]
+    );
+    setCurrentPage(1);
+  };
 
   const sortOptions = [
     t("search_page.sort_options.recommended"), 
@@ -140,11 +151,24 @@ function SearchContent() {
     ? cityParam.split("-").map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" ")
     : "";
 
+  const dummyApartment: ApartmentData = { 
+    id: "dummy", 
+    title: "Bright luxury apartment in city center", 
+    location: "City Center, Jerusalem", 
+    image: "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&q=80&w=800", 
+    price: 1500, 
+    rating: 5.0, 
+    reviews: 0, 
+    beds: 4, 
+    baths: 2, 
+    guests: 8, 
+    isSwapAvailable: true, 
+    verified: false,
+    amenities: ["WiFi", "Air Conditioning", "Parking", "Kosher Kitchen", "Washing Machine"]
+  };
+
   const allApartments = dummyVisible 
-    ? [
-        { id: "dummy", title: "Bright luxury apartment in city center", location: "City Center, Jerusalem", image: "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&q=80&w=800", price: 1500, rating: 5.0, reviews: 0, beds: 4, baths: 2, guests: 8, isSwapAvailable: true, verified: false },
-        ...apartments
-      ]
+    ? [dummyApartment, ...apartments]
     : apartments;
 
   let filteredApartments = cityParam
@@ -153,6 +177,24 @@ function SearchContent() {
 
   if (typeParam === "swap") {
     filteredApartments = filteredApartments.filter(apt => apt.isSwapAvailable);
+  }
+
+  if (selectedAmenities.length > 0) {
+    filteredApartments = filteredApartments.filter(apt => {
+      if (!apt.amenities || apt.amenities.length === 0) return false;
+      return selectedAmenities.every(selected =>
+        apt.amenities?.some(a => a.toLowerCase().includes(selected.toLowerCase()))
+      );
+    });
+  }
+
+  if (searchQuery.trim()) {
+    const q = searchQuery.toLowerCase();
+    filteredApartments = filteredApartments.filter(apt =>
+      apt.title.toLowerCase().includes(q) ||
+      apt.location.toLowerCase().includes(q) ||
+      apt.amenities?.some(a => a.toLowerCase().includes(q))
+    );
   }
   
   const ITEMS_PER_PAGE = 12;
@@ -181,6 +223,11 @@ function SearchContent() {
                 </div>
                 <input 
                   type="text" 
+                  value={searchQuery}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value);
+                    setCurrentPage(1);
+                  }}
                   placeholder={t("search_page.search_placeholder")}
                   className="w-full pl-10 pr-4 py-3 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-sm font-medium text-zinc-900 dark:text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-[#4c55a4] transition-all shadow-sm"
                 />
@@ -223,7 +270,15 @@ function SearchContent() {
           
           {/* Left Sidebar (Filters) */}
           <div className="hidden lg:block lg:col-span-3">
-            <FilterSidebar />
+            <FilterSidebar 
+              selectedAmenities={selectedAmenities}
+              onAmenityToggle={handleAmenityToggle}
+              onClearFilters={() => {
+                setSelectedAmenities([]);
+                setSearchQuery("");
+                setCurrentPage(1);
+              }}
+            />
           </div>
 
           {/* Right Main Area (Apartment Cards) */}

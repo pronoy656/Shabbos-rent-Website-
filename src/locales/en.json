@@ -257,11 +257,24 @@
       "studio": "Studio"
     },
     "amenities_list": {
+      "wifi": "WiFi",
+      "air_conditioning": "Air Conditioning",
+      "parking": "Parking",
+      "washing_machine": "Washing Machine",
       "kosher_kitchen": "Kosher Kitchen",
       "shabbos_elevator": "Shabbos Elevator",
+      "shabbos_plata": "Shabbos Plata",
+      "hot_water_urn": "Hot Water Urn",
+      "shabbos_clock": "Shabbos Clock",
       "balcony": "Balcony",
-      "parking": "Parking",
-      "wheelchair": "Wheelchair Accessible"
+      "sukkah_balcony": "Sukkah Balcony",
+      "private_garden": "Private Garden",
+      "baby_crib": "Baby Crib",
+      "wheelchair": "Wheelchair Accessible",
+      "sea_view": "Sea View",
+      "swimming_pool": "Swimming Pool",
+      "towels_linen": "Towels & Linen",
+      "coffee_machine": "Coffee Machine"
     }
   },
   "search_page": {
