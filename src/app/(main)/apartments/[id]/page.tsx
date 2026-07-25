@@ -64,6 +64,74 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
   const [isUnavailableModalOpen, setIsUnavailableModalOpen] = useState(false);
   const [isNotified, setIsNotified] = useState(false);
 
+  // Reviews Feature (R1 & R2)
+  const [isWriteReviewModalOpen, setIsWriteReviewModalOpen] = useState(false);
+  const [reviewRating, setReviewRating] = useState(5);
+  const [reviewerNameInput, setReviewerNameInput] = useState("");
+  const [reviewTitleInput, setReviewTitleInput] = useState("");
+  const [reviewCommentInput, setReviewCommentInput] = useState("");
+  const [approvedReviewsList, setApprovedReviewsList] = useState<any[]>([
+    {
+      id: "rev-default-1",
+      reviewerName: "Chaim Gold",
+      rating: 5,
+      title: "Perfect Shabbos Stay",
+      comment: "The apartment was spotless and the kosher kitchen setup made our Shabbos prep so easy. Highly recommend!",
+      date: "Jul 10, 2026",
+    },
+    {
+      id: "rev-default-2",
+      reviewerName: "Miriam S.",
+      rating: 5,
+      title: "Great Location in Rehavia",
+      comment: "Walking distance to Great Synagogue and Kotel. Very quiet building and comfortable beds.",
+      date: "Jun 24, 2026",
+    }
+  ]);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const savedApproved = localStorage.getItem("approved_reviews");
+      if (savedApproved) {
+        try {
+          const parsedApproved = JSON.parse(savedApproved);
+          const currentAptReviews = parsedApproved.filter((r: any) => r.apartmentId === id || !r.apartmentId);
+          if (currentAptReviews.length > 0) {
+            setApprovedReviewsList(prev => [...currentAptReviews, ...prev]);
+          }
+        } catch (e) {
+          console.error(e);
+        }
+      }
+    }
+  }, [id]);
+
+  const handleReviewSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const newReview = {
+      id: `rev-${Date.now()}`,
+      apartmentId: id,
+      apartmentTitle: "Beautiful Apartment in Jerusalem",
+      reviewerName: reviewerNameInput || "Renter User",
+      rating: reviewRating,
+      title: reviewTitleInput,
+      comment: reviewCommentInput,
+      date: new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
+      status: "Pending",
+    };
+
+    if (typeof window !== "undefined") {
+      const existingPending = localStorage.getItem("pending_reviews");
+      const pendingArr = existingPending ? JSON.parse(existingPending) : [];
+      localStorage.setItem("pending_reviews", JSON.stringify([newReview, ...pendingArr]));
+    }
+
+    setIsWriteReviewModalOpen(false);
+    setReviewTitleInput("");
+    setReviewCommentInput("");
+    alert("Thank you! Your review has been submitted to the Admin Moderation Queue. It will go live once approved by an Admin.");
+  };
+
   const [isConfirmationModalOpen, setIsConfirmationModalOpen] = useState(false);
   const [isSelectWeekModalOpen, setIsSelectWeekModalOpen] = useState(false);
   const [selectedAgreedWeek, setSelectedAgreedWeek] = useState(mockAvailableDates[0].date);
@@ -443,6 +511,39 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
                       title="Apartment Location"
                     />
                 </div>
+            </div>
+
+            {/* R1 — Renter Reviews Section */}
+            <div className="bg-white dark:bg-zinc-900 rounded-3xl p-6 md:p-8 border border-zinc-200 dark:border-zinc-800 shadow-sm mt-8">
+              <div className="mb-6">
+                <h2 className="text-2xl font-bold text-zinc-900 dark:text-white flex items-center gap-2">
+                  <Star className="w-6 h-6 text-amber-500 fill-amber-500" />
+                  Renter Reviews ({approvedReviewsList.length})
+                </h2>
+                <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
+                  Verified feedback from guests who completed a stay at this apartment.
+                </p>
+              </div>
+
+              <div className="space-y-4">
+                {approvedReviewsList.map(rev => (
+                  <div key={rev.id} className="p-5 bg-zinc-50 dark:bg-zinc-800/50 rounded-2xl border border-zinc-100 dark:border-zinc-700/60">
+                    <div className="flex justify-between items-start mb-2">
+                      <div>
+                        <h4 className="font-bold text-zinc-900 dark:text-white text-base">{rev.title}</h4>
+                        <p className="text-xs text-zinc-500 font-medium">By {rev.reviewerName} • {rev.date}</p>
+                      </div>
+                      <div className="flex items-center gap-1 bg-amber-100 dark:bg-amber-950/60 px-2.5 py-1 rounded-lg text-amber-800 dark:text-amber-300 font-bold text-xs">
+                        <Star className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
+                        {rev.rating}.0
+                      </div>
+                    </div>
+                    <p className="text-sm text-zinc-600 dark:text-zinc-300 leading-relaxed">
+                      {rev.comment}
+                    </p>
+                  </div>
+                ))}
+              </div>
             </div>
 
          </div>

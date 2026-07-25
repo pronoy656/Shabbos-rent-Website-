@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { PlusCircle, Home, LogOut, Settings, Building, RefreshCw, LayoutDashboard, MapPin, BedDouble, Bath, Users, Info, AlignLeft, CalendarCheck, Eye, Check, User, Heart, Lock, CalendarDays, Edit3, Clock, Phone, Gift, Copy, CheckCircle2, UserPlus, MoreHorizontal, Wallet, Banknote, Lightbulb, Bell, ShieldCheck, X, MessageCircle, Bookmark, Mail } from "lucide-react";
+import { PlusCircle, Home, LogOut, Settings, Building, RefreshCw, LayoutDashboard, MapPin, BedDouble, Bath, Users, Info, AlignLeft, CalendarCheck, Eye, Check, User, Heart, Lock, CalendarDays, Edit3, Clock, Phone, Gift, Copy, CheckCircle2, UserPlus, MoreHorizontal, Wallet, Banknote, Lightbulb, Bell, ShieldCheck, X, MessageCircle, Bookmark, Mail, Star } from "lucide-react";
 import MainNavbar from "@/components/layout/MainNavbar";
 import CreateListingModal from "@/components/layout/CreateListingModal";
 import ChangePasswordModal from "@/components/settings/ChangePasswordModal";
@@ -188,6 +188,51 @@ export default function UserDashboardPage() {
   // Renter Dashboard State
   const [selectedContactBooking, setSelectedContactBooking] = useState<any>(null);
   const [allRenterBookings, setAllRenterBookings] = useState(mockRenterBookings);
+
+  // Review Submission State from Booking History (R1)
+  const [isWriteReviewModalOpen, setIsWriteReviewModalOpen] = useState(false);
+  const [isReviewSuccessModalOpen, setIsReviewSuccessModalOpen] = useState(false);
+  const [selectedBookingForReview, setSelectedBookingForReview] = useState<any>(null);
+  const [reviewRating, setReviewRating] = useState(0);
+  const [reviewerNameInput, setReviewerNameInput] = useState("");
+  const [reviewTitleInput, setReviewTitleInput] = useState("");
+  const [reviewCommentInput, setReviewCommentInput] = useState("");
+
+  const handleOpenReviewModal = (booking: any) => {
+    setSelectedBookingForReview(booking);
+    setReviewRating(0);
+    setIsWriteReviewModalOpen(true);
+  };
+
+  const handleReviewSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedBookingForReview) return;
+
+    const finalRating = reviewRating > 0 ? reviewRating : 5;
+
+    const newReview = {
+      id: `rev-${Date.now()}`,
+      apartmentId: selectedBookingForReview.apartmentId || "1",
+      apartmentTitle: selectedBookingForReview.title || "Beautiful Apartment in Jerusalem",
+      reviewerName: reviewerNameInput || "Renter User",
+      rating: finalRating,
+      title: reviewTitleInput,
+      comment: reviewCommentInput,
+      date: new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
+      status: "Pending",
+    };
+
+    if (typeof window !== "undefined") {
+      const existingPending = localStorage.getItem("pending_reviews");
+      const pendingArr = existingPending ? JSON.parse(existingPending) : [];
+      localStorage.setItem("pending_reviews", JSON.stringify([newReview, ...pendingArr]));
+    }
+
+    setIsWriteReviewModalOpen(false);
+    setReviewTitleInput("");
+    setReviewCommentInput("");
+    setIsReviewSuccessModalOpen(true);
+  };
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -1163,6 +1208,12 @@ export default function UserDashboardPage() {
 
                         <div className="flex flex-wrap items-center gap-2 pt-4 lg:pt-0 border-t lg:border-t-0 border-zinc-100 dark:border-zinc-800">
                           <button
+                            onClick={() => handleOpenReviewModal(booking)}
+                            className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white text-xs font-extrabold rounded-xl transition-colors shadow-xs flex items-center gap-1.5 active:scale-95"
+                          >
+                            <Star className="w-3.5 h-3.5 fill-white" /> Give Review
+                          </button>
+                          <button
                             onClick={() => setSelectedContactBooking(booking)}
                             className="px-4 py-2 bg-[#4c55a4] hover:bg-[#3d4484] text-white text-xs font-bold rounded-xl transition-colors shadow-xs"
                           >
@@ -1174,12 +1225,6 @@ export default function UserDashboardPage() {
                           >
                             View Apartment
                           </Link>
-                          <button
-                            onClick={() => alert(`Downloading official receipt for ${booking.refCode}...`)}
-                            className="px-4 py-2 border border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800 text-xs font-bold rounded-xl transition-colors"
-                          >
-                            Receipt
-                          </button>
                         </div>
                       </div>
                     ))}
@@ -1595,6 +1640,129 @@ export default function UserDashboardPage() {
                 <span className="text-xs text-zinc-500">{selectedContactBooking.hostEmail}</span>
               </a>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* R1 — Write Review Modal from Booking History */}
+      {isWriteReviewModalOpen && selectedBookingForReview && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-950/60 backdrop-blur-md animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-zinc-900 rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden border border-zinc-200 dark:border-zinc-800 animate-in zoom-in-95 duration-200 relative p-6 md:p-8">
+            <button 
+              onClick={() => setIsWriteReviewModalOpen(false)}
+              className="absolute top-4 right-4 p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full transition-colors text-zinc-400"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="w-12 h-12 rounded-2xl bg-amber-500/10 text-amber-500 flex items-center justify-center mb-4">
+              <Star className="w-6 h-6 fill-amber-500" />
+            </div>
+
+            <h3 className="text-xl font-extrabold text-zinc-900 dark:text-white mb-1">
+              Give a Review
+            </h3>
+            <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-6">
+              Share your verified experience staying at <strong className="text-zinc-900 dark:text-white">{selectedBookingForReview.title}</strong>.
+            </p>
+
+            <form onSubmit={handleReviewSubmit} className="space-y-4 text-left">
+              {/* Star Selector */}
+              <div>
+                <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-2">Rating</label>
+                <div className="flex items-center gap-2">
+                  {[1, 2, 3, 4, 5].map(star => (
+                    <button
+                      type="button"
+                      key={star}
+                      onClick={() => setReviewRating(star)}
+                      className="p-1 transition-transform active:scale-110"
+                    >
+                      <Star className={`w-7 h-7 ${star <= reviewRating ? "text-amber-500 fill-amber-500" : "text-zinc-300 dark:text-zinc-700"}`} />
+                    </button>
+                  ))}
+                  <span className="ml-2 font-bold text-xs text-amber-600 dark:text-amber-400">
+                    {reviewRating > 0 ? `${reviewRating}.0 / 5.0` : "Select rating"}
+                  </span>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1.5">Your Name</label>
+                <input
+                  type="text"
+                  required
+                  value={reviewerNameInput}
+                  onChange={e => setReviewerNameInput(e.target.value)}
+                  placeholder="e.g. Chaim S."
+                  className="w-full px-4 py-3 bg-zinc-50 dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-700 rounded-xl text-sm font-medium text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-[#4c55a4]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1.5">Review Headline</label>
+                <input
+                  type="text"
+                  required
+                  value={reviewTitleInput}
+                  onChange={e => setReviewTitleInput(e.target.value)}
+                  placeholder="e.g. Excellent Shabbos experience!"
+                  className="w-full px-4 py-3 bg-zinc-50 dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-700 rounded-xl text-sm font-medium text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-[#4c55a4]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1.5">Your Review Comments</label>
+                <textarea
+                  required
+                  rows={4}
+                  value={reviewCommentInput}
+                  onChange={e => setReviewCommentInput(e.target.value)}
+                  placeholder="Tell other renters about the kosher kitchen, beds, location, cleanliness, etc..."
+                  className="w-full px-4 py-3 bg-zinc-50 dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-700 rounded-xl text-sm font-medium text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-[#4c55a4] resize-none"
+                />
+              </div>
+
+              <button
+                type="submit"
+                className="w-full py-3.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl font-extrabold text-sm transition-all shadow-md shadow-amber-500/20 active:scale-95"
+              >
+                Submit Review for Moderation
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* R1 — Review Submission Success Modal */}
+      {isReviewSuccessModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-950/60 backdrop-blur-md animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-zinc-900 rounded-3xl shadow-2xl w-full max-w-md overflow-hidden border border-zinc-200 dark:border-zinc-800 animate-in zoom-in-95 duration-200 relative text-center p-6 md:p-8">
+            <button 
+              onClick={() => setIsReviewSuccessModalOpen(false)}
+              className="absolute top-4 right-4 p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full transition-colors text-zinc-400"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            {/* Success Shield Icon */}
+            <div className="w-16 h-16 rounded-2xl bg-purple-100 dark:bg-purple-950/50 border border-purple-200 dark:border-purple-800 text-purple-600 dark:text-purple-400 flex items-center justify-center mx-auto mb-4 shadow-sm">
+              <ShieldCheck className="w-8 h-8" />
+            </div>
+
+            <h3 className="text-2xl font-black text-zinc-900 dark:text-white mb-1">
+              Review Submitted!
+            </h3>
+            <p className="text-sm text-zinc-600 dark:text-zinc-300 mb-6 leading-relaxed">
+              Thank you! Your review has been submitted to the <strong className="text-purple-600 dark:text-purple-400">Admin Moderation Queue</strong>. It will go live once approved by an Admin.
+            </p>
+
+            <button
+              onClick={() => setIsReviewSuccessModalOpen(false)}
+              className="w-full py-3.5 bg-[#4c55a4] hover:bg-[#3d4484] text-white rounded-xl font-extrabold text-sm transition-all shadow-md shadow-[#4c55a4]/20 active:scale-95"
+            >
+              Got it, thanks!
+            </button>
           </div>
         </div>
       )}

@@ -20,6 +20,7 @@ import {
   Settings,
   LogOut,
   ChevronDown,
+  Star,
 } from "lucide-react";
 
 import {
@@ -55,6 +56,7 @@ export default function AdminLayout({
     { name: t("admin.nav.alerts"), href: "/dashboard/alerts", icon: BellRing, color: "text-orange-600" },
     { name: t("admin.nav.payments"), href: "/dashboard/payments", icon: CreditCard, color: "text-green-600" },
     { name: "Ambassadors", href: "/dashboard/ambassadors", icon: Users, color: "text-indigo-600" },
+    { name: "Review Moderation", href: "/dashboard/reviews", icon: Star, color: "text-amber-500" },
   ];
 
   function classNames(...classes: string[]) {

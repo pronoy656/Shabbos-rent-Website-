@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import Link from "next/link";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -19,7 +20,12 @@ import {
   BarChart3,
   ArrowRight,
   ArrowRightLeft,
-  Activity
+  Activity,
+  Star,
+  Check,
+  X,
+  ShieldCheck,
+  MessageSquare
 } from "lucide-react";
 
 import {
@@ -120,6 +126,78 @@ export default function AdminDashboardPage() {
   const recentMonths = getRecentMonths(6);
   const [revenueMonth, setRevenueMonth] = useState(recentMonths[0]);
   const [demandMonth, setDemandMonth] = useState(recentMonths[0]);
+  
+  // R2 — Review Moderation Queue State
+  const [pendingReviews, setPendingReviews] = useState<any[]>([
+    {
+      id: "pending-demo-1",
+      apartmentId: "1",
+      apartmentTitle: "Luxury Penthouse in Jerusalem",
+      reviewerName: "David Cohen",
+      rating: 5,
+      title: "Absolutely Stunning Shabbos Apartment!",
+      comment: "Host was extremely accommodating. Hot plate and urn were already set up. Will definitely stay here again!",
+      date: "Just now",
+      status: "Pending"
+    },
+    {
+      id: "pending-demo-2",
+      apartmentId: "2",
+      apartmentTitle: "Cozy Garden Suite in Rehavia",
+      reviewerName: "Sarah Klein",
+      rating: 4,
+      title: "Very comfortable and great location",
+      comment: "Super close to local shuls and quiet neighborhood. Kitchen was clean and spacious.",
+      date: "2 hours ago",
+      status: "Pending"
+    }
+  ]);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const savedPendingStr = localStorage.getItem("pending_reviews");
+      if (savedPendingStr) {
+        try {
+          const savedPending = JSON.parse(savedPendingStr);
+          setPendingReviews(prev => [...savedPending, ...prev]);
+        } catch (e) {
+          console.error(e);
+        }
+      }
+    }
+  }, []);
+
+  const handleApproveReview = (review: any) => {
+    if (typeof window !== "undefined") {
+      const existingApprovedStr = localStorage.getItem("approved_reviews");
+      const existingApproved = existingApprovedStr ? JSON.parse(existingApprovedStr) : [];
+      const updatedApproved = [{ ...review, status: "Approved" }, ...existingApproved];
+      localStorage.setItem("approved_reviews", JSON.stringify(updatedApproved));
+
+      const existingPendingStr = localStorage.getItem("pending_reviews");
+      if (existingPendingStr) {
+        const existingPending = JSON.parse(existingPendingStr);
+        const filteredPending = existingPending.filter((r: any) => r.id !== review.id);
+        localStorage.setItem("pending_reviews", JSON.stringify(filteredPending));
+      }
+    }
+
+    setPendingReviews(prev => prev.filter(r => r.id !== review.id));
+    alert(`Review by "${review.reviewerName}" has been APPROVED and is now LIVE on the apartment details page!`);
+  };
+
+  const handleRejectReview = (review: any) => {
+    if (typeof window !== "undefined") {
+      const existingPendingStr = localStorage.getItem("pending_reviews");
+      if (existingPendingStr) {
+        const existingPending = JSON.parse(existingPendingStr);
+        const filteredPending = existingPending.filter((r: any) => r.id !== review.id);
+        localStorage.setItem("pending_reviews", JSON.stringify(filteredPending));
+      }
+    }
+    setPendingReviews(prev => prev.filter(r => r.id !== review.id));
+    alert(`Review by "${review.reviewerName}" has been rejected.`);
+  };
 
   // Mock data for charts based on selected month (randomized for demo)
   const revenueData = [

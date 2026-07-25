@@ -1,14 +1,71 @@
 "use client";
 
-import { Phone, ShieldCheck, Lightbulb, Users, Globe, Clock, Mail, Headset, ArrowRight, Quote, Truck, Package } from "lucide-react";
+import { Phone, ShieldCheck, Lightbulb, Users, Globe, Clock, Mail, Headset, ArrowRight, Quote, Truck, Package, Star } from "lucide-react";
 import Link from "next/link";
 import MainNavbar from "@/components/layout/MainNavbar";
 import MainFooter from "@/components/layout/MainFooter";
 import { useLanguage } from "@/context/LanguageContext";
 
+// Fixed Testimonials Data (Easy to edit wording for Chaim)
+const aboutTestimonials = [
+  {
+    id: "t1",
+    name: "Yitzchok & Rivka M.",
+    role: "Regular Renter",
+    location: "Jerusalem Stay",
+    avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&q=80",
+    rating: 5,
+    quote: "Finding a kosher apartment near local shuls for Shabbos used to be stressful. ShabbosRent made booking effortless and seamless for our family!"
+  },
+  {
+    id: "t2",
+    name: "Moshe Stern",
+    role: "Apartment Host",
+    location: "Rehavia Owner",
+    avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&q=80",
+    rating: 5,
+    quote: "As a host, listing our property for Shabbos rentals and managing guest inquiries has never been easier. The platform community is wonderful."
+  },
+  {
+    id: "t3",
+    name: "David & Sarah K.",
+    role: "Swap Member",
+    location: "Tel Aviv - Jerusalem Swap",
+    avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&q=80",
+    rating: 5,
+    quote: "We swapped our Tel Aviv apartment for a beautiful home in Jerusalem for Shabbat Bereshit. An incredible community initiative!"
+  },
+  {
+    id: "t4",
+    name: "Leah Goldberg",
+    role: "Yom Tov Guest",
+    location: "Tzfat Stay",
+    avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&q=80",
+    rating: 5,
+    quote: "Top-notch customer support and completely transparent listings. Having full kosher kitchen specs listed upfront was a game changer."
+  }
+];
+
 export default function AboutPage() {
   const { language } = useLanguage();
   const isRtl = language === "HE";
+  const [testimonialsList, setTestimonialsList] = useState(aboutTestimonials);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const savedStr = localStorage.getItem("about_testimonials");
+      if (savedStr) {
+        try {
+          const savedArr = JSON.parse(savedStr);
+          if (Array.isArray(savedArr) && savedArr.length > 0) {
+            setTestimonialsList([...savedArr, ...aboutTestimonials]);
+          }
+        } catch (e) {
+          console.error(e);
+        }
+      }
+    }
+  }, []);
 
   return (
     <div className="min-h-screen bg-white font-sans text-zinc-900">
@@ -296,6 +353,64 @@ export default function AboutPage() {
                 </div>
               </div>
             </div>
+          </div>
+        </section>
+
+        {/* R3 — What People Say About Us (Fixed Testimonials) */}
+        <section className="container mx-auto px-4 py-20 border-t border-zinc-100">
+          <div className="text-center max-w-2xl mx-auto mb-16">
+            <span className="inline-block text-blue-600 font-bold text-[11px] uppercase tracking-wider mb-3">
+              TESTIMONIALS
+            </span>
+            <h2 className="text-3xl md:text-4xl font-extrabold text-[#0f172a] mb-4 tracking-tight">
+              What People Say About Us
+            </h2>
+            <div className="w-16 h-1 bg-blue-600 mx-auto mb-4 rounded-full"></div>
+            <p className="text-[#475569] text-[15px] leading-relaxed">
+              Read feedback and experiences from our community of renters, hosts, and apartment swap participants.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
+            {testimonialsList.map((t) => (
+              <div 
+                key={t.id}
+                className="bg-white rounded-3xl p-6 shadow-[0_4px_20px_rgba(0,0,0,0.05)] border border-zinc-100 flex flex-col justify-between hover:shadow-lg transition-shadow duration-300 relative group"
+              >
+                <div>
+                  {/* Quote Icon */}
+                  <div className="w-10 h-10 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mb-4 group-hover:bg-blue-600 group-hover:text-white transition-colors">
+                    <Quote className="w-5 h-5 fill-current" />
+                  </div>
+
+                  {/* Stars */}
+                  <div className="flex items-center gap-1 text-amber-400 mb-3">
+                    {[...Array(t.rating)].map((_, i) => (
+                      <Star key={i} className="w-4 h-4 fill-amber-400 text-amber-400" />
+                    ))}
+                  </div>
+
+                  {/* Testimonial Quote Wording */}
+                  <p className="text-[#475569] text-sm leading-relaxed mb-6 italic">
+                    "{t.quote}"
+                  </p>
+                </div>
+
+                {/* Author Info */}
+                <div className="flex items-center gap-3 pt-4 border-t border-zinc-100 mt-auto">
+                  <img 
+                    src={t.avatar} 
+                    alt={t.name} 
+                    className="w-11 h-11 rounded-full object-cover border-2 border-blue-100 shrink-0" 
+                  />
+                  <div>
+                    <h4 className="font-bold text-[#0f172a] text-sm leading-snug">{t.name}</h4>
+                    <p className="text-xs text-blue-600 font-semibold">{t.role}</p>
+                    <p className="text-[11px] text-zinc-400">{t.location}</p>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         </section>
 
