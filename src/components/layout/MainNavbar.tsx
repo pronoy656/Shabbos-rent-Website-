@@ -51,6 +51,7 @@ export default function MainNavbar() {
     { href: "/search", label: t("nav.apartments") },
     { href: "/ambassador/dashboard", label: "Ambassador Program" },
     { href: "/about", label: t("nav.about") },
+    { href: "/contact", label: t("nav.contact") || "Contact" },
   ];
 
   return (
