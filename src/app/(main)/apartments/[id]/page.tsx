@@ -14,6 +14,33 @@ import {
 import { useLanguage } from "@/context/LanguageContext";
 import { mockBaseApartments } from "@/data/mockData";
 import { getCoordinatesForAddress, calculateWalkingMinutes, calculateDistanceKm } from "@/utils/distanceUtils";
+// Constants
+const SHABBATOT = [
+  { id: "devarim", name: "Devarim", date: "17/7" },
+  { id: "vaetchanan", name: "Vaetchanan", date: "24/7" },
+  { id: "eikev", name: "Eikev", date: "31/7" },
+  { id: "reeh", name: "Re'eh", date: "07/8" },
+  { id: "shoftim", name: "Shoftim", date: "14/8" },
+  { id: "ki-teitzei", name: "Ki Teitzei", date: "21/8" },
+  { id: "ki-tavo", name: "Ki Tavo", date: "28/8" },
+  { id: "nitzavim-vayelech", name: "Nitzavim-Vayelech", date: "04/9" },
+  { id: "rosh-hashana", name: "Rosh Hashana", date: "11/9" },
+  { id: "haazinu", name: "Ha'azinu", date: "18/9" },
+  { id: "sukkot", name: "Sukkot", date: "25/9" },
+  { id: "vzot-haberachah", name: "V'Zot HaBerachah", date: "02/10" },
+  { id: "bereshit", name: "Bereshit", date: "09/10" },
+  { id: "noach", name: "Noach", date: "16/10" },
+  { id: "lech-lecha", name: "Lech-Lecha", date: "23/10" },
+  { id: "vayeira", name: "Vayeira", date: "30/10" },
+  { id: "chayei-sara", name: "Chayei Sara", date: "06/11" },
+  { id: "toldot", name: "Toldot", date: "13/11" },
+  { id: "vayetzei", name: "Vayetzei", date: "20/11" },
+  { id: "vayishlach", name: "Vayishlach", date: "27/11" },
+  { id: "vayeshev", name: "Vayeshev", date: "04/12" },
+  { id: "miketz", name: "Miketz", date: "11/12" },
+  { id: "vayigash", name: "Vayigash", date: "18/12" },
+  { id: "vayechi", name: "Vayechi", date: "25/12" }
+];
 
 // Mock Data
 const galleryImages = [
@@ -50,6 +77,7 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
   const [isDatesModalOpen, setIsDatesModalOpen] = useState(false);
   const [showAllAmenities, setShowAllAmenities] = useState(false);
   const [isLandlordModalOpen, setIsLandlordModalOpen] = useState(false);
+  const [hasContactedOwner, setHasContactedOwner] = useState(false);
   const [landlordModalState, setLandlordModalState] = useState<"initial" | "options">("initial");
   const [isCopied, setIsCopied] = useState(false);
 
@@ -134,6 +162,32 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
 
   const [isConfirmationModalOpen, setIsConfirmationModalOpen] = useState(false);
   const [isSelectWeekModalOpen, setIsSelectWeekModalOpen] = useState(false);
+  const [isRequestOfferModalOpen, setIsRequestOfferModalOpen] = useState(false);
+  const [isNotifySuccessModalOpen, setIsNotifySuccessModalOpen] = useState(false);
+  const [isOfferSuccessModalOpen, setIsOfferSuccessModalOpen] = useState(false);
+  
+  // Custom dropdown states for Request Offer Modal
+  const [isWeekendDropdownOpen, setIsWeekendDropdownOpen] = useState(false);
+  const [selectedWeekendForOffer, setSelectedWeekendForOffer] = useState("");
+  
+  const handleNotifyMe = () => {
+    if (typeof window !== "undefined") {
+      const existing = localStorage.getItem("notify_me_requests");
+      const requests = existing ? JSON.parse(existing) : [];
+      const userEmail = localStorage.getItem("userEmail") || "user@example.com";
+      requests.push({
+        id: `notify-${Date.now()}`,
+        apartmentId: id,
+        apartmentTitle: targetApartment?.title || "Beautiful Apartment in Jerusalem",
+        userEmail,
+        date: new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
+      });
+      localStorage.setItem("notify_me_requests", JSON.stringify(requests));
+    }
+    setIsNotified(true);
+    setIsNotifySuccessModalOpen(true);
+  };
+
   const [selectedAgreedWeek, setSelectedAgreedWeek] = useState(mockAvailableDates[0].date);
   const [confirmedShabbosDate, setConfirmedShabbosDate] = useState("");
   const [activeConfirmationCode, setActiveConfirmationCode] = useState("");
@@ -238,7 +292,7 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
   const targetApartment = mockBaseApartments.find((a) => a.id === id || a.id === baseId) || similarApartments.find((a) => a.id === id);
   const isApartmentAvailable = targetApartment ? targetApartment.isAvailable !== false : (id !== "2" && id !== "4" && id !== "6" && id !== "rent-demo-1" && id !== "rent-demo-3" && id !== "swap-demo-1" && id !== "swap-demo-3");
   const isAcceptingRequests = targetApartment ? targetApartment.acceptRequestsWhenUnavailable : (id === "2" || id === "rent-demo-1" || id === "swap-demo-1");
-  const availableDates = isApartmentAvailable ? mockAvailableDates : [];
+  const availableDates = mockAvailableDates;
 
   // Mock Form Submit
   const handleContactSubmit = (e: React.FormEvent) => {
@@ -347,46 +401,76 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
                     </div>
                   </div>
                   <div className="flex-shrink-0 flex flex-col sm:flex-row items-center gap-3">
-                    <button 
-                      disabled
-                      className={`w-full sm:w-auto px-6 py-2.5 rounded-xl font-bold text-sm border cursor-default ${
-                        availableDates.length > 0 
-                          ? "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/20" 
-                          : "bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 border-red-200 dark:border-red-500/20 cursor-not-allowed"
-                      }`}
-                    >
-                       {availableDates.length > 0 ? t("apartment_details.available_upcoming") : t("apartment_details.unavailable_upcoming")}
-                    </button>
-                    {!isSwapMode && (
-                      isApartmentAvailable ? (
+                    {isApartmentAvailable ? (
+                      <>
                         <button 
-                          onClick={() => setIsLandlordModalOpen(true)}
-                          className="w-full sm:w-auto px-6 py-2.5 bg-[#4c55a4] hover:bg-[#3d4484] text-white rounded-xl font-bold transition-all shadow-md shadow-[#4c55a4]/20 text-sm"
+                          disabled
+                          className={`w-full sm:w-auto px-6 py-2.5 rounded-xl font-bold text-sm border cursor-default bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/20`}
                         >
-                           {t("apartment_details.interested")}
+                           {t("apartment_details.available_upcoming")}
                         </button>
-                      ) : (
+
+                        {isSwapMode && (
+                          <button 
+                            onClick={() => setIsSwapModalOpen(true)}
+                            className="w-full sm:w-auto px-6 py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl font-bold transition-all shadow-md shadow-amber-500/20 text-sm flex items-center justify-center gap-2"
+                          >
+                             <ArrowRightLeft className="w-4 h-4" /> {t("apartment_details.swap_now")}
+                          </button>
+                        )}
+                      </>
+                    ) : isAcceptingRequests ? (
+                      <div className="flex flex-col gap-2 w-full sm:w-auto">
                         <button 
-                          onClick={() => setIsUnavailableModalOpen(true)}
-                          className="w-full sm:w-auto px-6 py-2.5 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-bold transition-all shadow-md shadow-orange-500/20 text-sm flex items-center justify-center gap-1.5"
+                          disabled
+                          className="w-full px-6 py-2.5 rounded-xl font-bold text-sm border cursor-default bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 border-red-200 dark:border-red-500/20"
                         >
-                           {t("apartment_details.interested")}
+                          Unavailable for upcoming shabbat
                         </button>
-                      )
-                    )}
-                    {isSwapMode && (
-                      <button 
-                        onClick={() => {
-                          if (!isApartmentAvailable) {
-                            setIsUnavailableModalOpen(true);
-                          } else {
-                            setIsSwapModalOpen(true);
-                          }
-                        }}
-                        className="w-full sm:w-auto px-6 py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl font-bold transition-all shadow-md shadow-amber-500/20 text-sm flex items-center justify-center gap-2"
-                      >
-                         <ArrowRightLeft className="w-4 h-4" /> {t("apartment_details.swap_now")}
-                      </button>
+                        <div className="flex flex-col sm:flex-row gap-2">
+                          <button 
+                            onClick={() => setIsDatesModalOpen(true)}
+                            className="w-full sm:w-auto px-6 py-2.5 bg-zinc-900 dark:bg-white hover:bg-zinc-800 dark:hover:bg-zinc-200 text-white dark:text-zinc-900 rounded-xl font-bold transition-all shadow-md shadow-zinc-900/20 text-sm flex items-center justify-center whitespace-nowrap"
+                          >
+                            View all available dates
+                          </button>
+                          <button 
+                            onClick={() => setIsUnavailableModalOpen(true)}
+                            className="w-full sm:w-auto px-6 py-2.5 bg-[#4c55a4] hover:bg-[#3d4484] text-white rounded-xl font-bold transition-all shadow-md shadow-[#4c55a4]/20 text-sm flex items-center justify-center whitespace-nowrap"
+                          >
+                            I'm interested
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col gap-2 w-full sm:w-auto">
+                        <button 
+                          disabled
+                          className="w-full px-6 py-2.5 rounded-xl font-bold text-sm border cursor-default bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 border-red-200 dark:border-red-500/20"
+                        >
+                          Unavailable
+                        </button>
+                        <div className="flex flex-col sm:flex-row gap-2">
+                          <div className="relative inline-flex h-11 w-full sm:w-auto overflow-hidden rounded-xl p-[2px] focus:outline-none group">
+                            <span className="absolute inset-[-1000%] animate-[spin_3s_linear_infinite] bg-[conic-gradient(from_90deg_at_50%_50%,#e4e4e7_0%,#4c55a4_33%,#8b5cf6_66%,#e4e4e7_100%)] dark:bg-[conic-gradient(from_90deg_at_50%_50%,#27272a_0%,#818cf8_33%,#a78bfa_66%,#27272a_100%)] opacity-70 group-hover:opacity-100 transition-opacity duration-300" />
+                            <button 
+                              onClick={() => {
+                                setIsNotifySuccessModalOpen(true);
+                                setTimeout(() => setIsNotifySuccessModalOpen(false), 3000);
+                              }}
+                              className="inline-flex h-full w-full cursor-pointer items-center justify-center gap-2 rounded-[10px] bg-white dark:bg-zinc-900 px-6 py-2.5 text-sm font-bold text-zinc-900 dark:text-white hover:bg-zinc-50 dark:hover:bg-zinc-800 backdrop-blur-3xl transition-all shadow-md shadow-zinc-900/10 whitespace-nowrap"
+                            >
+                              Notify me when available
+                            </button>
+                          </div>
+                          <button 
+                            onClick={() => setIsModalOpen(true)}
+                            className="w-full sm:w-auto px-6 py-2.5 bg-[#4c55a4] hover:bg-[#3d4484] text-white rounded-xl font-bold transition-all shadow-md shadow-[#4c55a4]/20 text-sm flex items-center justify-center whitespace-nowrap"
+                          >
+                            Send request or offer
+                          </button>
+                        </div>
+                      </div>
                     )}
                   </div>
                 </div>
@@ -473,13 +557,24 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
                      <Phone className="w-4 h-4" />
                      {t("apartment_details.contact_landlord")}
                   </button>
+                ) : isAcceptingRequests ? (
+                  <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto mt-4 sm:mt-0">
+                    <button 
+                       onClick={() => setIsUnavailableModalOpen(true)}
+                       className="px-6 py-3.5 bg-[#4c55a4] hover:bg-[#3d4484] text-white rounded-xl font-extrabold transition-all shadow-md shadow-[#4c55a4]/20 flex items-center justify-center whitespace-nowrap active:scale-95"
+                    >
+                       I'm interested
+                    </button>
+                  </div>
                 ) : (
-                  <button 
-                     onClick={() => setIsUnavailableModalOpen(true)}
-                     className="px-8 py-3.5 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-extrabold transition-all shadow-md shadow-orange-500/20 flex items-center justify-center gap-2 whitespace-nowrap active:scale-95"
-                  >
-                     {t("apartment_details.interested")}
-                  </button>
+                  <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto mt-4 sm:mt-0">
+                    <button 
+                       onClick={() => setIsModalOpen(true)}
+                       className="px-6 py-3.5 bg-[#4c55a4] hover:bg-[#3d4484] text-white rounded-xl font-extrabold transition-all shadow-md shadow-[#4c55a4]/20 flex items-center justify-center whitespace-nowrap active:scale-95"
+                    >
+                       Send request or offer
+                    </button>
+                  </div>
                 )}
             </div>
 
@@ -634,56 +729,8 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
               </p>
               
               <form onSubmit={handleContactSubmit} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-bold text-zinc-700 dark:text-zinc-300 mb-1.5">{t("apartment_details.full_name")}</label>
-                  <input required type="text" placeholder="John Doe" className="w-full px-4 py-3 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#4c55a4]/50 transition-all" />
-                </div>
                 
-                <div>
-                  <label className="block text-sm font-bold text-zinc-700 dark:text-zinc-300 mb-1.5">{t("apartment_details.email_address")}</label>
-                  <input required type="email" placeholder="john@example.com" className="w-full px-4 py-3 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#4c55a4]/50 transition-all" />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-bold text-zinc-700 dark:text-zinc-300 mb-1.5">{t("apartment_details.phone_number")}</label>
-                  <input required type="tel" placeholder="+1 (555) 000-0000" className="w-full px-4 py-3 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#4c55a4]/50 transition-all" />
-                </div>
-
-                {/* Offer Price Input Fields (Min & Max) */}
-                <div>
-                  <label className="block text-sm font-bold text-zinc-700 dark:text-zinc-300 mb-1.5">
-                    {t("apartment_details.offer_price")}
-                  </label>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-xs font-semibold text-zinc-500 dark:text-zinc-400 mb-1">
-                        {t("apartment_details.min_offer")}
-                      </label>
-                      <div className="relative">
-                        <span className="absolute left-3 top-2.5 text-zinc-400 font-bold text-sm">₪</span>
-                        <input 
-                          type="number" 
-                          placeholder="Min ₪"
-                          className="w-full pl-8 pr-3 py-2.5 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#4c55a4]/50 transition-all text-sm font-semibold" 
-                        />
-                      </div>
-                    </div>
-                    <div>
-                      <label className="block text-xs font-semibold text-zinc-500 dark:text-zinc-400 mb-1">
-                        {t("apartment_details.max_offer")}
-                      </label>
-                      <div className="relative">
-                        <span className="absolute left-3 top-2.5 text-zinc-400 font-bold text-sm">₪</span>
-                        <input 
-                          type="number" 
-                          placeholder="Max ₪"
-                          className="w-full pl-8 pr-3 py-2.5 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#4c55a4]/50 transition-all text-sm font-semibold" 
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
+                {/* Which Shabbos Dropdown */}
                 {availableDates.length > 0 && (
                   <div className="relative z-20">
                     <label className="block text-sm font-bold text-zinc-700 dark:text-zinc-300 mb-1.5">{t("apartment_details.which_shabbos")}</label>
@@ -718,7 +765,30 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
                     </div>
                   </div>
                 )}
-                
+
+                {/* Original Price Display */}
+                <div className="bg-zinc-50 dark:bg-zinc-800/50 p-4 rounded-xl border border-zinc-200 dark:border-zinc-700 flex justify-between items-center">
+                  <span className="text-sm font-bold text-zinc-700 dark:text-zinc-300">Apartment Original Price</span>
+                  <span className="font-extrabold text-[#4c55a4] dark:text-indigo-400 text-lg">₪{targetApartment?.price || 4500}</span>
+                </div>
+
+                {/* Offer Price Input Field */}
+                <div>
+                  <label className="block text-sm font-bold text-zinc-700 dark:text-zinc-300 mb-1.5">
+                    Your Price Offer
+                  </label>
+                  <div className="relative">
+                    <span className="absolute left-4 top-3 text-zinc-400 font-bold text-sm">₪</span>
+                    <input 
+                      required
+                      type="number" 
+                      placeholder="Enter your offer"
+                      className="w-full pl-9 pr-4 py-3 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#4c55a4]/50 transition-all font-semibold" 
+                    />
+                  </div>
+                </div>
+
+                {/* Message Field */}
                 <div>
                   <label className="block text-sm font-bold text-zinc-700 dark:text-zinc-300 mb-1.5">{t("apartment_details.message")}</label>
                   <textarea required rows={4} placeholder="Hello, I am interested in this property for..." className="w-full px-4 py-3 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#4c55a4]/50 transition-all resize-none"></textarea>
@@ -820,39 +890,8 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
                  </button>
               </div>
 
-              {/* DIRECT OWNER CONTACT */}
-              <div>
-                 <p className="text-xs font-extrabold text-zinc-500 uppercase tracking-wider mb-2.5">DIRECT OWNER CONTACT</p>
-                 
-                 {/* Row 1: Call Owner & WhatsApp Owner in SAME ROW */}
-                 <div className="grid grid-cols-2 gap-3 mb-3">
-                    <a 
-                      href="tel:+972541234567"
-                      className="w-full py-3 bg-[#4c55a4] hover:bg-[#3d4484] text-white rounded-xl font-extrabold transition-all shadow-md shadow-[#4c55a4]/20 flex items-center justify-center gap-2 text-xs sm:text-sm active:scale-[0.98]"
-                    >
-                      <Phone className="w-4 h-4" /> Call Owner
-                    </a>
-                    <a 
-                      href="https://wa.me/972541234567"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="w-full py-3 bg-[#25D366] hover:bg-[#20bd5a] text-white rounded-xl font-extrabold transition-all shadow-md shadow-[#25D366]/20 flex items-center justify-center gap-2 text-xs sm:text-sm active:scale-[0.98]"
-                    >
-                      <MessageCircle className="w-4 h-4" /> WhatsApp Owner
-                    </a>
-                 </div>
-
-                 {/* Row 2: Contact Owner by Email in Next Row */}
-                 <a 
-                   href={`mailto:owner@shabbosrent.com?subject=Inquiry%20regarding%20Apartment%20APT-${id}`}
-                   className="w-full py-3 bg-white dark:bg-zinc-900 hover:bg-[#4c55a4]/5 dark:hover:bg-indigo-500/10 text-[#4c55a4] dark:text-indigo-300 border-2 border-[#4c55a4] dark:border-indigo-500 rounded-xl font-extrabold transition-all shadow-sm flex items-center justify-center gap-2 text-sm active:scale-[0.98]"
-                 >
-                   <Mail className="w-4 h-4 text-[#4c55a4] dark:text-indigo-300" /> Contact Owner by Email
-                 </a>
-              </div>
-
               {/* Section 2: ShabbosRent Official Support Hotline in Following Row */}
-              <div className="pt-3 border-t border-zinc-100 dark:border-zinc-800 mb-3">
+              <div className="mb-3">
                  <p className="text-xs font-extrabold text-zinc-500 uppercase tracking-wider mb-2 flex items-center gap-1.5">
                    <ShieldCheck className="w-4 h-4 text-emerald-600" /> SHABBOSRENT OFFICIAL SUPPORT HOTLINE
                  </p>
@@ -864,14 +903,49 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
                  </a>
               </div>
 
+              {/* DIRECT OWNER CONTACT */}
+              <div className="pt-3 border-t border-zinc-100 dark:border-zinc-800">
+                 <p className="text-xs font-extrabold text-zinc-500 uppercase tracking-wider mb-2.5">DIRECT OWNER CONTACT</p>
+                 
+                 {/* Row 1: Call Owner & WhatsApp Owner in SAME ROW */}
+                 <div className="grid grid-cols-2 gap-3 mb-3">
+                    <a 
+                      href="tel:+972541234567"
+                      onClick={() => setHasContactedOwner(true)}
+                      className="w-full py-3 bg-[#4c55a4] hover:bg-[#3d4484] text-white rounded-xl font-extrabold transition-all shadow-md shadow-[#4c55a4]/20 flex items-center justify-center gap-2 text-xs sm:text-sm active:scale-[0.98]"
+                    >
+                      <Phone className="w-4 h-4" /> Call Owner
+                    </a>
+                    <a 
+                      href="https://wa.me/972541234567"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={() => setHasContactedOwner(true)}
+                      className="w-full py-3 bg-[#25D366] hover:bg-[#20bd5a] text-white rounded-xl font-extrabold transition-all shadow-md shadow-[#25D366]/20 flex items-center justify-center gap-2 text-xs sm:text-sm active:scale-[0.98]"
+                    >
+                      <MessageCircle className="w-4 h-4" /> WhatsApp Owner
+                    </a>
+                 </div>
+
+                 {/* Row 2: Contact Owner by Email in Next Row */}
+                 <a 
+                   href={`mailto:owner@shabbosrent.com?subject=Inquiry%20regarding%20Apartment%20APT-${id}`}
+                   onClick={() => setHasContactedOwner(true)}
+                   className="w-full py-3 bg-white dark:bg-zinc-900 hover:bg-[#4c55a4]/5 dark:hover:bg-indigo-500/10 text-[#4c55a4] dark:text-indigo-300 border-2 border-[#4c55a4] dark:border-indigo-500 rounded-xl font-extrabold transition-all shadow-sm flex items-center justify-center gap-2 text-sm active:scale-[0.98]"
+                 >
+                   <Mail className="w-4 h-4 text-[#4c55a4] dark:text-indigo-300" /> Contact Owner by Email
+                 </a>
+              </div>
+
               {/* B1 — Renter Confirmation Section */}
               <div className="pt-3 border-t border-zinc-100 dark:border-zinc-800">
                 <button 
                   onClick={handleStartRenterConfirm}
-                  className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-extrabold transition-all shadow-md shadow-emerald-600/20 flex items-center justify-center gap-2 text-sm active:scale-[0.98]"
+                  disabled={!hasContactedOwner}
+                  className={`w-full py-3.5 rounded-xl font-extrabold transition-all flex items-center justify-center gap-2 text-sm ${hasContactedOwner ? "bg-emerald-600 hover:bg-emerald-700 text-white shadow-md shadow-emerald-600/20 active:scale-[0.98]" : "bg-zinc-100 dark:bg-zinc-800/80 text-zinc-400 dark:text-zinc-500 cursor-not-allowed"}`}
                 >
-                  <CheckCircle2 className="w-5 h-5 text-white" />
-                  I confirmed with the landlord
+                  <CheckCircle2 className={`w-5 h-5 ${hasContactedOwner ? "text-white" : "text-zinc-400 dark:text-zinc-500"}`} />
+                  {hasContactedOwner ? "I confirmed with the landlord" : "Contact owner to unlock"}
                 </button>
               </div>
 
@@ -1235,6 +1309,166 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
           </div>
         </div>
       )}
+
+      {/* Request Offer Modal */}
+      {isRequestOfferModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-zinc-900 rounded-3xl p-6 md:p-8 max-w-md w-full border border-zinc-200 dark:border-zinc-800 shadow-2xl relative text-left animate-in fade-in zoom-in-95 duration-200">
+            <button 
+              onClick={() => setIsRequestOfferModalOpen(false)}
+              className="absolute top-4 right-4 p-2 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <h3 className="text-xl md:text-2xl font-extrabold text-zinc-900 dark:text-white mb-6">
+              Send a Request or Offer
+            </h3>
+
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              const formData = new FormData(e.currentTarget);
+              const weekend = formData.get("weekend") as string;
+              const offerPrice = formData.get("offerPrice") as string;
+              
+              if (typeof window !== "undefined") {
+                const existing = localStorage.getItem("apartment_offers");
+                const requests = existing ? JSON.parse(existing) : [];
+                requests.push({
+                  id: `offer-${Date.now()}`,
+                  type: 'offer',
+                  apartmentId: id,
+                  apartmentTitle: targetApartment?.title || "Apartment",
+                  userEmail: localStorage.getItem("userEmail") || "user@example.com",
+                  date: new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
+                  weekend: weekend,
+                  offerPrice: offerPrice || (targetApartment?.price?.toString() || "690"),
+                  status: 'Pending'
+                });
+                localStorage.setItem("apartment_offers", JSON.stringify(requests));
+              }
+              setIsRequestOfferModalOpen(false);
+              setIsOfferSuccessModalOpen(true);
+            }} className="space-y-5">
+              
+              <div>
+                <label className="block text-sm font-bold text-zinc-700 dark:text-zinc-300 mb-2">Select Weekend</label>
+                <div className="relative">
+                  <div 
+                    onClick={() => setIsWeekendDropdownOpen(!isWeekendDropdownOpen)}
+                    className="w-full px-5 py-4 rounded-2xl border-2 border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/50 text-zinc-900 dark:text-white font-medium cursor-pointer flex justify-between items-center transition-all shadow-sm hover:bg-zinc-50 dark:hover:bg-zinc-800"
+                  >
+                    <span className={selectedWeekendForOffer ? "text-zinc-900 dark:text-white font-bold" : "text-zinc-500"}>
+                      {selectedWeekendForOffer ? selectedWeekendForOffer : "Choose a premium weekend..."}
+                    </span>
+                    <ChevronDown className={`w-5 h-5 text-zinc-400 transition-transform ${isWeekendDropdownOpen ? "rotate-180" : ""}`} />
+                  </div>
+                  
+                  {isWeekendDropdownOpen && (
+                    <div className="absolute z-50 w-full mt-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-xl max-h-64 overflow-y-auto animate-in fade-in slide-in-from-top-2">
+                      {SHABBATOT.map(shabbat => {
+                        const val = `${shabbat.name} (${shabbat.date})`;
+                        return (
+                          <div 
+                            key={shabbat.id}
+                            onClick={() => {
+                              setSelectedWeekendForOffer(val);
+                              setIsWeekendDropdownOpen(false);
+                            }}
+                            className="px-5 py-3.5 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 cursor-pointer transition-colors border-b border-zinc-100 dark:border-zinc-800/50 last:border-0"
+                          >
+                            <div className="font-bold text-zinc-900 dark:text-white">{shabbat.name}</div>
+                            <div className="text-sm font-medium text-zinc-500">{shabbat.date}</div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                  <input type="hidden" name="weekend" value={selectedWeekendForOffer} required />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-bold text-zinc-700 dark:text-zinc-300 mb-2">Regular Price</label>
+                <div className="w-full px-5 py-4 rounded-2xl border-2 border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 text-zinc-600 dark:text-zinc-400 font-bold shadow-sm">
+                  ₪{targetApartment?.price || "690"} <span className="text-zinc-400 dark:text-zinc-500 font-medium">/ weekend</span>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-bold text-zinc-700 dark:text-zinc-300 mb-2">Maximum Offer (Optional)</label>
+                <div className="relative">
+                  <span className="absolute left-5 top-1/2 -translate-y-1/2 text-zinc-400 font-bold text-lg">₪</span>
+                  <input name="offerPrice" type="number" placeholder="Enter your offer" className="w-full pl-10 pr-5 py-4 rounded-2xl border-2 border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 text-zinc-900 dark:text-white font-bold focus:outline-none focus:border-[#4c55a4] dark:focus:border-[#4c55a4] transition-all shadow-sm" />
+                </div>
+              </div>
+
+              <div className="pt-4">
+                <button
+                  type="submit"
+                  className="w-full py-4 bg-[#4c55a4] hover:bg-[#3d4484] text-white font-extrabold rounded-2xl text-lg transition-all shadow-lg shadow-[#4c55a4]/20 active:scale-[0.98]"
+                >
+                  Submit Request / Offer
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Notify Success Modal */}
+      {isNotifySuccessModalOpen && (
+        <div className="fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-zinc-900 rounded-3xl p-8 max-w-sm w-full border border-zinc-200 dark:border-zinc-800 shadow-2xl flex flex-col items-center text-center animate-in fade-in zoom-in-95 duration-200">
+            <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mb-6 text-green-600 dark:text-green-400 shadow-inner">
+              <Check className="w-8 h-8" />
+            </div>
+            
+            <h3 className="text-2xl font-extrabold text-zinc-900 dark:text-white mb-3">
+              Request Sent!
+            </h3>
+            
+            <p className="text-zinc-600 dark:text-zinc-400 mb-8 leading-relaxed">
+              We'll notify you via email the moment this property becomes available.
+            </p>
+            
+            <button
+              onClick={() => setIsNotifySuccessModalOpen(false)}
+              className="w-full py-3.5 bg-[#4c55a4] hover:bg-[#3d4484] text-white font-extrabold rounded-xl text-sm transition-all shadow-lg shadow-[#4c55a4]/20 active:scale-95"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Offer Success Modal */}
+      {isOfferSuccessModalOpen && (
+        <div className="fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-zinc-900 rounded-3xl p-8 max-w-sm w-full border border-zinc-200 dark:border-zinc-800 shadow-2xl flex flex-col items-center text-center animate-in fade-in zoom-in-95 duration-200">
+            <div className="w-16 h-16 bg-amber-100 dark:bg-amber-900/30 rounded-full flex items-center justify-center mb-6 text-amber-600 dark:text-amber-400 shadow-inner">
+              <Check className="w-8 h-8" />
+            </div>
+            
+            <h3 className="text-2xl font-extrabold text-zinc-900 dark:text-white mb-3">
+              Offer Sent!
+            </h3>
+            
+            <p className="text-zinc-600 dark:text-zinc-400 mb-8 leading-relaxed">
+              Your request/offer has been successfully sent to the owner. They will review it shortly.
+            </p>
+            
+            <button
+              onClick={() => setIsOfferSuccessModalOpen(false)}
+              className="w-full py-3.5 bg-[#4c55a4] hover:bg-[#3d4484] text-white font-extrabold rounded-xl text-sm transition-all shadow-lg shadow-[#4c55a4]/20 active:scale-95"
+            >
+              Continue
+            </button>
+          </div>
+        </div>
+      )}
+
+
 
     </div>
   );

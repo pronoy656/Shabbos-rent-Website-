@@ -220,6 +220,7 @@ export default function UserDashboardPage() {
   const [modalMode, setModalMode] = useState<"create" | "edit">("create");
   const [hasListing, setHasListing] = useState(false);
   const [manageSubTab, setManageSubTab] = useState("my_listing");
+  const [interestedSubTab, setInterestedSubTab] = useState("notify");
   const [settingsSubTab, setSettingsSubTab] = useState("profile");
   const [isApartmentVisible, setIsApartmentVisible] = useState(true);
   const [acceptRequestsWhenUnavailable, setAcceptRequestsWhenUnavailable] = useState(false);
@@ -229,7 +230,10 @@ export default function UserDashboardPage() {
   const [isEditProfileModalOpen, setIsEditProfileModalOpen] = useState(false);
   const [savedApartments, setSavedApartments] = useState<ApartmentData[]>([]);
   const [isCopied, setIsCopied] = useState(false);
-
+  
+  // Dashboard Requests State
+  const [notifyRequests, setNotifyRequests] = useState<any[]>([]);
+  const [offerRequests, setOfferRequests] = useState<any[]>([]);
   // Email & Notification Preferences State
   const [emailOptInState, setEmailOptInState] = useState(true);
   const [emailBookingsState, setEmailBookingsState] = useState(true);
@@ -263,6 +267,16 @@ export default function UserDashboardPage() {
   const [paymentSuccess, setPaymentSuccess] = useState(false);
   const [reportRentedSuccess, setReportRentedSuccess] = useState(false);
   const pendingAmount = reportedRentals.filter(r => r.status === "Pending").reduce((sum, r) => sum + r.amount, 0);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const notifies = localStorage.getItem("notify_me_requests");
+      if (notifies) setNotifyRequests(JSON.parse(notifies));
+      
+      const offers = localStorage.getItem("apartment_offers");
+      if (offers) setOfferRequests(JSON.parse(offers));
+    }
+  }, [manageSubTab]);
 
   const handleOpenReviewModal = (booking: any) => {
     setSelectedBookingForReview(booking);
@@ -846,51 +860,91 @@ export default function UserDashboardPage() {
                       )}
 
                       {manageSubTab === "interested_request" && (
-                        <div className="bg-white dark:bg-zinc-900 rounded-3xl border border-zinc-200 dark:border-zinc-800 p-6 shadow-sm flex flex-col gap-4 w-full">
-                          <h3 className="text-xl font-bold text-zinc-900 dark:text-white mb-2">{t("dashboard.manage.interested_requests")} (2)</h3>
+                        <div className="bg-white dark:bg-zinc-900 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-sm flex flex-col w-full overflow-hidden">
                           
-                          <div className="flex items-center justify-between p-5 border border-zinc-200 dark:border-zinc-800 rounded-2xl bg-zinc-50/50 dark:bg-zinc-800/30 hover:border-blue-200 dark:hover:border-blue-900/50 transition-colors">
-                            <div className="flex items-center gap-4">
-                              <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/40 rounded-full flex items-center justify-center text-blue-600 dark:text-blue-400 font-bold text-lg shadow-sm">
-                                DC
-                              </div>
-                              <div>
-                                <h4 className="font-bold text-zinc-900 dark:text-white text-lg">David Cohen</h4>
-                                <p className="text-sm text-zinc-500 mb-1">david.c@example.com</p>
-                                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-300">
-                                  {t("dashboard.manage.requested")} Oct 24-25 Shabbos
-                                </span>
-                              </div>
-                            </div>
-                            <div className="text-right flex flex-col items-end">
-                              <div className="bg-green-100 dark:bg-green-900/30 px-3 py-1 rounded-full mb-1">
-                                <p className="font-extrabold text-green-700 dark:text-green-400">₪1,450</p>
-                              </div>
-                              <p className="text-xs text-zinc-500 font-medium">2 {t("dashboard.manage.hours_ago")}</p>
-                            </div>
+                          <div className="flex border-b border-zinc-200 dark:border-zinc-800">
+                            <button 
+                              onClick={() => setInterestedSubTab("notify")}
+                              className={`flex-1 py-4 font-bold text-center transition-colors ${interestedSubTab === "notify" ? "text-[#4c55a4] dark:text-indigo-400 border-b-2 border-[#4c55a4] dark:border-indigo-400 bg-zinc-50 dark:bg-zinc-800/30" : "text-zinc-500 hover:bg-zinc-50 dark:hover:bg-zinc-800/30"}`}
+                            >
+                              Notify Requests ({notifyRequests.length})
+                            </button>
+                            <button 
+                              onClick={() => setInterestedSubTab("offer")}
+                              className={`flex-1 py-4 font-bold text-center transition-colors ${interestedSubTab === "offer" ? "text-[#4c55a4] dark:text-indigo-400 border-b-2 border-[#4c55a4] dark:border-indigo-400 bg-zinc-50 dark:bg-zinc-800/30" : "text-zinc-500 hover:bg-zinc-50 dark:hover:bg-zinc-800/30"}`}
+                            >
+                              Interested Requests ({offerRequests.length})
+                            </button>
                           </div>
 
-                          <div className="flex items-center justify-between p-5 border border-zinc-200 dark:border-zinc-800 rounded-2xl bg-zinc-50/50 dark:bg-zinc-800/30 hover:border-blue-200 dark:hover:border-blue-900/50 transition-colors">
-                            <div className="flex items-center gap-4">
-                              <div className="w-12 h-12 bg-amber-100 dark:bg-amber-900/40 rounded-full flex items-center justify-center text-amber-600 dark:text-amber-400 font-bold text-lg shadow-sm">
-                                SL
-                              </div>
-                              <div>
-                                <h4 className="font-bold text-zinc-900 dark:text-white text-lg">Sarah Levy</h4>
-                                <p className="text-sm text-zinc-500 mb-1">sarah.levy@example.com</p>
-                                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-300">
-                                  {t("dashboard.manage.requested")} Nov 1-2 Shabbos
-                                </span>
-                              </div>
-                            </div>
-                            <div className="text-right flex flex-col items-end">
-                              <div className="bg-green-100 dark:bg-green-900/30 px-3 py-1 rounded-full mb-1">
-                                <p className="font-extrabold text-green-700 dark:text-green-400">₪1,500</p>
-                              </div>
-                              <p className="text-xs text-zinc-500 font-medium">1 {t("dashboard.manage.days_ago")}</p>
-                            </div>
+                          <div className="p-6 flex flex-col gap-4">
+                            {interestedSubTab === "notify" && (
+                              <>
+                                {notifyRequests.length === 0 && (
+                                  <p className="text-zinc-500 text-center py-4">No notify requests yet.</p>
+                                )}
+                                {notifyRequests.map(req => (
+                                  <div key={req.id} className="flex items-center justify-between p-5 border border-zinc-200 dark:border-zinc-800 rounded-2xl bg-zinc-50/50 dark:bg-zinc-800/30 hover:border-blue-200 dark:hover:border-blue-900/50 transition-colors">
+                                    <div className="flex items-center gap-4">
+                                      <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/40 rounded-full flex items-center justify-center text-blue-600 dark:text-blue-400 font-bold text-lg shadow-sm">
+                                        N
+                                      </div>
+                                      <div>
+                                        <h4 className="font-bold text-zinc-900 dark:text-white text-lg">{req.apartmentTitle}</h4>
+                                        <p className="text-sm text-zinc-500 mb-1">{req.userEmail}</p>
+                                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-300">
+                                          Notify when available
+                                        </span>
+                                      </div>
+                                    </div>
+                                    <div className="flex items-center gap-6">
+                                      <div className="text-right flex flex-col items-end">
+                                        <p className="text-xs text-zinc-500 font-medium mb-2">{req.date}</p>
+                                      </div>
+                                      <a href={`mailto:${req.userEmail}`} title="Email User" className="p-2 bg-blue-100 hover:bg-blue-200 dark:bg-blue-900/40 dark:hover:bg-blue-800/60 text-blue-600 dark:text-blue-400 rounded-full transition-colors">
+                                        <Mail className="w-5 h-5" />
+                                      </a>
+                                    </div>
+                                  </div>
+                                ))}
+                              </>
+                            )}
+
+                            {interestedSubTab === "offer" && (
+                              <>
+                                {offerRequests.length === 0 && (
+                                  <p className="text-zinc-500 text-center py-4">No interested requests yet.</p>
+                                )}
+                                {offerRequests.map(req => (
+                                  <div key={req.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-5 border border-zinc-200 dark:border-zinc-800 rounded-2xl bg-zinc-50/50 dark:bg-zinc-800/30 hover:border-blue-200 dark:hover:border-blue-900/50 transition-colors gap-4">
+                                    <div className="flex items-start sm:items-center gap-4">
+                                      <div className="w-12 h-12 bg-amber-100 dark:bg-amber-900/40 rounded-full flex items-center justify-center text-amber-600 dark:text-amber-400 font-bold text-lg shadow-sm shrink-0">
+                                        O
+                                      </div>
+                                      <div>
+                                        <div className="flex items-center gap-2 mb-1">
+                                          <h4 className="font-bold text-zinc-900 dark:text-white text-lg">{req.apartmentTitle}</h4>
+                                          <span className="px-2 py-0.5 bg-zinc-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300 text-xs rounded font-bold uppercase tracking-wider">
+                                            Code: APT-{req.apartmentId}
+                                          </span>
+                                        </div>
+                                        <p className="text-sm text-zinc-500 mb-1">{req.userEmail}</p>
+                                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300">
+                                          Requested: {req.weekend || "Any Weekend"}
+                                        </span>
+                                      </div>
+                                    </div>
+                                    <div className="text-right flex flex-col sm:items-end">
+                                      <div className="bg-green-100 dark:bg-green-900/30 px-3 py-1 rounded-full mb-1 inline-block">
+                                        <p className="font-extrabold text-green-700 dark:text-green-400">Offer: ₪{req.offerPrice}</p>
+                                      </div>
+                                      <p className="text-xs text-zinc-500 font-medium">Submitted: {req.date}</p>
+                                    </div>
+                                  </div>
+                                ))}
+                              </>
+                            )}
                           </div>
-                          
                         </div>
                       )}
                       
