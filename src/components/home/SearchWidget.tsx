@@ -160,8 +160,22 @@ export default function SearchWidget({ onSearch }: SearchWidgetProps) {
           />
         </div>
 
+        {/* Target Destination / Shul Address */}
+        <div className="lg:col-span-4 space-y-1.5">
+          <label className="text-xs font-bold text-zinc-900 dark:text-white flex items-center gap-1">
+            <Footprints className="w-3.5 h-3.5 text-[#4c55a4]" /> Target Destination / Shul Address
+          </label>
+          <input 
+            type="text" 
+            placeholder="e.g. Kotel, Great Synagogue, Rehavia..." 
+            value={destinationAddress}
+            onChange={(e) => setDestinationAddress(e.target.value)}
+            className="w-full h-[48px] px-4 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#4c55a4] transition-all text-zinc-900 dark:text-white placeholder-zinc-400 font-medium"
+          />
+        </div>
+
         {/* Walking Time */}
-        <div className="lg:col-span-2 space-y-1.5">
+        <div className="lg:col-span-3 space-y-1.5">
           <label className="text-xs font-bold text-zinc-900 dark:text-white">{t("search_widget.walking_time")}</label>
           <CustomSelect
             icon={MapPin}
@@ -176,9 +190,13 @@ export default function SearchWidget({ onSearch }: SearchWidgetProps) {
             ]}
           />
         </div>
+      </div>
 
+      {/* Row 2: Additional Fields & Search Button */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-5 items-end mt-5">
+        
         {/* Weekend */}
-        <div className="lg:col-span-3 space-y-1.5">
+        <div className="lg:col-span-2 space-y-1.5">
           <label className="text-xs font-bold text-zinc-900 dark:text-white">{t("search_widget.weekend")}</label>
           <CustomSelect
             icon={Calendar}
@@ -207,24 +225,6 @@ export default function SearchWidget({ onSearch }: SearchWidgetProps) {
               { value: "3", label: t("search_widget.plus_3") },
               { value: "4", label: t("search_widget.plus_4") },
             ]}
-          />
-        </div>
-      </div>
-
-      {/* Row 2: Additional Fields & Search Button */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-5 items-end mt-5">
-        
-        {/* Target Destination / Shul Address */}
-        <div className="lg:col-span-4 space-y-1.5">
-          <label className="text-xs font-bold text-zinc-900 dark:text-white flex items-center gap-1">
-            <Footprints className="w-3.5 h-3.5 text-[#4c55a4]" /> Target Destination / Shul Address
-          </label>
-          <input 
-            type="text" 
-            placeholder="e.g. Kotel, Great Synagogue, Rehavia..." 
-            value={destinationAddress}
-            onChange={(e) => setDestinationAddress(e.target.value)}
-            className="w-full h-[48px] px-4 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#4c55a4] transition-all text-zinc-900 dark:text-white placeholder-zinc-400 font-medium"
           />
         </div>
 
@@ -368,8 +368,8 @@ export default function SearchWidget({ onSearch }: SearchWidgetProps) {
           return false;
         });
 
-        const totalPages = Math.ceil(filteredApartments.length / 9) || 1;
-        const paginatedApartments = filteredApartments.slice((currentPage - 1) * 9, currentPage * 9);
+        const totalPages = Math.ceil(filteredApartments.length / 12) || 1;
+        const paginatedApartments = filteredApartments.slice((currentPage - 1) * 12, currentPage * 12);
 
         return (
           <div className="container mx-auto mt-12 mb-20 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -408,7 +408,7 @@ export default function SearchWidget({ onSearch }: SearchWidgetProps) {
             </div>
           )}
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
             {paginatedApartments.length > 0 ? (
               paginatedApartments.map(apt => {
                 let walkingMins: number | undefined = undefined;

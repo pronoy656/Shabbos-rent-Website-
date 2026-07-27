@@ -152,22 +152,29 @@ export default function ApartmentCard({
                 {apartment.title}
               </h3>
               {/* Location Breakdown with explicit labels */}
-              <div className="mt-2.5 text-xs space-y-1 bg-zinc-50 dark:bg-zinc-800/50 p-2.5 rounded-xl border border-zinc-100 dark:border-zinc-800/80">
+              <div className="mt-2.5 text-xs space-y-1.5 bg-zinc-50 dark:bg-zinc-800/50 p-2.5 rounded-xl border border-zinc-100 dark:border-zinc-800/80">
                 <div className="flex items-center gap-1.5 text-zinc-900 dark:text-white font-bold">
                   <MapPin className="w-3.5 h-3.5 text-[#4c55a4] shrink-0" />
                   <span className="text-zinc-500 dark:text-zinc-400 font-semibold">City:</span>
                   <span className="font-extrabold text-[#4c55a4] dark:text-indigo-400">{addr.city}</span>
                 </div>
-                <div className="pl-5 flex items-center gap-1.5 text-zinc-700 dark:text-zinc-300 font-medium">
+                <div className="flex items-center gap-1.5 text-zinc-700 dark:text-zinc-300 font-medium">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[#4c55a4] shrink-0">
+                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                    <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                  </svg>
                   <span className="text-zinc-400 dark:text-zinc-500 font-semibold">Neighborhood:</span>
                   <span className="font-bold text-zinc-900 dark:text-zinc-100">{addr.neighborhood}</span>
                 </div>
-                <div className="pl-5 flex items-center gap-1.5 text-zinc-600 dark:text-zinc-400 font-medium">
+                <div className="flex items-center gap-1.5 text-zinc-600 dark:text-zinc-400 font-medium">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[#4c55a4] shrink-0">
+                    <path d="M12 22V2M8 22l4-20M16 22L12 2" />
+                  </svg>
                   <span className="text-zinc-400 dark:text-zinc-500 font-semibold">Street Name:</span>
                   <span className="font-semibold text-zinc-800 dark:text-zinc-200">{addr.street}</span>
                 </div>
                 {addr.houseNumber && (
-                  <div className="pl-5 flex items-center gap-1.5 text-zinc-600 dark:text-zinc-400 font-medium">
+                  <div className="flex items-center gap-1.5 text-zinc-600 dark:text-zinc-400 font-medium pl-[20px]">
                     <span className="text-zinc-400 dark:text-zinc-500 font-semibold">House Number:</span>
                     <span className="font-extrabold text-zinc-900 dark:text-zinc-100">{addr.houseNumber}</span>
                   </div>
@@ -186,15 +193,15 @@ export default function ApartmentCard({
           <div className="flex items-center gap-4 py-4 mt-2 border-y border-zinc-100 dark:border-zinc-800">
             <div className="flex items-center gap-1.5 text-sm text-zinc-600 dark:text-zinc-300 font-medium">
               <BedDouble className="w-4 h-4 text-zinc-400" />
-              {apartment.beds} {t("apartment_card.beds")}
+              {apartment.beds} {t("apartment_card.beds") || "Beds"}
             </div>
             <div className="flex items-center gap-1.5 text-sm text-zinc-600 dark:text-zinc-300 font-medium">
               <Bath className="w-4 h-4 text-zinc-400" />
-              {apartment.baths} {t("apartment_card.baths")}
+              {apartment.baths} {t("apartment_card.baths") || "Baths"}
             </div>
             <div className="flex items-center gap-1.5 text-sm text-zinc-600 dark:text-zinc-300 font-medium">
               <Users className="w-4 h-4 text-zinc-400" />
-              {apartment.guests} {t("apartment_card.guests")}
+              {apartment.guests} {t("apartment_card.guests") || "Guests"}
             </div>
           </div>
 
