@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -21,6 +22,8 @@ import {
   LogOut,
   ChevronDown,
   Star,
+  Menu,
+  X,
 } from "lucide-react";
 
 import {
@@ -42,6 +45,7 @@ export default function AdminLayout({
 }) {
   const pathname = usePathname();
   const { t } = useLanguage();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   
   const navigation = [
     { name: t("admin.nav.dashboard"), href: "/dashboard", icon: LayoutDashboard, color: "text-blue-600" },
@@ -122,8 +126,16 @@ export default function AdminLayout({
       {/* Main Content Area */}
       <main className="flex-1 md:pl-72">
         {/* Top Header */}
-        <header className="sticky top-0 z-10 flex h-16 shrink-0 items-center gap-x-4 border-b border-zinc-200 bg-white/80 backdrop-blur-md px-4 shadow-sm sm:gap-x-6 sm:px-6 lg:px-8 dark:border-zinc-800 dark:bg-black/80">
-          <div className="flex flex-1 gap-x-4 self-stretch lg:gap-x-6 justify-end items-center">
+        <header className="sticky top-0 z-10 flex h-16 shrink-0 items-center gap-x-4 border-b border-zinc-200 bg-white/80 backdrop-blur-md px-4 shadow-sm sm:gap-x-6 sm:px-6 lg:px-8 dark:border-zinc-800 dark:bg-black/80 justify-between md:justify-end">
+          <button 
+            type="button"
+            className="-m-2.5 p-2.5 text-zinc-700 dark:text-zinc-300 md:hidden flex items-center justify-center hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors"
+            onClick={() => setIsMobileMenuOpen(true)}
+          >
+            <span className="sr-only">Open sidebar</span>
+            <Menu className="h-6 w-6" aria-hidden="true" />
+          </button>
+          <div className="flex gap-x-4 self-stretch lg:gap-x-6 justify-end items-center">
             <Link href="/dashboard/alerts" className="relative p-2 text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full transition-colors mr-2">
               <BellRing className="h-5 w-5" />
               <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-red-500 ring-2 ring-white dark:ring-black" />
@@ -168,10 +180,54 @@ export default function AdminLayout({
           </div>
         </header>
 
-        <div className="p-4 sm:p-6 lg:p-8 mx-auto">
+        <div className="p-4 sm:p-6 lg:p-8 mx-auto w-full max-w-full overflow-x-hidden">
           {children}
         </div>
       </main>
+
+      {/* Mobile Sidebar Drawer */}
+      {isMobileMenuOpen && (
+        <div className="fixed inset-0 z-50 md:hidden">
+          <div className="fixed inset-0 bg-zinc-950/50 backdrop-blur-sm" onClick={() => setIsMobileMenuOpen(false)} />
+          <div className="fixed inset-y-0 left-0 w-72 max-w-[85%] bg-white dark:bg-[#121212] border-r border-zinc-200 dark:border-zinc-800 shadow-2xl flex flex-col animate-in slide-in-from-left duration-300">
+            <div className="flex h-16 shrink-0 items-center justify-between px-6 border-b border-zinc-200 dark:border-zinc-800">
+              <Link href="/dashboard" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-2.5 font-bold text-xl tracking-tight text-zinc-900 dark:text-white">
+                <img
+                  src="/launchericon-192x192.png"
+                  alt="Shabos Rent Logo"
+                  className="w-7 h-7 object-contain"
+                />
+                <span>Shabos Rent</span>
+              </Link>
+              <button onClick={() => setIsMobileMenuOpen(false)} className="p-2 text-zinc-500 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full transition-colors">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <nav className="p-4 flex flex-col flex-1 overflow-y-auto">
+              {navigation.map((item, index) => {
+                const isActive = pathname === item.href;
+                return (
+                  <div key={item.name} className={classNames(index !== 0 ? "border-t border-zinc-100 dark:border-zinc-800/60" : "")}>
+                    <Link
+                      href={item.href}
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className={classNames(
+                        isActive
+                          ? "bg-blue-50 text-blue-700 shadow-sm ring-1 ring-blue-500/20 dark:bg-blue-500/10 dark:text-blue-400 dark:ring-blue-500/30"
+                          : "hover:bg-blue-50/50 dark:hover:bg-blue-900/20 text-zinc-700 dark:text-zinc-300",
+                        "group flex items-center gap-4 px-3 py-3 rounded-lg transition-all my-1"
+                      )}
+                    >
+                      <item.icon className={classNames(item.color, "h-5 w-5 shrink-0")} aria-hidden="true" />
+                      <span className="text-[15px] font-bold leading-tight">{item.name}</span>
+                    </Link>
+                  </div>
+                );
+              })}
+            </nav>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

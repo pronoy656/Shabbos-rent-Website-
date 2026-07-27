@@ -6,7 +6,7 @@ import MainNavbar from "@/components/layout/MainNavbar";
 import FilterSidebar from "@/components/search/FilterSidebar";
 import ApartmentCard from "@/components/search/ApartmentCard";
 import { ApartmentData } from "@/types";
-import { SlidersHorizontal, Search, ChevronDown, ChevronLeft, ChevronRight, Footprints } from "lucide-react";
+import { SlidersHorizontal, Search, ChevronDown, ChevronLeft, ChevronRight, Footprints, X } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -144,6 +144,7 @@ function SearchContent() {
   const [maxWalkingMinutes, setMaxWalkingMinutes] = useState<number | undefined>(undefined);
   const [searchQuery, setSearchQuery] = useState("");
   const [destinationAddress, setDestinationAddress] = useState("");
+  const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
 
   const searchParams = useSearchParams();
   const cityParam = searchParams.get("city");
@@ -321,7 +322,10 @@ function SearchContent() {
             </div>
 
             <div className="flex items-center gap-3">
-              <button className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl text-sm font-bold text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-colors md:hidden">
+              <button 
+                onClick={() => setIsMobileFiltersOpen(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl text-sm font-bold text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-colors md:hidden"
+              >
                 <SlidersHorizontal className="w-4 h-4" />
                 {t("search_page.filters")}
               </button>
@@ -457,9 +461,47 @@ function SearchContent() {
               </>
             )}
           </div>
-
         </div>
       </div>
+
+      {/* Mobile Filters Drawer */}
+      {isMobileFiltersOpen && (
+        <div className="fixed inset-0 z-50 lg:hidden">
+          <div className="fixed inset-0 bg-zinc-950/50 backdrop-blur-sm" onClick={() => setIsMobileFiltersOpen(false)} />
+          <div className="fixed top-0 left-0 h-full w-[85%] max-w-sm bg-white dark:bg-zinc-950 shadow-2xl overflow-y-auto animate-in slide-in-from-left duration-300 border-r border-zinc-200 dark:border-zinc-800">
+            <div className="p-5 border-b border-zinc-100 dark:border-zinc-800 flex items-center justify-between sticky top-0 bg-white/90 dark:bg-zinc-950/90 backdrop-blur z-10">
+              <span className="font-extrabold text-lg text-zinc-900 dark:text-white">{t("search_page.filters")}</span>
+              <button onClick={() => setIsMobileFiltersOpen(false)} className="p-2 text-zinc-500 hover:text-zinc-900 dark:hover:text-white bg-zinc-100 dark:bg-zinc-900 hover:bg-zinc-200 dark:hover:bg-zinc-800 rounded-full transition-colors">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-4">
+              <FilterSidebar 
+                selectedAmenities={selectedAmenities}
+                maxWalkingMinutes={maxWalkingMinutes}
+                onAmenityToggle={handleAmenityToggle}
+                onMaxWalkingMinutesChange={setMaxWalkingMinutes}
+                onClearFilters={() => {
+                  setSelectedAmenities([]);
+                  setMaxWalkingMinutes(undefined);
+                  setSearchQuery("");
+                  setDestinationAddress("");
+                  setCurrentPage(1);
+                  setIsMobileFiltersOpen(false);
+                }}
+              />
+              <div className="mt-6">
+                <button 
+                  onClick={() => setIsMobileFiltersOpen(false)}
+                  className="w-full py-3.5 bg-gradient-to-r from-[#4c55a4] to-[#6b75c8] text-white rounded-xl font-extrabold shadow-md shadow-[#4c55a4]/20"
+                >
+                  Show Results ({processedApartments.length})
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );
