@@ -11,6 +11,7 @@ import EditProfileModal from "@/components/settings/EditProfileModal";
 import ApartmentCard from "@/components/search/ApartmentCard";
 import { ApartmentData } from "@/types";
 import { useLanguage } from "@/context/LanguageContext";
+import { Select } from "@/components/ui/Select";
 
 // Report Rented Data Type
 type ReportedRental = {
@@ -217,6 +218,12 @@ export default function UserDashboardPage() {
   const [activeTab, setActiveTab] = useState("manage");
   const [isSwapEnabled, setIsSwapEnabled] = useState(true);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [swapPrefCity, setSwapPrefCity] = useState("Jerusalem");
+  const [swapPrefNeighborhood, setSwapPrefNeighborhood] = useState("Any");
+  const [swapPrefRooms, setSwapPrefRooms] = useState("5");
+  const [swapPrefBeds, setSwapPrefBeds] = useState("5");
+  const [swapPrefWeekend, setSwapPrefWeekend] = useState("");
+  const [isSwapSuccessModalOpen, setIsSwapSuccessModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState<"create" | "edit">("create");
   const [hasListing, setHasListing] = useState(false);
   const [manageSubTab, setManageSubTab] = useState("my_listing");
@@ -224,6 +231,9 @@ export default function UserDashboardPage() {
   const [settingsSubTab, setSettingsSubTab] = useState("profile");
   const [isApartmentVisible, setIsApartmentVisible] = useState(true);
   const [acceptRequestsWhenUnavailable, setAcceptRequestsWhenUnavailable] = useState(false);
+  const [notifyWhenAvailable, setNotifyWhenAvailable] = useState(false);
+  const [isHideReasonModalOpen, setIsHideReasonModalOpen] = useState(false);
+  const [hideReason, setHideReason] = useState("");
   const [selectedShabbatot, setSelectedShabbatot] = useState<string[]>([]);
   const [createdListingDate, setCreatedListingDate] = useState("");
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
@@ -1333,6 +1343,54 @@ export default function UserDashboardPage() {
                       <div className="w-11 h-6 bg-zinc-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-zinc-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-zinc-600 peer-checked:bg-[#4c55a4]"></div>
                     </label>
                   </div>
+                  
+                  {isSwapEnabled && (
+                    <div className="mt-6 pt-6 border-t border-zinc-100 dark:border-zinc-800 animate-in fade-in duration-300">
+                      <h4 className="font-extrabold text-zinc-900 dark:text-white mb-4">I want to swap to:</h4>
+                      <form onSubmit={(e) => { e.preventDefault(); setIsSwapSuccessModalOpen(true); }} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1.5">City</label>
+                          <input required type="text" value={swapPrefCity} onChange={(e) => setSwapPrefCity(e.target.value)} className="w-full px-4 py-3 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-sm text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-[#4c55a4]" placeholder="Enter interested city" />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1.5">Neighborhood</label>
+                          <input required type="text" value={swapPrefNeighborhood} onChange={(e) => setSwapPrefNeighborhood(e.target.value)} className="w-full px-4 py-3 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-sm text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-[#4c55a4]" placeholder="Enter interested neighborhood" />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1.5">Rooms</label>
+                          <input required type="number" value={swapPrefRooms} onChange={(e) => setSwapPrefRooms(e.target.value)} className="w-full px-4 py-3 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-sm text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-[#4c55a4]" placeholder="Enter room number" />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1.5">Beds</label>
+                          <input required type="number" value={swapPrefBeds} onChange={(e) => setSwapPrefBeds(e.target.value)} className="w-full px-4 py-3 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-sm text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-[#4c55a4]" placeholder="Enter bed number" />
+                        </div>
+                        <div className="md:col-span-2 -mb-2 mt-1">
+                          <Select
+                            label="Preferred Dates / Weekend"
+                            required
+                            value={swapPrefWeekend}
+                            onChange={(e) => setSwapPrefWeekend(e.target.value)}
+                            options={[
+                              { value: "", label: "Select a weekend..." },
+                              { value: "Any", label: "Any Weekend" },
+                              ...SHABBATOT.map(shabbat => ({
+                                value: shabbat.id,
+                                label: `${shabbat.name} (${shabbat.date})`
+                              }))
+                            ]}
+                          />
+                        </div>
+                        <div className="md:col-span-2 mt-2 flex justify-end">
+                          <button type="submit" className="px-6 py-2.5 bg-[#4c55a4] hover:bg-[#3d4484] text-white rounded-xl font-bold text-sm transition-all shadow-md shadow-[#4c55a4]/20">
+                            Save Preferences
+                          </button>
+                        </div>
+                      </form>
+                      <p className="text-xs text-zinc-500 mt-5 bg-blue-50 dark:bg-blue-900/20 p-3 rounded-xl border border-blue-100 dark:border-blue-900/50 leading-relaxed">
+                        <strong className="text-blue-700 dark:text-blue-400">Note:</strong> The more specific your preferences, the fewer but more relevant matches you will get. Leaving details open (like "Any") will result in more possible matches.
+                      </p>
+                    </div>
+                  )}
                 </div>
 
                 <h3 className="text-2xl font-extrabold text-zinc-900 dark:text-white mb-6">Active & Past Swaps</h3>
@@ -1838,9 +1896,13 @@ export default function UserDashboardPage() {
                               <span className="text-[15px] font-bold text-zinc-600 dark:text-zinc-400">{isApartmentVisible ? t("dashboard.manage.active") : t("dashboard.manage.hidden")}</span>
                               <button 
                                 onClick={() => {
-                                  const newVal = !isApartmentVisible;
-                                  setIsApartmentVisible(newVal);
-                                  localStorage.setItem("isApartmentVisible", newVal.toString());
+                                  if (isApartmentVisible) {
+                                    setIsHideReasonModalOpen(true);
+                                  } else {
+                                    setIsApartmentVisible(true);
+                                    setHideReason("");
+                                    localStorage.setItem("isApartmentVisible", "true");
+                                  }
                                 }}
                                 className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors duration-300 focus:outline-none ${isApartmentVisible ? 'bg-[#4c55a4]' : 'bg-zinc-300 dark:bg-zinc-700'}`}
                               >
@@ -1849,19 +1911,33 @@ export default function UserDashboardPage() {
                             </div>
                           </div>
 
-                          {!isApartmentVisible && (
-                            <div className="flex items-center justify-between w-full pt-4 border-t border-zinc-100 dark:border-zinc-800">
-                              <div>
-                                <p className="font-bold text-zinc-900 dark:text-white">Accept Requests When Unavailable</p>
-                                <p className="text-sm text-zinc-500">Allow renters to send requests even when hidden/unavailable</p>
+                          {!isApartmentVisible && hideReason !== 'booked_website' && (
+                            <>
+                              <div className="flex items-center justify-between w-full pt-4 border-t border-zinc-100 dark:border-zinc-800">
+                                <div>
+                                  <p className="font-bold text-zinc-900 dark:text-white">Accept Requests When Unavailable</p>
+                                  <p className="text-sm text-zinc-500">Allow renters to send requests even when hidden/unavailable</p>
+                                </div>
+                                <button 
+                                  onClick={() => setAcceptRequestsWhenUnavailable(!acceptRequestsWhenUnavailable)}
+                                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#4c55a4] ${acceptRequestsWhenUnavailable ? 'bg-[#4c55a4]' : 'bg-zinc-200 dark:bg-zinc-700'}`}
+                                >
+                                  <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${acceptRequestsWhenUnavailable ? 'translate-x-6' : 'translate-x-1'}`} />
+                                </button>
                               </div>
-                              <button 
-                                onClick={() => setAcceptRequestsWhenUnavailable(!acceptRequestsWhenUnavailable)}
-                                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#4c55a4] ${acceptRequestsWhenUnavailable ? 'bg-[#4c55a4]' : 'bg-zinc-200 dark:bg-zinc-700'}`}
-                              >
-                                <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${acceptRequestsWhenUnavailable ? 'translate-x-6' : 'translate-x-1'}`} />
-                              </button>
-                            </div>
+                              <div className="flex items-center justify-between w-full pt-4 border-t border-zinc-100 dark:border-zinc-800 mt-2">
+                                <div>
+                                  <p className="font-bold text-zinc-900 dark:text-white">Notify Me When Available</p>
+                                  <p className="text-sm text-zinc-500">Allow renters to request a notification for when your apartment becomes available.</p>
+                                </div>
+                                <button 
+                                  onClick={() => setNotifyWhenAvailable(!notifyWhenAvailable)}
+                                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#4c55a4] ${notifyWhenAvailable ? 'bg-[#4c55a4]' : 'bg-zinc-200 dark:bg-zinc-700'}`}
+                                >
+                                  <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${notifyWhenAvailable ? 'translate-x-6' : 'translate-x-1'}`} />
+                                </button>
+                              </div>
+                            </>
                           )}
                         </div>
 
@@ -2380,6 +2456,71 @@ export default function UserDashboardPage() {
                 </div>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* ===== Hide Reason Modal ===== */}
+      {isHideReasonModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-zinc-900 rounded-3xl shadow-2xl w-full max-w-md border border-zinc-200 dark:border-zinc-800 overflow-hidden">
+            <div className="flex items-center justify-between p-6 border-b border-zinc-100 dark:border-zinc-800">
+              <h3 className="font-extrabold text-zinc-900 dark:text-white text-lg">Hide Apartment</h3>
+              <button onClick={() => setIsHideReasonModalOpen(false)} className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full transition-colors text-zinc-400">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-6 space-y-4">
+              <p className="text-sm text-zinc-500 mb-2">Please select a reason for hiding your apartment:</p>
+              <button 
+                onClick={() => setHideReason("booked_website")}
+                className={`w-full text-left p-4 rounded-xl border transition-all ${hideReason === "booked_website" ? "border-[#4c55a4] bg-[#4c55a4]/5 dark:bg-[#4c55a4]/20" : "border-zinc-200 dark:border-zinc-700 hover:border-zinc-300 dark:hover:border-zinc-600"}`}
+              >
+                <div className="font-bold text-zinc-900 dark:text-white text-[15px]">Booked through Shabbos Rent</div>
+                <p className="text-xs text-zinc-500 mt-1">This apartment was successfully rented via the website.</p>
+              </button>
+              <button 
+                onClick={() => setHideReason("unavailable")}
+                className={`w-full text-left p-4 rounded-xl border transition-all ${hideReason === "unavailable" ? "border-[#4c55a4] bg-[#4c55a4]/5 dark:bg-[#4c55a4]/20" : "border-zinc-200 dark:border-zinc-700 hover:border-zinc-300 dark:hover:border-zinc-600"}`}
+              >
+                <div className="font-bold text-zinc-900 dark:text-white text-[15px]">Unavailable / Not Renting</div>
+                <p className="text-xs text-zinc-500 mt-1">I am unavailable or do not want to rent it out right now.</p>
+              </button>
+            </div>
+            <div className="p-6 border-t border-zinc-100 dark:border-zinc-800">
+              <button 
+                disabled={!hideReason}
+                onClick={() => {
+                  setIsApartmentVisible(false);
+                  localStorage.setItem("isApartmentVisible", "false");
+                  setIsHideReasonModalOpen(false);
+                }}
+                className="w-full py-3 bg-[#4c55a4] hover:bg-[#3d4484] text-white rounded-xl font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Confirm
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ===== Swap Success Modal ===== */}
+      {isSwapSuccessModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-zinc-900 rounded-3xl shadow-2xl w-full max-w-sm border border-zinc-200 dark:border-zinc-800 overflow-hidden text-center p-8">
+            <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-6">
+              <CheckCircle2 className="w-8 h-8 text-green-600 dark:text-green-400" />
+            </div>
+            <h3 className="text-xl font-extrabold text-zinc-900 dark:text-white mb-3">Preferences Saved!</h3>
+            <p className="text-zinc-500 mb-8 leading-relaxed">
+              Yes, now your apartment will be available for swap based on your preferences.
+            </p>
+            <button 
+              onClick={() => setIsSwapSuccessModalOpen(false)}
+              className="w-full py-3.5 bg-[#4c55a4] hover:bg-[#3d4484] text-white rounded-xl font-bold transition-all shadow-md"
+            >
+              Great, thanks!
+            </button>
           </div>
         </div>
       )}
