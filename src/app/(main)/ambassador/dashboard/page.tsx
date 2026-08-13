@@ -48,6 +48,9 @@ import {
   Filter,
   RotateCcw,
   Sparkles,
+  Bell,
+  User,
+  ChevronDown,
 } from 'lucide-react';
 
 export default function AmbassadorDashboardPage() {
@@ -59,6 +62,8 @@ export default function AmbassadorDashboardPage() {
   const [payouts, setPayouts] = useState<Payout[]>([]);
   const [subAmbassadors, setSubAmbassadors] = useState<Ambassador[]>([]);
   const [activeTab, setActiveTab] = useState<'apartments' | 'commissions' | 'manual' | 'sub' | 'payout' | 'settings'>('apartments');
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
 
   // Copy feedback state
   const [copiedLink, setCopiedLink] = useState(false);
@@ -214,17 +219,98 @@ export default function AmbassadorDashboardPage() {
             </div>
           </Link>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 sm:gap-4 relative">
+            {/* Notifications Dropdown */}
             <button
               onClick={() => {
-                logoutAmbassador();
-                router.push('/ambassador/login');
+                setShowNotifications(!showNotifications);
+                setShowProfileMenu(false);
               }}
-              className="flex items-center gap-1.5 text-xs font-bold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 px-3 py-1.5 rounded-xl transition-colors"
+              onBlur={() => setTimeout(() => setShowNotifications(false), 200)}
+              className="relative p-2 text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full transition-all"
             >
-              <LogOut className="w-3.5 h-3.5" />
-              Logout
+              <Bell className="w-5 h-5" />
+              <span className="absolute top-1.5 right-2 w-2 h-2 bg-red-500 rounded-full"></span>
             </button>
+
+            {showNotifications && (
+              <div className="absolute top-12 right-12 w-80 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-xl p-2 z-50 animate-in fade-in slide-in-from-top-2">
+                <div className="px-3 py-2 border-b border-zinc-100 dark:border-zinc-800 mb-1">
+                  <p className="text-sm font-bold text-zinc-900 dark:text-white">Notifications</p>
+                </div>
+                <div className="flex flex-col gap-1 max-h-80 overflow-y-auto">
+                  <div className="p-3 text-xs hover:bg-zinc-50 dark:hover:bg-zinc-800/50 rounded-xl cursor-pointer transition-colors flex gap-3 items-start">
+                    <div className="bg-emerald-100 dark:bg-emerald-900/40 p-2 rounded-lg shrink-0">
+                      <DollarSign className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                    </div>
+                    <div>
+                      <p className="font-bold text-zinc-900 dark:text-zinc-100">Pending balance approved</p>
+                      <p className="text-zinc-500 mt-0.5 leading-relaxed">Your recent listing fee has been cleared and added to your balance.</p>
+                    </div>
+                  </div>
+                  <div className="p-3 text-xs hover:bg-zinc-50 dark:hover:bg-zinc-800/50 rounded-xl cursor-pointer transition-colors flex gap-3 items-start">
+                    <div className="bg-blue-100 dark:bg-blue-900/40 p-2 rounded-lg shrink-0">
+                      <Users className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                    </div>
+                    <div>
+                      <p className="font-bold text-zinc-900 dark:text-zinc-100">Referral check approved</p>
+                      <p className="text-zinc-500 mt-0.5 leading-relaxed">A sub-ambassador referral was successfully processed.</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Profile Dropdown */}
+            <button
+              onClick={() => {
+                setShowProfileMenu(!showProfileMenu);
+                setShowNotifications(false);
+              }}
+              onBlur={() => setTimeout(() => setShowProfileMenu(false), 200)}
+              className="flex items-center gap-2.5 outline-none rounded-full border border-zinc-200 bg-white p-1.5 pr-4 shadow-sm hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:bg-zinc-800 transition-all focus-visible:ring-2 focus-visible:ring-blue-500 group"
+              title={ambassador.name}
+            >
+              <div className="h-8 w-8 rounded-full overflow-hidden border border-zinc-100 dark:border-zinc-700 shadow-sm group-hover:scale-105 transition-transform">
+                <img src={`https://i.pravatar.cc/150?u=${ambassador.email}`} alt={ambassador.name} className="w-full h-full object-cover" />
+              </div>
+              <div className="flex flex-col items-start hidden md:block text-left">
+                <span className="text-[13px] font-bold leading-none text-zinc-900 dark:text-white block pb-0.5">{ambassador.name}</span>
+                <span className="text-[11px] font-medium leading-none text-zinc-500 dark:text-zinc-400 block uppercase tracking-wider">{ambassador.status} Ambassador</span>
+              </div>
+              <ChevronDown className="h-4 w-4 text-zinc-400 hidden md:block ml-1" />
+            </button>
+
+            {showProfileMenu && (
+              <div className="absolute top-12 right-0 w-52 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-xl p-2 z-50 animate-in fade-in slide-in-from-top-2">
+                <div className="px-3 py-2.5 border-b border-zinc-100 dark:border-zinc-800 mb-1">
+                  <p className="text-sm font-bold text-zinc-900 dark:text-white truncate">{ambassador.name}</p>
+                  <p className="text-xs text-zinc-500 truncate">{ambassador.email}</p>
+                </div>
+                
+                <button
+                  onClick={() => {
+                    setActiveTab('settings');
+                    setShowProfileMenu(false);
+                  }}
+                  className="w-full flex items-center gap-2 text-sm font-semibold text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 px-3 py-2.5 rounded-xl transition-colors text-left"
+                >
+                  <Settings className="w-4 h-4" />
+                  Settings
+                </button>
+
+                <button
+                  onClick={() => {
+                    logoutAmbassador();
+                    router.push('/ambassador/login');
+                  }}
+                  className="w-full flex items-center gap-2 text-sm font-bold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 px-3 py-2.5 rounded-xl transition-colors text-left mt-1"
+                >
+                  <LogOut className="w-4 h-4" />
+                  Logout
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </header>
@@ -254,9 +340,18 @@ export default function AmbassadorDashboardPage() {
             <div className="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center font-black text-sm">
               {ambassador.referralCode.slice(0, 2)}
             </div>
-            <div>
-              <span className="text-[11px] font-bold text-zinc-400 uppercase tracking-wider block">Your Referral Code</span>
-              <span className="text-lg font-black tracking-wider text-blue-600 dark:text-blue-400 font-mono">{ambassador.referralCode}</span>
+            <div className="flex items-center gap-3">
+              <div>
+                <span className="text-[11px] font-bold text-zinc-400 uppercase tracking-wider block">Your Referral Code</span>
+                <span className="text-lg font-black tracking-wider text-blue-600 dark:text-blue-400 font-mono">{ambassador.referralCode}</span>
+              </div>
+              <button
+                onClick={handleCopyCode}
+                className="p-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors shadow-sm text-zinc-600 dark:text-zinc-400 hover:text-blue-600 dark:hover:text-blue-400"
+                title="Copy Code"
+              >
+                {copiedCode ? <Check className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4" />}
+              </button>
             </div>
           </div>
         </div>
@@ -838,10 +933,10 @@ export default function AmbassadorDashboardPage() {
 
                 <button
                   onClick={handleRequestPayoutSubmit}
-                  disabled={balances.approvedBalance < MINIMUM_PAYOUT_THRESHOLD}
+                  disabled={balances.approvedBalance < MINIMUM_PAYOUT_THRESHOLD || payoutResult?.success === true}
                   className="w-full sm:w-auto px-8 py-3.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-xl shadow-md transition-all text-sm"
                 >
-                  Request Payout Now
+                  {payoutResult?.success ? 'Payout Requested' : 'Request Payout Now'}
                 </button>
               </div>
             </div>

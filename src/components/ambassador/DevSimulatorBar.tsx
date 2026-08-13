@@ -84,10 +84,13 @@ export default function DevSimulatorBar({ onDataChange }: { onDataChange?: () =>
     const session = getActiveAmbassadorSession();
     const refCode = session?.referralCode || 'MOSHE50';
     const randomId = Math.floor(100 + Math.random() * 900);
+    
+    const apartmentNames = ['Cozy Studio', 'Modern Loft', 'Seaview Villa', 'Downtown Penthouse', 'Sunny Apartment', 'Luxury Suite', 'Family Home', 'Urban Studio', 'Grand Villa', 'Boutique Apartment'];
+    const randomName = apartmentNames[Math.floor(Math.random() * apartmentNames.length)];
 
     const res = createAttributionFromListing({
       listingId: `apt-sim-${randomId}`,
-      apartmentTitle: `Simulated Luxury Suite #${randomId}`,
+      apartmentTitle: `${randomName} #${randomId}`,
       ownerName: `Owner #${randomId}`,
       ownerPhone: `050${randomId}1234`,
       ownerEmail: `owner${randomId}@example.com`,

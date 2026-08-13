@@ -52,6 +52,13 @@ export default function AdminAmbassadorsPage() {
   const [relinkModel, setRelinkModel] = useState<CommissionModel>('A');
   const [relinkResult, setRelinkResult] = useState<string | null>(null);
 
+  // Payout Modals state
+  const [selectedPayoutForApprove, setSelectedPayoutForApprove] = useState<Payout | null>(null);
+  const [payoutRefCode, setPayoutRefCode] = useState<string>('');
+  
+  const [selectedPayoutForReject, setSelectedPayoutForReject] = useState<Payout | null>(null);
+  const [payoutRejectReason, setPayoutRejectReason] = useState<string>('Information mismatch or payout under review');
+
   // Search filter
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -119,25 +126,32 @@ export default function AdminAmbassadorsPage() {
     }
   };
 
-  const handleApprovePayout = (payoutId: string) => {
-    const ref = prompt('Enter payment reference code (optional):', `PAY-${Math.floor(100000 + Math.random() * 900000)}`);
-    if (ref !== null) {
-      const res = approvePayout(payoutId, ref);
-      if (res.success) {
-        alert('Payout approved and marked as paid!');
-        loadAdminData();
-      } else {
-        alert(res.error);
-      }
+  const handleApprovePayout = (payout: Payout) => {
+    setSelectedPayoutForApprove(payout);
+    setPayoutRefCode(`PAY-${Math.floor(100000 + Math.random() * 900000)}`);
+  };
+
+  const executeApprovePayout = () => {
+    if (!selectedPayoutForApprove) return;
+    const res = approvePayout(selectedPayoutForApprove.id, payoutRefCode);
+    if (res.success) {
+      setSelectedPayoutForApprove(null);
+      loadAdminData();
+    } else {
+      alert(res.error);
     }
   };
 
-  const handleRejectPayout = (payoutId: string) => {
-    const reason = prompt('Enter rejection reason:', 'Information mismatch or payout under review');
-    if (reason !== null) {
-      rejectPayout(payoutId, reason);
-      loadAdminData();
-    }
+  const handleRejectPayout = (payout: Payout) => {
+    setSelectedPayoutForReject(payout);
+    setPayoutRejectReason('Information mismatch or payout under review');
+  };
+
+  const executeRejectPayout = () => {
+    if (!selectedPayoutForReject) return;
+    rejectPayout(selectedPayoutForReject.id, payoutRejectReason);
+    setSelectedPayoutForReject(null);
+    loadAdminData();
   };
 
   return (
@@ -625,14 +639,14 @@ export default function AdminAmbassadorsPage() {
                         {p.status === 'requested' ? (
                           <div className="flex items-center justify-end gap-2">
                             <button
-                              onClick={() => handleApprovePayout(p.id)}
+                              onClick={() => handleApprovePayout(p)}
                               className="px-3 py-1.5 bg-emerald-600 text-white rounded-xl font-bold text-xs shadow-sm hover:bg-emerald-700 transition-all flex items-center gap-1"
                             >
                               <CheckCircle2 className="w-3.5 h-3.5" />
                               Approve Payout
                             </button>
                             <button
-                              onClick={() => handleRejectPayout(p.id)}
+                              onClick={() => handleRejectPayout(p)}
                               className="px-3 py-1.5 bg-zinc-100 dark:bg-zinc-800 text-rose-600 rounded-xl font-bold text-xs hover:bg-rose-50 transition-all"
                             >
                               Reject
@@ -646,6 +660,88 @@ export default function AdminAmbassadorsPage() {
                   ))}
                 </tbody>
               </table>
+            </div>
+          )}
+
+          {/* Approve Payout Modal */}
+          {selectedPayoutForApprove && (
+            <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+              <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-6 max-w-md w-full shadow-2xl space-y-4">
+                <div className="flex items-center gap-2 text-emerald-600 font-bold text-sm">
+                  <CheckCircle2 className="w-5 h-5" />
+                  <span>Approve Payout</span>
+                </div>
+                <p className="text-xs text-zinc-600 dark:text-zinc-400">
+                  Are you sure you want to approve a payout of <strong className="text-zinc-900 dark:text-white">₪{selectedPayoutForApprove.amount}</strong> for {selectedPayoutForApprove.ambassadorName}?
+                </p>
+                <div className="space-y-3 text-xs">
+                  <div>
+                    <label className="block font-bold mb-1">Payment Reference Code (Optional):</label>
+                    <input
+                      type="text"
+                      value={payoutRefCode}
+                      onChange={(e) => setPayoutRefCode(e.target.value)}
+                      className="w-full p-2.5 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800"
+                      placeholder="e.g. PAY-123456"
+                    />
+                  </div>
+                </div>
+                <div className="flex items-center justify-end gap-2 pt-4 border-t border-zinc-100 dark:border-zinc-800">
+                  <button
+                    onClick={() => setSelectedPayoutForApprove(null)}
+                    className="px-4 py-2 bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 font-bold rounded-xl text-xs"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={executeApprovePayout}
+                    className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs shadow-md"
+                  >
+                    Confirm Approval
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Reject Payout Modal */}
+          {selectedPayoutForReject && (
+            <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+              <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-6 max-w-md w-full shadow-2xl space-y-4">
+                <div className="flex items-center gap-2 text-rose-600 font-bold text-sm">
+                  <XCircle className="w-5 h-5" />
+                  <span>Reject Payout</span>
+                </div>
+                <p className="text-xs text-zinc-600 dark:text-zinc-400">
+                  Are you sure you want to reject the payout of <strong className="text-zinc-900 dark:text-white">₪{selectedPayoutForReject.amount}</strong> for {selectedPayoutForReject.ambassadorName}?
+                </p>
+                <div className="space-y-3 text-xs">
+                  <div>
+                    <label className="block font-bold mb-1">Rejection Reason:</label>
+                    <input
+                      type="text"
+                      value={payoutRejectReason}
+                      onChange={(e) => setPayoutRejectReason(e.target.value)}
+                      className="w-full p-2.5 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800"
+                      placeholder="e.g. Information mismatch"
+                    />
+                  </div>
+                </div>
+                <div className="flex items-center justify-end gap-2 pt-4 border-t border-zinc-100 dark:border-zinc-800">
+                  <button
+                    onClick={() => setSelectedPayoutForReject(null)}
+                    className="px-4 py-2 bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 font-bold rounded-xl text-xs"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={executeRejectPayout}
+                    className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl text-xs shadow-md"
+                  >
+                    Confirm Rejection
+                  </button>
+                </div>
+              </div>
             </div>
           )}
         </div>
