@@ -7,6 +7,7 @@ import SearchWidget from "@/components/home/SearchWidget";
 import PopularCities from "@/components/home/PopularCities";
 import PremiumCities from "@/components/home/PremiumCities";
 
+import AdvertisementsSection from "@/components/home/AdvertisementsSection";
 import PartnerAds from "@/components/home/PartnerAds";
 import FAQSection from "@/components/home/FAQSection";
 import MainFooter from "@/components/layout/MainFooter";
@@ -77,6 +78,7 @@ export default function HomePage() {
         <>
           <PopularCities />
           <PremiumCities />
+          <AdvertisementsSection />
           <PartnerAds />
           <FAQSection />
           <ContactSection />

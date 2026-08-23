@@ -59,6 +59,7 @@ export default function AdminLayout({
   const navigation = [
     { name: t("admin.nav.dashboard"), href: "/dashboard", icon: LayoutDashboard, color: "text-blue-600" },
     { name: t("admin.nav.apartments"), href: "/dashboard/apartments", icon: Building2, color: "text-purple-600" },
+    { name: "Apartment Calls", href: "/dashboard/apartment-calls", icon: PhoneCall, color: "text-purple-500" },
     { name: t("admin.nav.owners"), href: "/dashboard/owners", icon: Users, color: "text-emerald-600" },
     { name: t("admin.nav.renters"), href: "/dashboard/renters", icon: UserCheck, color: "text-orange-600" },
     { name: t("admin.nav.rentals"), href: "/dashboard/rentals", icon: CheckSquare, color: "text-blue-500" },
@@ -72,21 +73,23 @@ export default function AdminLayout({
     { name: "Review Moderation", href: "/dashboard/reviews", icon: Star, color: "text-amber-500" },
   ];
 
+  /*
   const pdfNavigation = [
     { name: "Dashboard (PDF)", href: "/dashboard/pdf-dashboard", icon: LayoutDashboard, color: "text-blue-600" },
     { name: "Apartments (PDF)", href: "/dashboard/pdf-apartments", icon: Building2, color: "text-purple-600" },
-    // { name: "Voice Inbox", href: "/dashboard/voice-inbox", icon: Mic, color: "text-blue-500" },
-    // { name: "Upload Hotline", href: "/dashboard/upload-hotline", icon: Phone, color: "text-green-500" },
+    { name: "Voice Inbox", href: "/dashboard/voice-inbox", icon: Mic, color: "text-blue-500" },
+    { name: "Upload Hotline", href: "/dashboard/upload-hotline", icon: Phone, color: "text-green-500" },
     { name: "Apartment Calls", href: "/dashboard/apartment-calls", icon: PhoneCall, color: "text-purple-500" },
     { name: "Owner Hotline", href: "/dashboard/owner-hotline", icon: Headphones, color: "text-orange-500" },
     { name: "Open Debts", href: "/dashboard/open-debts", icon: FileText, color: "text-red-500" },
     { name: "Finance & Budget", href: "/dashboard/finance", icon: PieChart, color: "text-emerald-500" },
-    // { name: "Campaigns", href: "/dashboard/campaigns", icon: Megaphone, color: "text-pink-500" },
-    // { name: "Partners Hub", href: "/dashboard/partners", icon: Briefcase, color: "text-indigo-500" },
-    // { name: "Neighborhoods", href: "/dashboard/neighborhoods", icon: MapPin, color: "text-teal-500" },
-    // { name: "Worker Management", href: "/dashboard/workers", icon: Users, color: "text-cyan-500" },
-    // { name: "Worker Hours", href: "/dashboard/worker-hours", icon: Clock, color: "text-blue-400" },
+    { name: "Campaigns", href: "/dashboard/campaigns", icon: Megaphone, color: "text-pink-500" },
+    { name: "Partners Hub", href: "/dashboard/partners", icon: Briefcase, color: "text-indigo-500" },
+    { name: "Neighborhoods", href: "/dashboard/neighborhoods", icon: MapPin, color: "text-teal-500" },
+    { name: "Worker Management", href: "/dashboard/workers", icon: Users, color: "text-cyan-500" },
+    { name: "Worker Hours", href: "/dashboard/worker-hours", icon: Clock, color: "text-blue-400" },
   ];
+  */
 
   function classNames(...classes: string[]) {
     return classes.filter(Boolean).join(" ");
@@ -140,43 +143,6 @@ export default function AdminLayout({
             );
           })}
           
-          <div className="mt-6 mb-2 px-3">
-            <h3 className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
-              PDF Admin Features
-            </h3>
-          </div>
-          
-          {pdfNavigation.map((item, index) => {
-            const isActive = pathname === item.href;
-            return (
-              <div key={item.name} className={classNames(
-                index !== 0 ? "border-t border-zinc-100 dark:border-zinc-800/60" : ""
-              )}>
-                <Link
-                  href={item.href}
-                  className={classNames(
-                    isActive
-                      ? "bg-blue-50 text-blue-700 shadow-sm ring-1 ring-blue-500/20 dark:bg-blue-500/10 dark:text-blue-400 dark:ring-blue-500/30"
-                      : "hover:bg-blue-50/50 dark:hover:bg-blue-900/20",
-                    "group flex items-center gap-4 px-3 py-3 rounded-lg transition-all my-1"
-                  )}
-                >
-                  <item.icon
-                    className={classNames(item.color, "h-5 w-5 shrink-0")}
-                    aria-hidden="true"
-                  />
-                  <div className="flex flex-col">
-                    <span className={classNames(
-                      isActive ? "text-blue-900 dark:text-blue-300" : "text-zinc-900 dark:text-white",
-                      "text-[15px] font-bold leading-tight"
-                    )}>
-                      {item.name}
-                    </span>
-                  </div>
-                </Link>
-              </div>
-            );
-          })}
         </nav>
         <div className="p-4 border-t border-zinc-200 dark:border-zinc-800">
           <button className="flex w-full items-center gap-3 rounded-lg px-3 py-3 text-[15px] font-bold text-red-600 bg-red-50 dark:bg-red-950/30 hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors">
@@ -288,32 +254,6 @@ export default function AdminLayout({
                 );
               })}
               
-              <div className="mt-6 mb-2 px-3">
-                <h3 className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
-                  PDF Admin Features
-                </h3>
-              </div>
-              
-              {pdfNavigation.map((item, index) => {
-                const isActive = pathname === item.href;
-                return (
-                  <div key={item.name} className={classNames(index !== 0 ? "border-t border-zinc-100 dark:border-zinc-800/60" : "")}>
-                    <Link
-                      href={item.href}
-                      onClick={() => setIsMobileMenuOpen(false)}
-                      className={classNames(
-                        isActive
-                          ? "bg-blue-50 text-blue-700 shadow-sm ring-1 ring-blue-500/20 dark:bg-blue-500/10 dark:text-blue-400 dark:ring-blue-500/30"
-                          : "hover:bg-blue-50/50 dark:hover:bg-blue-900/20 text-zinc-700 dark:text-zinc-300",
-                        "group flex items-center gap-4 px-3 py-3 rounded-lg transition-all my-1"
-                      )}
-                    >
-                      <item.icon className={classNames(item.color, "h-5 w-5 shrink-0")} aria-hidden="true" />
-                      <span className="text-[15px] font-bold leading-tight">{item.name}</span>
-                    </Link>
-                  </div>
-                );
-              })}
             </nav>
           </div>
         </div>
