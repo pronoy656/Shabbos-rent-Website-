@@ -75,17 +75,17 @@ export default function AdminLayout({
   const pdfNavigation = [
     { name: "Dashboard (PDF)", href: "/dashboard/pdf-dashboard", icon: LayoutDashboard, color: "text-blue-600" },
     { name: "Apartments (PDF)", href: "/dashboard/pdf-apartments", icon: Building2, color: "text-purple-600" },
-    { name: "Voice Inbox", href: "/dashboard/voice-inbox", icon: Mic, color: "text-blue-500" },
-    { name: "Upload Hotline", href: "/dashboard/upload-hotline", icon: Phone, color: "text-green-500" },
+    // { name: "Voice Inbox", href: "/dashboard/voice-inbox", icon: Mic, color: "text-blue-500" },
+    // { name: "Upload Hotline", href: "/dashboard/upload-hotline", icon: Phone, color: "text-green-500" },
     { name: "Apartment Calls", href: "/dashboard/apartment-calls", icon: PhoneCall, color: "text-purple-500" },
     { name: "Owner Hotline", href: "/dashboard/owner-hotline", icon: Headphones, color: "text-orange-500" },
     { name: "Open Debts", href: "/dashboard/open-debts", icon: FileText, color: "text-red-500" },
     { name: "Finance & Budget", href: "/dashboard/finance", icon: PieChart, color: "text-emerald-500" },
-    { name: "Campaigns", href: "/dashboard/campaigns", icon: Megaphone, color: "text-pink-500" },
-    { name: "Partners Hub", href: "/dashboard/partners", icon: Briefcase, color: "text-indigo-500" },
-    { name: "Neighborhoods", href: "/dashboard/neighborhoods", icon: MapPin, color: "text-teal-500" },
-    { name: "Worker Management", href: "/dashboard/workers", icon: Users, color: "text-cyan-500" },
-    { name: "Worker Hours", href: "/dashboard/worker-hours", icon: Clock, color: "text-blue-400" },
+    // { name: "Campaigns", href: "/dashboard/campaigns", icon: Megaphone, color: "text-pink-500" },
+    // { name: "Partners Hub", href: "/dashboard/partners", icon: Briefcase, color: "text-indigo-500" },
+    // { name: "Neighborhoods", href: "/dashboard/neighborhoods", icon: MapPin, color: "text-teal-500" },
+    // { name: "Worker Management", href: "/dashboard/workers", icon: Users, color: "text-cyan-500" },
+    // { name: "Worker Hours", href: "/dashboard/worker-hours", icon: Clock, color: "text-blue-400" },
   ];
 
   function classNames(...classes: string[]) {
