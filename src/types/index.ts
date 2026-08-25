@@ -1,5 +1,8 @@
 import { LucideIcon } from "lucide-react";
 
+export type OwnerStatus = "available" | "pending" | "unavailable";
+export type PublicAvailabilityStatus = "available" | "unavailable_upcoming" | "unavailable";
+
 export interface ApartmentData {
   id: string;
   title: string;
@@ -15,6 +18,11 @@ export interface ApartmentData {
   verified: boolean;
   isAvailable?: boolean;
   acceptRequestsWhenUnavailable?: boolean;
+  ownerStatus?: OwnerStatus;
+  availabilityStatus?: PublicAvailabilityStatus;
+  ownerName?: string;
+  ownerEmail?: string;
+  ownerPhone?: string;
   amenities?: string[];
   lat?: number;
   lng?: number;

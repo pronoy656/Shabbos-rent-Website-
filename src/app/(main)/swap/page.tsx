@@ -22,6 +22,7 @@ const swapApartments: ApartmentData[] = [
     guests: 8,
     isSwapAvailable: true,
     verified: true,
+    availabilityStatus: "available",
   },
   {
     id: "s2",
@@ -36,6 +37,7 @@ const swapApartments: ApartmentData[] = [
     guests: 10,
     isSwapAvailable: true,
     verified: true,
+    availabilityStatus: "unavailable_upcoming",
   },
   {
     id: "s3",
@@ -50,6 +52,7 @@ const swapApartments: ApartmentData[] = [
     guests: 8,
     isSwapAvailable: true,
     verified: true,
+    availabilityStatus: "available",
   },
   {
     id: "s4",
@@ -64,6 +67,7 @@ const swapApartments: ApartmentData[] = [
     guests: 2,
     isSwapAvailable: true,
     verified: false,
+    availabilityStatus: "unavailable",
   },
 ];
 

@@ -7,13 +7,14 @@ import MainNavbar from "@/components/layout/MainNavbar";
 import ApartmentCard from "@/components/search/ApartmentCard";
 import { ApartmentData } from "@/types";
 import { 
-  MapPin, BedDouble, Bath, Users, Star, ArrowRightLeft, 
+  MapPin, BedDouble, Bath, DoorOpen, Users, Star, ArrowRightLeft, 
   ShieldCheck, CalendarCheck, Wifi, Tent, Monitor, ChefHat, X, Mail, Sparkles,
-  Coffee, Tv, Snowflake, Car, WashingMachine, Phone, MessageCircle, Copy, ChevronDown, Home, Footprints, Check, LockKeyhole, CheckCircle2, Navigation
+  Coffee, Tv, Snowflake, Car, WashingMachine, Phone, MessageCircle, Copy, ChevronDown, Home, Footprints, Check, LockKeyhole, CheckCircle2, Navigation, Heart
 } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
 import { mockBaseApartments } from "@/data/mockData";
 import { getCoordinatesForAddress, calculateWalkingMinutes, calculateDistanceKm } from "@/utils/distanceUtils";
+import { useFavorites } from "@/hooks/useFavorites";
 // Constants
 const SHABBATOT = [
   { id: "devarim", name: "Devarim", date: "17/7" },
@@ -251,6 +252,44 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
     }
   }, [id, isSwapMode, router]);
 
+  // Record current apartment into Recently Viewed localStorage history (logged in users only)
+  useEffect(() => {
+    if (typeof window !== "undefined" && isAuthChecked) {
+      const userRole = localStorage.getItem("userRole");
+      if (!userRole) return;
+
+      try {
+        const matchingBase = mockBaseApartments.find((a) => a.id === id);
+        const aptToRecord: ApartmentData = matchingBase || {
+          id: id,
+          title: "Beautiful Apartment in Jerusalem",
+          location: "Rehavia, Jerusalem",
+          image: "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&q=80",
+          price: 4500,
+          rating: 4.9,
+          reviews: 128,
+          beds: 3,
+          baths: 2,
+          guests: 6,
+          isSwapAvailable: true,
+          verified: true,
+          availabilityStatus: "available",
+        };
+
+        const existingStr = localStorage.getItem("recently_viewed_apartments");
+        let existingList: ApartmentData[] = existingStr ? JSON.parse(existingStr) : [];
+        existingList = existingList.filter((item) => item.id !== aptToRecord.id);
+        const updatedList = [aptToRecord, ...existingList].slice(0, 8);
+        localStorage.setItem("recently_viewed_apartments", JSON.stringify(updatedList));
+      } catch (err) {
+        console.error("Failed to update recently viewed apartments:", err);
+      }
+    }
+  }, [id, isAuthChecked]);
+
+  const { isSaved: checkIsSaved, toggleFavorite } = useFavorites();
+  const isSaved = checkIsSaved(id);
+
   const hasUserListing = typeof window !== 'undefined' && localStorage.getItem("hasUserListing") === "true";
 
   if (!isAuthChecked) {
@@ -301,6 +340,14 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
     alert("Message sent successfully!"); // Simulate success
   };
 
+  const toggleSaveApartment = () => {
+    toggleFavorite({
+      id,
+      title: targetApartment?.title || "Apartment",
+      image: targetApartment?.image || activeImage,
+    });
+  };
+
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 font-sans pb-20 relative">
       <MainNavbar />
@@ -343,6 +390,21 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
                    </div>
                  )}
                </div>
+             </div>
+
+             {/* Favorite Save Button */}
+             <div className="flex items-center gap-3 self-start md:self-auto">
+               <button
+                 onClick={toggleSaveApartment}
+                 className={`flex items-center gap-2.5 px-5 py-3 rounded-2xl border font-extrabold text-sm transition-all shadow-sm active:scale-95 cursor-pointer ${
+                   isSaved
+                     ? "bg-red-50 dark:bg-red-950/40 border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 shadow-red-500/10"
+                     : "bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-200 hover:border-red-300 hover:text-red-600 dark:hover:text-red-400"
+                 }`}
+               >
+                 <Heart className={`w-5 h-5 transition-transform ${isSaved ? "fill-red-500 text-red-500 scale-110" : ""}`} />
+                 <span>{isSaved ? "Saved to Favorites" : "Save to Favorites"}</span>
+               </button>
              </div>
            </div>
         </div>
@@ -392,7 +454,7 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
                       4 {t("apartment_details.beds")}
                     </div>
                     <div className="flex items-center gap-2 text-zinc-700 dark:text-zinc-300 font-medium">
-                      <Bath className="w-5 h-5 text-[#4c55a4] dark:text-[#6b75c8]" />
+                      <DoorOpen className="w-5 h-5 text-[#4c55a4] dark:text-[#6b75c8]" />
                       3 {t("apartment_details.baths")}
                     </div>
                     <div className="flex items-center gap-2 text-zinc-700 dark:text-zinc-300 font-medium">
@@ -423,9 +485,9 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
                       <div className="flex flex-col gap-2 w-full sm:w-auto">
                         <button 
                           disabled
-                          className="w-full px-6 py-2.5 rounded-xl font-bold text-sm border cursor-default bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 border-red-200 dark:border-red-500/20"
+                          className="w-full px-6 py-2.5 rounded-xl font-bold text-sm border cursor-default bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-500/20"
                         >
-                          Unavailable for upcoming shabbat
+                          Unavailable for upcoming weekend
                         </button>
                         <div className="flex flex-col sm:flex-row gap-2">
                           <button 
@@ -1158,7 +1220,7 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
                         </div>
                         <div className="flex flex-wrap items-center text-xs text-zinc-700 dark:text-zinc-300 font-medium gap-y-2">
                           <span className="flex items-center gap-1 w-1/2"><BedDouble className="w-3.5 h-3.5 text-[#4c55a4]" /> 3 Beds</span>
-                          <span className="flex items-center gap-1 w-1/2"><Bath className="w-3.5 h-3.5 text-[#4c55a4]" /> 2 Rooms</span>
+                          <span className="flex items-center gap-1 w-1/2"><DoorOpen className="w-3.5 h-3.5 text-[#4c55a4]" /> 2 Rooms</span>
                           <span className="flex items-center gap-1 w-1/2"><Users className="w-3.5 h-3.5 text-[#4c55a4]" /> 6 Guests</span>
                           <span className="flex items-center gap-1 w-1/2"><Footprints className="w-3.5 h-3.5 text-[#4c55a4]" /> 10m walk</span>
                         </div>
@@ -1184,7 +1246,7 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
                         </div>
                         <div className="flex flex-wrap items-center text-xs text-zinc-700 dark:text-zinc-300 font-medium gap-y-2">
                           <span className="flex items-center gap-1 w-1/2"><BedDouble className="w-3.5 h-3.5 text-[#4c55a4]" /> 4 Beds</span>
-                          <span className="flex items-center gap-1 w-1/2"><Bath className="w-3.5 h-3.5 text-[#4c55a4]" /> 3 Rooms</span>
+                          <span className="flex items-center gap-1 w-1/2"><DoorOpen className="w-3.5 h-3.5 text-[#4c55a4]" /> 3 Rooms</span>
                           <span className="flex items-center gap-1 w-1/2"><Users className="w-3.5 h-3.5 text-[#4c55a4]" /> 8 Guests</span>
                           <span className="flex items-center gap-1 w-1/2"><Footprints className="w-3.5 h-3.5 text-[#4c55a4]" /> 5m walk</span>
                         </div>

@@ -6,8 +6,7 @@ import { useLanguage } from "@/context/LanguageContext";
 import SearchWidget from "@/components/home/SearchWidget";
 import PopularCities from "@/components/home/PopularCities";
 import PremiumCities from "@/components/home/PremiumCities";
-
-import AdvertisementsSection from "@/components/home/AdvertisementsSection";
+import RecentlyViewedSection from "@/components/home/RecentlyViewedSection";
 import PartnerAds from "@/components/home/PartnerAds";
 import FAQSection from "@/components/home/FAQSection";
 import MainFooter from "@/components/layout/MainFooter";
@@ -28,6 +27,7 @@ export default function HomePage() {
         {/* Background Image & Gradient Overlay */}
         <div className="absolute inset-0 z-0 bg-white dark:bg-zinc-950">
           <div className="w-full h-full relative">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img 
               src="/ChatGPT%20Image%20Jul%2010,%202026,%2002_11_20%20AM.png" 
               alt="Hero Background" 
@@ -77,8 +77,8 @@ export default function HomePage() {
       {!isSearchActive && (
         <>
           <PopularCities />
+          <RecentlyViewedSection />
           <PremiumCities />
-          <AdvertisementsSection />
           <PartnerAds />
           <FAQSection />
           <ContactSection />

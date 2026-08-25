@@ -6,7 +6,7 @@ import MainNavbar from "@/components/layout/MainNavbar";
 import FilterSidebar from "@/components/search/FilterSidebar";
 import ApartmentCard from "@/components/search/ApartmentCard";
 import { ApartmentData } from "@/types";
-import { SlidersHorizontal, Search, ChevronDown, ChevronLeft, ChevronRight, Footprints, X } from "lucide-react";
+import { SlidersHorizontal, Search, ChevronDown, ChevronLeft, ChevronRight, Footprints, X, Check, MapPin, Navigation } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -34,6 +34,7 @@ const baseApartments: ApartmentData[] = [
     guests: 8,
     isSwapAvailable: true,
     verified: true,
+    availabilityStatus: "available",
     amenities: ["WiFi", "Air Conditioning", "Parking", "Kosher Kitchen", "Washing Machine", "Balcony"],
   },
   {
@@ -52,6 +53,7 @@ const baseApartments: ApartmentData[] = [
     guests: 6,
     isSwapAvailable: false,
     verified: true,
+    availabilityStatus: "unavailable_upcoming",
     amenities: ["WiFi", "Air Conditioning", "Kosher Kitchen", "Shabbos Elevator"],
   },
   {
@@ -70,6 +72,7 @@ const baseApartments: ApartmentData[] = [
     guests: 10,
     isSwapAvailable: true,
     verified: false,
+    availabilityStatus: "available",
     amenities: ["WiFi", "Air Conditioning", "Parking", "Washing Machine", "Kosher Kitchen", "Balcony"],
   },
   {
@@ -88,6 +91,7 @@ const baseApartments: ApartmentData[] = [
     guests: 2,
     isSwapAvailable: false,
     verified: true,
+    availabilityStatus: "unavailable",
     amenities: ["WiFi", "Air Conditioning", "Washing Machine"],
   },
   {
@@ -106,6 +110,7 @@ const baseApartments: ApartmentData[] = [
     guests: 8,
     isSwapAvailable: true,
     verified: true,
+    availabilityStatus: "available",
     amenities: ["WiFi", "Air Conditioning", "Parking", "Kosher Kitchen", "Shabbos Elevator"],
   },
   {
@@ -124,6 +129,7 @@ const baseApartments: ApartmentData[] = [
     guests: 4,
     isSwapAvailable: false,
     verified: false,
+    availabilityStatus: "unavailable_upcoming",
     amenities: ["WiFi", "Parking", "Washing Machine", "Balcony"],
   },
 ];
@@ -142,6 +148,8 @@ function SearchContent() {
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedAmenities, setSelectedAmenities] = useState<string[]>([]);
   const [maxWalkingMinutes, setMaxWalkingMinutes] = useState<number | undefined>(undefined);
+  const [selectedCity, setSelectedCity] = useState("any");
+  const [selectedNeighborhood, setSelectedNeighborhood] = useState("any");
   const [searchQuery, setSearchQuery] = useState("");
   const [destinationAddress, setDestinationAddress] = useState("");
   const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
@@ -220,6 +228,14 @@ function SearchContent() {
     processedApartments = processedApartments.filter(apt => apt.location.toLowerCase().includes(cityParam.replace("-", " ").toLowerCase()));
   }
 
+  if (selectedCity && selectedCity !== "any") {
+    processedApartments = processedApartments.filter(apt => apt.location.toLowerCase().includes(selectedCity.toLowerCase()));
+  }
+
+  if (selectedNeighborhood && selectedNeighborhood !== "any") {
+    processedApartments = processedApartments.filter(apt => apt.location.toLowerCase().includes(selectedNeighborhood.toLowerCase()));
+  }
+
   if (typeParam === "swap") {
     processedApartments = processedApartments.filter(apt => apt.isSwapAvailable);
   }
@@ -270,7 +286,7 @@ function SearchContent() {
       <div className="bg-white dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800 pt-8 pb-8 sticky top-0 z-40">
         <div className="container mx-auto px-4">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-            <div className="flex-1 max-w-3xl">
+            <div className="flex-1 max-w-4xl">
               <h1 className="text-3xl font-extrabold text-zinc-900 dark:text-white mb-2 capitalize">
                 {typeParam === "swap" ? t("search_page.swap_matches") : t("search_page.search_results")} {formattedCity ? `${t("search_page.in")} ${formattedCity}` : ""}
               </h1>
@@ -278,7 +294,9 @@ function SearchContent() {
                 {processedApartments.length} {typeParam === "swap" ? t("search_page.properties_swap") : t("search_page.places_stay")} {formattedCity ? `${t("search_page.in")} ${formattedCity} ` : ""}{t("search_page.for_shabbos")}
               </p>
               
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {/* 4-Column Header Search Bar */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                {/* 1. Search Keywords */}
                 <div className="space-y-1">
                   <span className="text-[11px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider block">Search Keywords</span>
                   <div className="relative">
@@ -293,11 +311,98 @@ function SearchContent() {
                         setCurrentPage(1);
                       }}
                       placeholder={t("search_page.search_placeholder")}
-                      className="w-full pl-9 pr-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-sm font-medium text-zinc-900 dark:text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#4c55a4] transition-all shadow-sm truncate"
+                      className="w-full pl-9 pr-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-medium text-zinc-900 dark:text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#4c55a4] transition-all shadow-sm truncate"
                     />
                   </div>
                 </div>
 
+                {/* 2. City Dropdown */}
+                <div className="space-y-1">
+                  <span className="text-[11px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider block">
+                    {t("search_widget.city")}
+                  </span>
+                  <div className="relative w-full">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger className="w-full flex items-center justify-between pl-3 pr-2.5 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-semibold text-zinc-700 dark:text-zinc-300 outline-none focus:ring-2 focus:ring-[#4c55a4] transition-all cursor-pointer shadow-sm">
+                        <div className="flex items-center gap-1.5 truncate">
+                          <MapPin className="h-3.5 w-3.5 text-zinc-400 shrink-0" />
+                          <span className="truncate">
+                            {selectedCity === "jerusalem"
+                              ? t("search_widget.jerusalem")
+                              : selectedCity === "tel-aviv"
+                              ? t("search_widget.tel_aviv")
+                              : `All Cities`}
+                          </span>
+                        </div>
+                        <ChevronDown className="h-3.5 w-3.5 text-zinc-400 shrink-0 opacity-80" />
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="start" className="w-[200px] rounded-xl bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 p-1.5 shadow-2xl z-50">
+                        {[
+                          { value: "any", label: `All Cities` },
+                          { value: "jerusalem", label: t("search_widget.jerusalem") },
+                          { value: "tel-aviv", label: t("search_widget.tel_aviv") },
+                        ].map((opt) => (
+                          <DropdownMenuItem
+                            key={opt.value}
+                            onClick={() => {
+                              setSelectedCity(opt.value);
+                              setCurrentPage(1);
+                            }}
+                            className="flex items-center justify-between cursor-pointer rounded-lg py-2 px-3 text-xs font-semibold text-zinc-800 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-900"
+                          >
+                            <span>{opt.label}</span>
+                            {selectedCity === opt.value && <Check className="w-3.5 h-3.5 text-[#4c55a4]" />}
+                          </DropdownMenuItem>
+                        ))}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                </div>
+
+                {/* 3. Neighborhood Dropdown */}
+                <div className="space-y-1">
+                  <span className="text-[11px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider block">
+                    {t("search_widget.neighborhood")}
+                  </span>
+                  <div className="relative w-full">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger className="w-full flex items-center justify-between pl-3 pr-2.5 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-semibold text-zinc-700 dark:text-zinc-300 outline-none focus:ring-2 focus:ring-[#4c55a4] transition-all cursor-pointer shadow-sm">
+                        <div className="flex items-center gap-1.5 truncate">
+                          <Navigation className="h-3.5 w-3.5 text-zinc-400 shrink-0" />
+                          <span className="truncate">
+                            {selectedNeighborhood === "rehavia"
+                              ? t("search_widget.rehavia")
+                              : selectedNeighborhood === "geula"
+                              ? t("search_widget.geula")
+                              : `All Neighborhoods`}
+                          </span>
+                        </div>
+                        <ChevronDown className="h-3.5 w-3.5 text-zinc-400 shrink-0 opacity-80" />
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="start" className="w-[200px] rounded-xl bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 p-1.5 shadow-2xl z-50">
+                        {[
+                          { value: "any", label: `All Neighborhoods` },
+                          { value: "rehavia", label: t("search_widget.rehavia") },
+                          { value: "geula", label: t("search_widget.geula") },
+                        ].map((opt) => (
+                          <DropdownMenuItem
+                            key={opt.value}
+                            onClick={() => {
+                              setSelectedNeighborhood(opt.value);
+                              setCurrentPage(1);
+                            }}
+                            className="flex items-center justify-between cursor-pointer rounded-lg py-2 px-3 text-xs font-semibold text-zinc-800 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-900"
+                          >
+                            <span>{opt.label}</span>
+                            {selectedNeighborhood === opt.value && <Check className="w-3.5 h-3.5 text-[#4c55a4]" />}
+                          </DropdownMenuItem>
+                        ))}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                </div>
+
+                {/* 4. Target Shul Address */}
                 <div className="space-y-1">
                   <span className="text-[11px] font-bold text-[#4c55a4] dark:text-indigo-400 uppercase tracking-wider block flex items-center gap-1">
                     <Footprints className="w-3 h-3" /> Target Shul / Address
@@ -314,7 +419,7 @@ function SearchContent() {
                         setCurrentPage(1);
                       }}
                       placeholder={t("search_page.destination_placeholder")}
-                      className="w-full pl-9 pr-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-sm font-medium text-zinc-900 dark:text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#4c55a4] transition-all shadow-sm truncate"
+                      className="w-full pl-9 pr-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-medium text-zinc-900 dark:text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#4c55a4] transition-all shadow-sm truncate"
                     />
                   </div>
                 </div>

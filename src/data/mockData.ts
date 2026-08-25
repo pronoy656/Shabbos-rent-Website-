@@ -23,6 +23,7 @@ export const mockBaseApartments: ApartmentData[] = [
     isSwapAvailable: true,
     verified: true,
     isAvailable: true,
+    availabilityStatus: "available",
     amenities: ["WiFi", "Air Conditioning", "Parking", "Kosher Kitchen", "Washing Machine", "Balcony"],
   },
   {
@@ -47,6 +48,7 @@ export const mockBaseApartments: ApartmentData[] = [
     verified: true,
     isAvailable: false,
     acceptRequestsWhenUnavailable: true,
+    availabilityStatus: "unavailable_upcoming",
     amenities: ["WiFi", "Air Conditioning", "Kosher Kitchen", "Shabbos Elevator"],
   },
   {
@@ -70,6 +72,7 @@ export const mockBaseApartments: ApartmentData[] = [
     isSwapAvailable: true,
     verified: false,
     isAvailable: true,
+    availabilityStatus: "available",
     amenities: ["WiFi", "Air Conditioning", "Parking", "Washing Machine", "Kosher Kitchen", "Balcony"],
   },
   {
@@ -94,6 +97,7 @@ export const mockBaseApartments: ApartmentData[] = [
     verified: true,
     isAvailable: false,
     acceptRequestsWhenUnavailable: false,
+    availabilityStatus: "unavailable",
     amenities: ["WiFi", "Air Conditioning", "Washing Machine"],
   },
   {
@@ -117,6 +121,7 @@ export const mockBaseApartments: ApartmentData[] = [
     isSwapAvailable: true,
     verified: true,
     isAvailable: true,
+    availabilityStatus: "available",
     amenities: ["WiFi", "Air Conditioning", "Parking", "Kosher Kitchen", "Shabbos Elevator"],
   },
   {
@@ -140,6 +145,8 @@ export const mockBaseApartments: ApartmentData[] = [
     isSwapAvailable: false,
     verified: false,
     isAvailable: false,
+    acceptRequestsWhenUnavailable: true,
+    availabilityStatus: "unavailable_upcoming",
     amenities: ["WiFi", "Parking", "Washing Machine", "Balcony"],
   },
 ];

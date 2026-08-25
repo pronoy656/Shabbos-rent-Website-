@@ -36,6 +36,8 @@ export const metadata: Metadata = {
   },
 };
 
+import ToastContainer from "@/components/ui/ToastContainer";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -50,6 +52,7 @@ export default function RootLayout({
       <body className="font-sans min-h-full flex flex-col" suppressHydrationWarning>
         <LanguageProvider>
           {children}
+          <ToastContainer />
         </LanguageProvider>
       </body>
     </html>

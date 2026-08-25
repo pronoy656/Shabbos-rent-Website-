@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { PlusCircle, Home, LogOut, Settings, Building, RefreshCw, LayoutDashboard, MapPin, BedDouble, Bath, Users, Info, AlignLeft, CalendarCheck, Eye, Check, User, Heart, Lock, CalendarDays, Edit3, Clock, Phone, Gift, Copy, CheckCircle2, UserPlus, MoreHorizontal, Wallet, Banknote, Lightbulb, Bell, ShieldCheck, X, MessageCircle, Bookmark, Mail, Star, AlertCircle, CreditCard, Receipt, ChevronRight, DollarSign } from "lucide-react";
+import { PlusCircle, Home, LogOut, Settings, Building, RefreshCw, LayoutDashboard, MapPin, BedDouble, Bath, DoorOpen, Users, Info, AlignLeft, CalendarCheck, Eye, Check, User, Heart, Lock, CalendarDays, Edit3, Clock, Phone, PhoneCall, MessageSquare, Gift, Copy, CheckCircle2, UserPlus, MoreHorizontal, Wallet, Banknote, Lightbulb, Bell, ShieldCheck, X, MessageCircle, Bookmark, Mail, Star, AlertCircle, CreditCard, Receipt, ChevronRight, DollarSign } from "lucide-react";
 import MainNavbar from "@/components/layout/MainNavbar";
 import CreateListingModal from "@/components/layout/CreateListingModal";
 import ChangePasswordModal from "@/components/settings/ChangePasswordModal";
@@ -11,6 +11,7 @@ import EditProfileModal from "@/components/settings/EditProfileModal";
 import ApartmentCard from "@/components/search/ApartmentCard";
 import { ApartmentData } from "@/types";
 import { useLanguage } from "@/context/LanguageContext";
+import { useFavorites } from "@/hooks/useFavorites";
 import { Select } from "@/components/ui/Select";
 
 // Report Rented Data Type
@@ -238,14 +239,15 @@ export default function UserDashboardPage() {
   const [createdListingDate, setCreatedListingDate] = useState("");
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
   const [isEditProfileModalOpen, setIsEditProfileModalOpen] = useState(false);
-  const [savedApartments, setSavedApartments] = useState<ApartmentData[]>([]);
+  const { savedApartments } = useFavorites();
   const [isCopied, setIsCopied] = useState(false);
   
   // Dashboard Requests State
   const [notifyRequests, setNotifyRequests] = useState<any[]>([]);
   const [offerRequests, setOfferRequests] = useState<any[]>([]);
-  // Email & Notification Preferences State
+  // Communication Preferences State
   const [emailOptInState, setEmailOptInState] = useState(true);
+  const [phoneCommState, setPhoneCommState] = useState(true);
   const [emailBookingsState, setEmailBookingsState] = useState(true);
   const [emailPromosState, setEmailPromosState] = useState(true);
   const [emailNewsletterState, setEmailNewsletterState] = useState(true);
@@ -494,6 +496,12 @@ export default function UserDashboardPage() {
         localStorage.removeItem("pendingNotificationAction");
         initialTabSet = true;
       }
+      if (localStorage.getItem("pendingFavoritesAction") === "true") {
+        setActiveTab("favorites");
+        sessionStorage.setItem("dashboardTab", "favorites");
+        localStorage.removeItem("pendingFavoritesAction");
+        initialTabSet = true;
+      }
       
       if (!initialTabSet && savedTab) {
         if (hasListingVal && savedTab === "add") {
@@ -528,18 +536,10 @@ export default function UserDashboardPage() {
         setCreatedListingDate(savedDate);
       }
 
-      // Saved apartments logic
-      const updateSaved = () => {
-        const savedIds = JSON.parse(localStorage.getItem("savedApartments") || "[]");
-        const matchingApts = allPossibleApartments.filter(apt => savedIds.includes(apt.id));
-        if (savedIds.includes("dummy")) {
-          matchingApts.unshift({ id: "dummy", title: "Bright luxury apartment in city center", location: "City Center, Jerusalem", image: "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&q=80&w=800", price: 1500, rating: 5.0, reviews: 0, beds: 4, baths: 2, guests: 8, isSwapAvailable: true, verified: false });
-        }
-        setSavedApartments(matchingApts);
-      };
-      updateSaved();
-      window.addEventListener("savedApartmentsChanged", updateSaved);
-      return () => window.removeEventListener("savedApartmentsChanged", updateSaved);
+      const savedPhoneComm = localStorage.getItem("phoneCommState");
+      if (savedPhoneComm !== null) {
+        setPhoneCommState(savedPhoneComm === "true");
+      }
     }
   }, []);
 
@@ -551,7 +551,7 @@ export default function UserDashboardPage() {
   const navItems = [
     { id: "manage", label: t("dashboard.nav.manage"), icon: Building, color: "text-blue-600" },
     { id: "swap", label: t("dashboard.nav.swap"), icon: RefreshCw, color: "text-indigo-500" },
-    { id: "favorites", label: "Favorites & Saved", icon: Heart, color: "text-pink-500" },
+    { id: "favorites", label: "Favorites & Saved", icon: Heart, color: "text-red-500" },
     { id: "bookings", label: "Booking History", icon: CalendarDays, color: "text-amber-500" },
     { id: "affiliate", label: t("dashboard.nav.affiliate"), icon: Gift, color: "text-purple-500" },
     { id: "notifications", label: t("dashboard.nav.notifications"), icon: Bell, color: "text-blue-500" },
@@ -745,7 +745,7 @@ export default function UserDashboardPage() {
                                   <span>4 {t("dashboard.add.beds")}</span>
                                 </div>
                                 <div className="flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300 font-bold bg-zinc-50 dark:bg-zinc-800/50 px-3 py-2 rounded-xl">
-                                  <Bath className="w-4 h-4 text-emerald-500" />
+                                  <DoorOpen className="w-4 h-4 text-emerald-500" />
                                   <span>2 {t("dashboard.add.baths")}</span>
                                 </div>
                                 <div className="flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300 font-bold bg-zinc-50 dark:bg-zinc-800/50 px-3 py-2 rounded-xl">
@@ -1642,15 +1642,15 @@ export default function UserDashboardPage() {
               <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-6xl mx-auto">
                 <div className="mb-8">
                   <h1 className="text-3xl font-extrabold text-zinc-900 dark:text-white mb-1 flex items-center gap-2.5">
-                    <Heart className="w-7 h-7 text-pink-500 fill-pink-500" /> Favorites & Saved Apartments
+                    <Heart className="w-7 h-7 text-red-500 fill-red-500" /> Favorites & Saved Apartments
                   </h1>
                   <p className="text-zinc-500 text-sm">Apartments you have bookmarked or loved for future Shabbos stays.</p>
                 </div>
 
                 {savedApartments.length === 0 ? (
                   <div className="bg-white dark:bg-zinc-900 rounded-3xl border border-zinc-200 dark:border-zinc-800 p-12 text-center shadow-sm">
-                    <div className="w-20 h-20 bg-pink-50 dark:bg-pink-950/40 rounded-full flex items-center justify-center mx-auto mb-4 border border-pink-100 dark:border-pink-900/50">
-                      <Heart className="w-10 h-10 text-pink-500" />
+                    <div className="w-20 h-20 bg-red-50 dark:bg-red-950/40 rounded-full flex items-center justify-center mx-auto mb-4 border border-red-100 dark:border-red-900/50">
+                      <Heart className="w-10 h-10 text-red-500" />
                     </div>
                     <h3 className="text-xl font-bold text-zinc-900 dark:text-white mb-2">No Saved Apartments Yet</h3>
                     <p className="text-sm text-zinc-500 max-w-md mx-auto mb-6">
@@ -1822,7 +1822,7 @@ export default function UserDashboardPage() {
                     {[
                       { id: "profile", label: "Profile", icon: User },
                       { id: "security", label: "Security & Password", icon: Lock },
-                      { id: "notifications", label: "Email Preferences", icon: Bell },
+                      { id: "notifications", label: "Communication Preferences", icon: MessageSquare },
                     ].map(tab => (
                       <button 
                         key={tab.id}
@@ -2042,40 +2042,57 @@ export default function UserDashboardPage() {
                           </div>
                         )}
 
-                        <div className="bg-white dark:bg-zinc-900 rounded-3xl border border-zinc-200 dark:border-zinc-800 p-8 shadow-sm">
+                        <div className="bg-white dark:bg-zinc-900 rounded-3xl border border-zinc-200/80 dark:border-zinc-800 p-6 sm:p-8 shadow-sm">
                           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-zinc-100 dark:border-zinc-800 mb-6">
                             <div>
                               <h3 className="text-xl font-bold text-zinc-900 dark:text-white flex items-center gap-2">
-                                <Bell className="w-5 h-5 text-[#4c55a4]" /> Email Preferences & Notifications
+                                <MessageSquare className="w-5 h-5 text-[#4c55a4]" /> Shabbat Availability & Communication Preferences
                               </h3>
-                              <p className="text-zinc-500 text-sm mt-1">Manage what emails and notifications you receive from Shabos Rent.</p>
+                              <p className="text-zinc-500 text-sm mt-1">Control how Shabos Rent contacts you to check your apartment's availability for upcoming Shabbatot.</p>
                             </div>
 
                             <div className="flex items-center gap-2">
-                              {emailOptInState ? (
+                              {emailOptInState || phoneCommState ? (
                                 <span className="inline-flex items-center gap-1.5 px-3.5 py-1 bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 rounded-full text-xs font-bold">
-                                  <CheckCircle2 className="w-3.5 h-3.5" /> Subscribed (Opted In)
+                                  <CheckCircle2 className="w-3.5 h-3.5" /> Reminders Active
                                 </span>
                               ) : (
                                 <span className="inline-flex items-center gap-1.5 px-3.5 py-1 bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800 rounded-full text-xs font-bold">
-                                  Unsubscribed from Marketing
+                                  Availability Reminders Muted
                                 </span>
                               )}
                             </div>
                           </div>
 
-                          <div className="space-y-6">
-                            {/* Master Toggle */}
-                            <div className="flex items-center justify-between p-4 bg-zinc-50 dark:bg-zinc-800/40 rounded-2xl border border-zinc-200/80 dark:border-zinc-800">
-                              <div>
-                                <h4 className="font-bold text-zinc-900 dark:text-white text-sm">Receive Email Notifications</h4>
-                                <p className="text-xs text-zinc-500 mt-0.5">Master toggle for promotional emails and platform updates</p>
+                          {/* Shabbat Availability Context Box */}
+                          <div className="p-4 rounded-2xl bg-indigo-50/80 dark:bg-indigo-950/40 border border-indigo-100 dark:border-indigo-900/50 flex items-start gap-3 mb-6 text-xs text-indigo-900 dark:text-indigo-200">
+                            <CalendarCheck className="w-5 h-5 text-[#4c55a4] dark:text-indigo-400 shrink-0 mt-0.5" />
+                            <div>
+                              <p className="font-bold text-sm text-[#4c55a4] dark:text-indigo-300">Shabbat Apartment Availability Checks</p>
+                              <p className="mt-0.5 opacity-90 leading-relaxed">
+                                To ensure renters see accurate listings, Shabos Rent reaches out before upcoming Shabbatot to confirm if your apartment is available. Choose your preferred channels below to receive these availability reminders.
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="space-y-4">
+                            {/* Option 1: Email Communication */}
+                            <div className="flex items-center justify-between p-5 bg-zinc-50 dark:bg-zinc-800/40 rounded-2xl border border-zinc-200/80 dark:border-zinc-800 transition-all hover:border-zinc-300 dark:hover:border-zinc-700">
+                              <div className="flex items-center gap-4">
+                                <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-950/50 flex items-center justify-center text-blue-600 dark:text-blue-400 shrink-0">
+                                  <Mail className="w-5 h-5" />
+                                </div>
+                                <div>
+                                  <h4 className="font-bold text-zinc-900 dark:text-white text-base">Email Notifications & Reminders</h4>
+                                  <p className="text-xs text-zinc-500 mt-0.5">Receive weekly email reminders to confirm your apartment's availability for upcoming Shabbatot, plus booking requests.</p>
+                                </div>
                               </div>
                               <button
                                 type="button"
                                 onClick={() => {
                                   const next = !emailOptInState;
-                                  handleSaveEmailPreferences(next, emailBookingsState, next, next);
+                                  setEmailOptInState(next);
+                                  localStorage.setItem("emailOptIn", next ? "true" : "false");
                                 }}
                                 className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${emailOptInState ? "bg-[#4c55a4]" : "bg-zinc-300 dark:bg-zinc-700"}`}
                               >
@@ -2083,14 +2100,27 @@ export default function UserDashboardPage() {
                               </button>
                             </div>
 
-                            {/* Unsubscribe Footer */}
-                            <div className="pt-6 border-t border-zinc-100 dark:border-zinc-800 flex justify-end">
+                            {/* Option 2: Phone Call Communication */}
+                            <div className="flex items-center justify-between p-5 bg-zinc-50 dark:bg-zinc-800/40 rounded-2xl border border-zinc-200/80 dark:border-zinc-800 transition-all hover:border-zinc-300 dark:hover:border-zinc-700">
+                              <div className="flex items-center gap-4">
+                                <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shrink-0">
+                                  <PhoneCall className="w-5 h-5" />
+                                </div>
+                                <div>
+                                  <h4 className="font-bold text-zinc-900 dark:text-white text-base">Phone Call & Automated Voice Reminders</h4>
+                                  <p className="text-xs text-zinc-500 mt-0.5">Receive phone calls & voice reminders to quickly confirm if your apartment is open for Shabbat, plus urgent rental calls.</p>
+                                </div>
+                              </div>
                               <button
                                 type="button"
-                                onClick={() => handleSaveEmailPreferences(false, emailBookingsState, false, false)}
-                                className="px-4 py-2 border border-red-200 dark:border-red-800/80 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-xl text-xs font-bold transition-colors"
+                                onClick={() => {
+                                  const next = !phoneCommState;
+                                  setPhoneCommState(next);
+                                  localStorage.setItem("phoneCommState", next ? "true" : "false");
+                                }}
+                                className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${phoneCommState ? "bg-[#4c55a4]" : "bg-zinc-300 dark:bg-zinc-700"}`}
                               >
-                                Unsubscribe from Marketing Emails
+                                <span className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out ${phoneCommState ? "translate-x-5" : "translate-x-0"}`} />
                               </button>
                             </div>
                           </div>

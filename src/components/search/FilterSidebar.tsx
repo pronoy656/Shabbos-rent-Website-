@@ -1,7 +1,14 @@
 "use client";
 
-import { MapPin, Navigation, Calendar, BedDouble, Bath, ChevronDown, Footprints } from "lucide-react";
+import { useState } from "react";
+import { MapPin, Navigation, Calendar, BedDouble, Bath, DoorOpen, ChevronDown, Footprints, Check } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export interface FilterSidebarProps {
   selectedAmenities?: string[];
@@ -33,6 +40,15 @@ const AMENITIES_OPTIONS = [
   { key: "Coffee Machine", labelKey: "filters.amenities_list.coffee_machine", name: "Coffee Machine" },
 ];
 
+const WALKING_OPTIONS = [
+  { label: "Any distance", value: undefined },
+  { label: "Under 5 mins", value: 5 },
+  { label: "Under 10 mins", value: 10 },
+  { label: "Under 15 mins", value: 15 },
+  { label: "Under 20 mins", value: 20 },
+  { label: "Under 30 mins", value: 30 },
+];
+
 export default function FilterSidebar({
   selectedAmenities = [],
   maxWalkingMinutes,
@@ -42,6 +58,13 @@ export default function FilterSidebar({
   onClearFilters,
 }: FilterSidebarProps) {
   const { t } = useLanguage();
+  const [selectedCity, setSelectedCity] = useState("jerusalem");
+  const [selectedNeighborhood, setSelectedNeighborhood] = useState("rehavia");
+  const [selectedWeekend, setSelectedWeekend] = useState("any");
+  const [selectedRooms, setSelectedRooms] = useState("any");
+  const [selectedBaths, setSelectedBaths] = useState("any");
+
+  const currentWalkingOption = WALKING_OPTIONS.find((opt) => opt.value === maxWalkingMinutes) || WALKING_OPTIONS[0];
 
   return (
     <div className="bg-white dark:bg-zinc-950 rounded-2xl border border-zinc-200 dark:border-zinc-800 p-6 sticky top-24">
@@ -57,152 +80,134 @@ export default function FilterSidebar({
         )}
       </div>
 
-      {/* Location */}
+      {/* Walking Distance & Date Filter (Same Row, 2 Columns) */}
       <div className="space-y-4 mb-6">
-        <h3 className="text-sm font-bold text-zinc-900 dark:text-white uppercase tracking-wider">{t("filters.location")}</h3>
-        
         <div className="grid grid-cols-2 gap-3">
+          {/* Walking Distance Column */}
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-zinc-600 dark:text-zinc-400">{t("search_widget.city")}</label>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <MapPin className="h-4 w-4 text-zinc-400" />
-              </div>
-              <select className="w-full pl-9 pr-8 py-2 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-sm font-medium text-zinc-700 dark:text-zinc-300 appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500">
-                <option value="jerusalem">{t("search_widget.jerusalem")}</option>
-                <option value="tel-aviv">{t("search_widget.tel_aviv")}</option>
-              </select>
-              <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                <ChevronDown className="h-4 w-4 text-zinc-400" />
-              </div>
-            </div>
+            <label className="text-xs font-semibold text-zinc-600 dark:text-zinc-400">Walking Distance</label>
+            <DropdownMenu>
+              <DropdownMenuTrigger className="w-full flex items-center justify-between pl-3 pr-2 py-2 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-semibold text-zinc-700 dark:text-zinc-300 outline-none focus:ring-2 focus:ring-[#4c55a4] transition-all cursor-pointer">
+                <span className="truncate">{currentWalkingOption.label}</span>
+                <ChevronDown className="h-3.5 w-3.5 text-zinc-400 shrink-0 opacity-80" />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-[160px] rounded-xl bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 p-1.5 shadow-2xl z-50">
+                {WALKING_OPTIONS.map((opt) => (
+                  <DropdownMenuItem
+                    key={opt.label}
+                    onClick={() => onMaxWalkingMinutesChange?.(opt.value)}
+                    className="flex items-center justify-between cursor-pointer rounded-lg py-2 px-3 text-xs font-semibold text-zinc-800 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-900"
+                  >
+                    <span>{opt.label}</span>
+                    {maxWalkingMinutes === opt.value && <Check className="w-3.5 h-3.5 text-[#4c55a4]" />}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
 
+          {/* Shabbat Date Column */}
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-zinc-600 dark:text-zinc-400">{t("search_widget.neighborhood")}</label>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Navigation className="h-4 w-4 text-zinc-400" />
-              </div>
-              <select className="w-full pl-9 pr-8 py-2 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-sm font-medium text-zinc-700 dark:text-zinc-300 appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500">
-                <option value="rehavia">{t("search_widget.rehavia")}</option>
-                <option value="geula">{t("search_widget.geula")}</option>
-              </select>
-              <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                <ChevronDown className="h-4 w-4 text-zinc-400" />
-              </div>
-            </div>
+            <label className="text-xs font-semibold text-zinc-600 dark:text-zinc-400">{t("filters.date")}</label>
+            <DropdownMenu>
+              <DropdownMenuTrigger className="w-full flex items-center justify-between pl-3 pr-2 py-2 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-semibold text-zinc-700 dark:text-zinc-300 outline-none focus:ring-2 focus:ring-[#4c55a4] transition-all cursor-pointer">
+                <span className="truncate">
+                  {selectedWeekend === "next"
+                    ? t("search_widget.this_weekend")
+                    : selectedWeekend === "following"
+                    ? t("search_widget.next_weekend")
+                    : `${t("search_widget.any")} ${t("search_widget.weekend")}`}
+                </span>
+                <ChevronDown className="h-3.5 w-3.5 text-zinc-400 shrink-0 opacity-80" />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-[180px] rounded-xl bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 p-1.5 shadow-2xl z-50">
+                {[
+                  { value: "any", label: `${t("search_widget.any")} ${t("search_widget.weekend")}` },
+                  { value: "next", label: t("search_widget.this_weekend") },
+                  { value: "following", label: t("search_widget.next_weekend") },
+                ].map((opt) => (
+                  <DropdownMenuItem
+                    key={opt.value}
+                    onClick={() => setSelectedWeekend(opt.value)}
+                    className="flex items-center justify-between cursor-pointer rounded-lg py-2 px-3 text-xs font-semibold text-zinc-800 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-900"
+                  >
+                    <span>{opt.label}</span>
+                    {selectedWeekend === opt.value && <Check className="w-3.5 h-3.5 text-[#4c55a4]" />}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </div>
 
       <hr className="border-zinc-100 dark:border-zinc-800 mb-6" />
 
-      {/* Max Walking Distance */}
-      <div className="space-y-4 mb-6">
-        <div className="flex items-center justify-between">
-          <h3 className="text-sm font-bold text-zinc-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
-            <Footprints className="w-4 h-4 text-[#4c55a4]" /> Max Walking Distance
-          </h3>
-          {maxWalkingMinutes && (
-            <span className="text-xs font-bold text-[#4c55a4] bg-[#4c55a4]/10 px-2 py-0.5 rounded-full">
-              &le; {maxWalkingMinutes} mins
-            </span>
-          )}
-        </div>
-
-        <div className="grid grid-cols-2 gap-2">
-          {[
-            { label: "Any distance", value: undefined },
-            { label: "Under 5 mins", value: 5 },
-            { label: "Under 10 mins", value: 10 },
-            { label: "Under 15 mins", value: 15 },
-            { label: "Under 20 mins", value: 20 },
-            { label: "Under 30 mins", value: 30 },
-          ].map((option) => {
-            const isSelected = maxWalkingMinutes === option.value;
-            return (
-              <button
-                key={option.label}
-                type="button"
-                onClick={() => onMaxWalkingMinutesChange?.(option.value)}
-                className={`px-3 py-2 rounded-xl text-xs font-bold transition-all border text-center ${
-                  isSelected
-                    ? "bg-[#4c55a4] text-white border-[#4c55a4] shadow-sm"
-                    : "bg-zinc-50 dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 border-zinc-200 dark:border-zinc-800 hover:border-[#4c55a4]"
-                }`}
-              >
-                {option.label}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      <hr className="border-zinc-100 dark:border-zinc-800 mb-6" />
-
-      {/* Date */}
-      <div className="space-y-4 mb-6">
-        <h3 className="text-sm font-bold text-zinc-900 dark:text-white uppercase tracking-wider">{t("filters.date")}</h3>
-        <div className="space-y-1.5">
-          <label className="text-xs font-semibold text-zinc-600 dark:text-zinc-400">{t("search_widget.weekend")}</label>
-          <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Calendar className="h-4 w-4 text-zinc-400" />
-            </div>
-            <select className="w-full pl-9 pr-8 py-2 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-sm font-medium text-zinc-700 dark:text-zinc-300 appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500">
-              <option value="any">{t("search_widget.any")} {t("search_widget.weekend")}</option>
-              <option value="next">{t("search_widget.this_weekend")}</option>
-              <option value="following">{t("search_widget.next_weekend")}</option>
-            </select>
-            <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-              <ChevronDown className="h-4 w-4 text-zinc-400" />
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <hr className="border-zinc-100 dark:border-zinc-800 mb-6" />
-
-      {/* Rooms & Details */}
+      {/* Rooms & Details (Shadcn Dropdowns) */}
       <div className="space-y-4 mb-6">
         <h3 className="text-sm font-bold text-zinc-900 dark:text-white uppercase tracking-wider">{t("filters.rooms_details")}</h3>
         
         <div className="grid grid-cols-2 gap-3">
+          {/* Rooms Dropdown */}
           <div className="space-y-1.5">
             <label className="text-xs font-semibold text-zinc-600 dark:text-zinc-400">{t("search_widget.rooms")}</label>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <BedDouble className="h-4 w-4 text-zinc-400" />
-              </div>
-              <select className="w-full pl-9 pr-8 py-2 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-sm font-medium text-zinc-700 dark:text-zinc-300 appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500">
-                <option value="any">{t("search_widget.any")}</option>
-                <option value="1">{t("search_widget.plus_1")}</option>
-                <option value="2">{t("search_widget.plus_2")}</option>
-                <option value="3">{t("search_widget.plus_3")}</option>
-                <option value="4">{t("search_widget.plus_4")}</option>
-              </select>
-              <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                <ChevronDown className="h-4 w-4 text-zinc-400" />
-              </div>
-            </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger className="w-full flex items-center justify-between pl-3 pr-2.5 py-2 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-semibold text-zinc-700 dark:text-zinc-300 outline-none focus:ring-2 focus:ring-[#4c55a4] transition-all cursor-pointer">
+                <div className="flex items-center gap-1.5 truncate">
+                  <BedDouble className="h-3.5 w-3.5 text-zinc-400 shrink-0" />
+                  <span className="truncate">{selectedRooms === "any" ? t("search_widget.any") : `${selectedRooms}+`}</span>
+                </div>
+                <ChevronDown className="h-3.5 w-3.5 text-zinc-400 shrink-0 opacity-80" />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-[140px] rounded-xl bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 p-1.5 shadow-2xl z-50">
+                {[
+                  { value: "any", label: t("search_widget.any") },
+                  { value: "1", label: t("search_widget.plus_1") },
+                  { value: "2", label: t("search_widget.plus_2") },
+                  { value: "3", label: t("search_widget.plus_3") },
+                  { value: "4", label: t("search_widget.plus_4") },
+                ].map((opt) => (
+                  <DropdownMenuItem
+                    key={opt.value}
+                    onClick={() => setSelectedRooms(opt.value)}
+                    className="flex items-center justify-between cursor-pointer rounded-lg py-2 px-3 text-xs font-semibold text-zinc-800 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-900"
+                  >
+                    <span>{opt.label}</span>
+                    {selectedRooms === opt.value && <Check className="w-3.5 h-3.5 text-[#4c55a4]" />}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
 
+          {/* Bathrooms Dropdown */}
           <div className="space-y-1.5">
             <label className="text-xs font-semibold text-zinc-600 dark:text-zinc-400">{t("search_widget.bathrooms")}</label>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Bath className="h-4 w-4 text-zinc-400" />
-              </div>
-              <select className="w-full pl-9 pr-8 py-2 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-sm font-medium text-zinc-700 dark:text-zinc-300 appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500">
-                <option value="any">{t("search_widget.any")}</option>
-                <option value="1">{t("search_widget.plus_1")}</option>
-                <option value="2">{t("search_widget.plus_2")}</option>
-              </select>
-              <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                <ChevronDown className="h-4 w-4 text-zinc-400" />
-              </div>
-            </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger className="w-full flex items-center justify-between pl-3 pr-2.5 py-2 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-semibold text-zinc-700 dark:text-zinc-300 outline-none focus:ring-2 focus:ring-[#4c55a4] transition-all cursor-pointer">
+                <div className="flex items-center gap-1.5 truncate">
+                  <DoorOpen className="h-3.5 w-3.5 text-zinc-400 shrink-0" />
+                  <span className="truncate">{selectedBaths === "any" ? t("search_widget.any") : `${selectedBaths}+`}</span>
+                </div>
+                <ChevronDown className="h-3.5 w-3.5 text-zinc-400 shrink-0 opacity-80" />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-[140px] rounded-xl bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 p-1.5 shadow-2xl z-50">
+                {[
+                  { value: "any", label: t("search_widget.any") },
+                  { value: "1", label: t("search_widget.plus_1") },
+                  { value: "2", label: t("search_widget.plus_2") },
+                ].map((opt) => (
+                  <DropdownMenuItem
+                    key={opt.value}
+                    onClick={() => setSelectedBaths(opt.value)}
+                    className="flex items-center justify-between cursor-pointer rounded-lg py-2 px-3 text-xs font-semibold text-zinc-800 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-900"
+                  >
+                    <span>{opt.label}</span>
+                    {selectedBaths === opt.value && <Check className="w-3.5 h-3.5 text-[#4c55a4]" />}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </div>
