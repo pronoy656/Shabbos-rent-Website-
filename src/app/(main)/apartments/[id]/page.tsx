@@ -15,6 +15,7 @@ import { useLanguage } from "@/context/LanguageContext";
 import { mockBaseApartments } from "@/data/mockData";
 import { getCoordinatesForAddress, calculateWalkingMinutes, calculateDistanceKm } from "@/utils/distanceUtils";
 import { useFavorites } from "@/hooks/useFavorites";
+import { getTelLink, getWhatsAppLink } from "@/utils/phoneUtils";
 // Constants
 const SHABBATOT = [
   { id: "devarim", name: "Devarim", date: "17/7" },
@@ -972,14 +973,14 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
                  {/* Row 1: Call Owner & WhatsApp Owner in SAME ROW */}
                  <div className="grid grid-cols-2 gap-3 mb-3">
                     <a 
-                      href="tel:+972541234567"
+                      href={getTelLink("972541234567")}
                       onClick={() => setHasContactedOwner(true)}
                       className="w-full py-3 bg-[#4c55a4] hover:bg-[#3d4484] text-white rounded-xl font-extrabold transition-all shadow-md shadow-[#4c55a4]/20 flex items-center justify-center gap-2 text-xs sm:text-sm active:scale-[0.98]"
                     >
                       <Phone className="w-4 h-4" /> Call Owner
                     </a>
                     <a 
-                      href="https://wa.me/972541234567"
+                      href={getWhatsAppLink("972541234567")}
                       target="_blank"
                       rel="noopener noreferrer"
                       onClick={() => setHasContactedOwner(true)}
@@ -1296,18 +1297,20 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
 
                   <div className="space-y-3">
                      <a 
-                       href="tel:+972501234567"
-                       className="w-full py-4 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-900 dark:text-white rounded-xl font-bold transition-all flex items-center justify-center gap-2 text-lg"
+                       href={getTelLink("972541234567")}
+                       onClick={() => setHasContactedOwner(true)}
+                       className="w-full py-3 bg-[#4c55a4] hover:bg-[#3d4484] text-white rounded-xl font-extrabold transition-all shadow-md shadow-[#4c55a4]/20 flex items-center justify-center gap-2 text-xs sm:text-sm active:scale-[0.98]"
                      >
-                       <Phone className="w-5 h-5" /> {t("apartment_details.call_hotline")}
+                       <Phone className="w-4 h-4" /> Call Owner
                      </a>
                      <a 
-                       href="https://wa.me/972501234567"
+                       href={getWhatsAppLink("972541234567")}
                        target="_blank"
                        rel="noopener noreferrer"
-                       className="w-full py-4 bg-[#25D366] hover:bg-[#20bd5a] text-white rounded-xl font-bold transition-all shadow-md shadow-[#25D366]/20 flex items-center justify-center gap-2 text-lg"
+                       onClick={() => setHasContactedOwner(true)}
+                       className="w-full py-3 bg-[#25D366] hover:bg-[#20bd5a] text-white rounded-xl font-extrabold transition-all shadow-md shadow-[#25D366]/20 flex items-center justify-center gap-2 text-xs sm:text-sm active:scale-[0.98]"
                      >
-                       <MessageCircle className="w-5 h-5" /> {t("apartment_details.whatsapp")}
+                       <MessageCircle className="w-4 h-4" /> WhatsApp Owner
                      </a>
                      <a 
                        href={`mailto:owner@shabbosrent.com?subject=Swap%20Inquiry%20(SWP-8472)%20for%20Apartment%20APT-${id}`}

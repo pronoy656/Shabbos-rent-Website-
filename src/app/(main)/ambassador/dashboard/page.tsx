@@ -28,6 +28,8 @@ import {
   MINIMUM_PAYOUT_THRESHOLD,
 } from '@/services/payoutService';
 import { Ambassador, Attribution, Commission, Payout, CommissionModel } from '@/types/ambassador';
+import { PhoneInput } from '@/components/common/PhoneInput';
+import { formatPhoneNumber } from '@/utils/phoneUtils';
 import DevSimulatorBar from '@/components/ambassador/DevSimulatorBar';
 import {
   Building2,
@@ -420,7 +422,7 @@ export default function AmbassadorDashboardPage() {
                       {attr.apartmentTitle}
                     </h3>
                     <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
-                      Owner: <span className="font-semibold text-zinc-700 dark:text-zinc-300">{attr.ownerName}</span> ({attr.ownerPhone}) • Listed via Personal Referral Link
+                      Owner: <span className="font-semibold text-zinc-700 dark:text-zinc-300">{attr.ownerName}</span> ({formatPhoneNumber(attr.ownerPhone)}) • Listed via Personal Referral Link
                     </p>
                     <div className="flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400 font-bold mt-2">
                       <Clock className="w-3.5 h-3.5" />
@@ -604,7 +606,7 @@ export default function AmbassadorDashboardPage() {
                           <tr key={attr.id} className="hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors">
                             <td className="p-4">
                               <div className="font-bold text-sm text-zinc-900 dark:text-white">{attr.apartmentTitle}</div>
-                              <div className="text-zinc-500">{attr.ownerName} • {attr.ownerPhone}</div>
+                              <div className="text-zinc-500">{attr.ownerName} • {formatPhoneNumber(attr.ownerPhone)}</div>
                             </td>
                             <td className="p-4 text-zinc-600 dark:text-zinc-400 font-medium">
                               {new Date(attr.attributedAt).toLocaleDateString()}
@@ -775,16 +777,11 @@ export default function AmbassadorDashboardPage() {
                 </div>
 
                 <div>
-                  <label className="block font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1">
-                    Owner Phone Number *
-                  </label>
-                  <input
-                    type="tel"
+                  <PhoneInput
+                    label="Owner Phone Number"
                     required
-                    placeholder="050-123-4567"
                     value={manualForm.ownerPhone}
-                    onChange={(e) => setManualForm({ ...manualForm, ownerPhone: e.target.value })}
-                    className="w-full px-4 py-3 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    onChange={(val) => setManualForm({ ...manualForm, ownerPhone: val })}
                   />
                 </div>
 

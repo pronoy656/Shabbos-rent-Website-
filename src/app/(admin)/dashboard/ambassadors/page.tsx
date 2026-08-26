@@ -23,6 +23,7 @@ import {
   rejectPayout,
 } from '@/services/payoutService';
 import { Ambassador, Attribution, Commission, Payout, CommissionModel } from '@/types/ambassador';
+import { formatPhoneNumber } from '@/utils/phoneUtils';
 import DevSimulatorBar from '@/components/ambassador/DevSimulatorBar';
 import {
   Users,
@@ -435,7 +436,7 @@ export default function AdminAmbassadorsPage() {
                     <tr key={attr.id} className="hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors">
                       <td className="p-4">
                         <div className="font-bold text-sm text-zinc-900 dark:text-white">{attr.apartmentTitle}</div>
-                        <div className="text-zinc-500">{attr.ownerName} ({attr.ownerPhone})</div>
+                        <div className="text-zinc-500">{attr.ownerName} ({formatPhoneNumber(attr.ownerPhone)})</div>
                       </td>
                       <td className="p-4 font-bold text-blue-600 dark:text-blue-400">
                         {amb ? amb.name : attr.ambassadorId}

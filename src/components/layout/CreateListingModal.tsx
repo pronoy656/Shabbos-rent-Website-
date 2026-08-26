@@ -6,6 +6,7 @@ import {
   UploadCloud, AlignLeft, Check, Plus, X, Search, DollarSign, ChevronDown, PartyPopper, Star, Clock
 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { PhoneInput } from '@/components/common/PhoneInput';
 
 interface CreateListingModalProps {
   isOpen: boolean;
@@ -16,6 +17,7 @@ interface CreateListingModalProps {
 
 export default function CreateListingModal({ isOpen, onClose, onSave, isEditMode }: CreateListingModalProps) {
   const router = useRouter();
+  const [phone, setPhone] = useState("");
   const [amenityInput, setAmenityInput] = useState("");
   const [amenities, setAmenities] = useState<string[]>([]);
   const [whatsappEnabled, setWhatsappEnabled] = useState(false);
@@ -483,8 +485,13 @@ export default function CreateListingModal({ isOpen, onClose, onSave, isEditMode
                 </div>
                 <div className="p-8">
                   <div>
-                    <label className="block text-sm font-bold text-zinc-800 dark:text-zinc-200 mb-2">Phone Number <span className="text-red-500">*</span></label>
-                    <input type="tel" defaultValue={isEditMode ? "+972 50 123 4567" : ""} placeholder="+972 XX XXX XXXX" className="w-full px-4 py-3.5 bg-zinc-50/80 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-2xl text-[15px] text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:bg-white dark:focus:bg-zinc-900 focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 outline-none transition-all duration-200" />
+                    <PhoneInput
+                      label="Phone Number"
+                      required
+                      value={phone}
+                      onChange={(val) => setPhone(val)}
+                      showPreview={true}
+                    />
                   </div>
                 </div>
               </div>

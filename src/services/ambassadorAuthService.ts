@@ -4,6 +4,7 @@ import {
   saveStoredAmbassadors,
   DEFAULT_RATES,
 } from '@/data/mockAmbassadorData';
+import { normalizePhoneNumber, isSamePhone } from '@/utils/phoneUtils';
 
 const SESSION_KEY = 'shabos_rent_ambassador_session';
 
@@ -27,12 +28,12 @@ export function registerAmbassador(data: {
 }): { success: boolean; ambassador?: Ambassador; error?: string } {
   const ambassadors = getStoredAmbassadors();
 
-  // Check email or phone duplicate
+  // Check email or phone duplicate using intelligent normalization
   const cleanEmail = data.email.trim().toLowerCase();
-  const cleanPhone = data.phone.replace(/\D/g, '');
+  const normalizedPhone = normalizePhoneNumber(data.phone);
 
   const existing = ambassadors.find(
-    (a) => a.email.toLowerCase() === cleanEmail || a.phone.replace(/\D/g, '') === cleanPhone
+    (a) => a.email.toLowerCase() === cleanEmail || isSamePhone(a.phone, normalizedPhone)
   );
 
   if (existing) {
@@ -57,7 +58,7 @@ export function registerAmbassador(data: {
     id: `amb-${Date.now()}`,
     name: data.name.trim(),
     email: cleanEmail,
-    phone: data.phone.trim(),
+    phone: normalizedPhone,
     password: data.password || 'password123',
     referralCode: '', // Not assigned until Admin approves!
     defaultModel: 'A',
@@ -79,12 +80,11 @@ export function loginAmbassador(
 ): { success: boolean; session?: AmbassadorAuthSession; status?: string; error?: string } {
   const ambassadors = getStoredAmbassadors();
   const query = emailOrPhone.trim().toLowerCase();
-  const cleanPhone = emailOrPhone.replace(/\D/g, '');
 
   const found = ambassadors.find(
     (a) =>
       a.email.toLowerCase() === query ||
-      (cleanPhone !== '' && a.phone.replace(/\D/g, '') === cleanPhone)
+      isSamePhone(a.phone, emailOrPhone)
   );
 
   if (!found) {

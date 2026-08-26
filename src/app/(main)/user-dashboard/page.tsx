@@ -13,6 +13,8 @@ import { ApartmentData } from "@/types";
 import { useLanguage } from "@/context/LanguageContext";
 import { useFavorites } from "@/hooks/useFavorites";
 import { Select } from "@/components/ui/Select";
+import { getTelLink, getWhatsAppLink, formatPhoneNumber } from "@/utils/phoneUtils";
+import { OwnerReminderSettingsCard } from "@/components/dashboard/OwnerReminderSettingsCard";
 
 // Report Rented Data Type
 type ReportedRental = {
@@ -1822,7 +1824,7 @@ export default function UserDashboardPage() {
                     {[
                       { id: "profile", label: "Profile", icon: User },
                       { id: "security", label: "Security & Password", icon: Lock },
-                      { id: "notifications", label: "Communication Preferences", icon: MessageSquare },
+                      { id: "notifications", label: "Reminder Settings", icon: Bell },
                     ].map(tab => (
                       <button 
                         key={tab.id}
@@ -2032,98 +2034,19 @@ export default function UserDashboardPage() {
                       </div>
                     )}
 
-                    {/* Email & Notifications Tab */}
+                    {/* Reminder Settings Tab */}
                     {settingsSubTab === "notifications" && (
                       <div className="space-y-6">
                         {emailSavedToast && (
                           <div className="p-4 bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800 rounded-2xl flex items-center gap-3 text-emerald-800 dark:text-emerald-300 font-semibold text-sm animate-in fade-in slide-in-from-top-2 duration-300">
                             <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
-                            Email preferences saved successfully!
+                            Reminder preferences saved successfully!
                           </div>
                         )}
 
-                        <div className="bg-white dark:bg-zinc-900 rounded-3xl border border-zinc-200/80 dark:border-zinc-800 p-6 sm:p-8 shadow-sm">
-                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-zinc-100 dark:border-zinc-800 mb-6">
-                            <div>
-                              <h3 className="text-xl font-bold text-zinc-900 dark:text-white flex items-center gap-2">
-                                <MessageSquare className="w-5 h-5 text-[#4c55a4]" /> Shabbat Availability & Communication Preferences
-                              </h3>
-                              <p className="text-zinc-500 text-sm mt-1">Control how Shabos Rent contacts you to check your apartment's availability for upcoming Shabbatot.</p>
-                            </div>
-
-                            <div className="flex items-center gap-2">
-                              {emailOptInState || phoneCommState ? (
-                                <span className="inline-flex items-center gap-1.5 px-3.5 py-1 bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 rounded-full text-xs font-bold">
-                                  <CheckCircle2 className="w-3.5 h-3.5" /> Reminders Active
-                                </span>
-                              ) : (
-                                <span className="inline-flex items-center gap-1.5 px-3.5 py-1 bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800 rounded-full text-xs font-bold">
-                                  Availability Reminders Muted
-                                </span>
-                              )}
-                            </div>
-                          </div>
-
-                          {/* Shabbat Availability Context Box */}
-                          <div className="p-4 rounded-2xl bg-indigo-50/80 dark:bg-indigo-950/40 border border-indigo-100 dark:border-indigo-900/50 flex items-start gap-3 mb-6 text-xs text-indigo-900 dark:text-indigo-200">
-                            <CalendarCheck className="w-5 h-5 text-[#4c55a4] dark:text-indigo-400 shrink-0 mt-0.5" />
-                            <div>
-                              <p className="font-bold text-sm text-[#4c55a4] dark:text-indigo-300">Shabbat Apartment Availability Checks</p>
-                              <p className="mt-0.5 opacity-90 leading-relaxed">
-                                To ensure renters see accurate listings, Shabos Rent reaches out before upcoming Shabbatot to confirm if your apartment is available. Choose your preferred channels below to receive these availability reminders.
-                              </p>
-                            </div>
-                          </div>
-
-                          <div className="space-y-4">
-                            {/* Option 1: Email Communication */}
-                            <div className="flex items-center justify-between p-5 bg-zinc-50 dark:bg-zinc-800/40 rounded-2xl border border-zinc-200/80 dark:border-zinc-800 transition-all hover:border-zinc-300 dark:hover:border-zinc-700">
-                              <div className="flex items-center gap-4">
-                                <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-950/50 flex items-center justify-center text-blue-600 dark:text-blue-400 shrink-0">
-                                  <Mail className="w-5 h-5" />
-                                </div>
-                                <div>
-                                  <h4 className="font-bold text-zinc-900 dark:text-white text-base">Email Notifications & Reminders</h4>
-                                  <p className="text-xs text-zinc-500 mt-0.5">Receive weekly email reminders to confirm your apartment's availability for upcoming Shabbatot, plus booking requests.</p>
-                                </div>
-                              </div>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  const next = !emailOptInState;
-                                  setEmailOptInState(next);
-                                  localStorage.setItem("emailOptIn", next ? "true" : "false");
-                                }}
-                                className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${emailOptInState ? "bg-[#4c55a4]" : "bg-zinc-300 dark:bg-zinc-700"}`}
-                              >
-                                <span className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out ${emailOptInState ? "translate-x-5" : "translate-x-0"}`} />
-                              </button>
-                            </div>
-
-                            {/* Option 2: Phone Call Communication */}
-                            <div className="flex items-center justify-between p-5 bg-zinc-50 dark:bg-zinc-800/40 rounded-2xl border border-zinc-200/80 dark:border-zinc-800 transition-all hover:border-zinc-300 dark:hover:border-zinc-700">
-                              <div className="flex items-center gap-4">
-                                <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shrink-0">
-                                  <PhoneCall className="w-5 h-5" />
-                                </div>
-                                <div>
-                                  <h4 className="font-bold text-zinc-900 dark:text-white text-base">Phone Call & Automated Voice Reminders</h4>
-                                  <p className="text-xs text-zinc-500 mt-0.5">Receive phone calls & voice reminders to quickly confirm if your apartment is open for Shabbat, plus urgent rental calls.</p>
-                                </div>
-                              </div>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  const next = !phoneCommState;
-                                  setPhoneCommState(next);
-                                  localStorage.setItem("phoneCommState", next ? "true" : "false");
-                                }}
-                                className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${phoneCommState ? "bg-[#4c55a4]" : "bg-zinc-300 dark:bg-zinc-700"}`}
-                              >
-                                <span className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out ${phoneCommState ? "translate-x-5" : "translate-x-0"}`} />
-                              </button>
-                            </div>
-                          </div>
+                        {/* Self-Service Owner Availability Reminders Card */}
+                        <div>
+                          <OwnerReminderSettingsCard />
                         </div>
                       </div>
                     )}
@@ -2181,17 +2104,17 @@ export default function UserDashboardPage() {
 
             <div className="space-y-3 mb-2">
               <a
-                href={`tel:${selectedContactBooking.hostPhone}`}
+                href={getTelLink(selectedContactBooking.hostPhone)}
                 className="flex items-center justify-between p-4 bg-zinc-50 dark:bg-zinc-800/50 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-2xl border border-zinc-200/80 dark:border-zinc-700/60 transition-colors text-sm font-semibold text-zinc-900 dark:text-white"
               >
                 <span className="flex items-center gap-2.5">
                   <Phone className="w-4 h-4 text-[#4c55a4]" /> Call Host
                 </span>
-                <span className="text-xs text-zinc-500">{selectedContactBooking.hostPhone}</span>
+                <span className="text-xs text-zinc-500">{formatPhoneNumber(selectedContactBooking.hostPhone)}</span>
               </a>
 
               <a
-                href={`https://wa.me/${selectedContactBooking.hostPhone.replace(/[^0-9]/g, '')}`}
+                href={getWhatsAppLink(selectedContactBooking.hostPhone)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center justify-between p-4 bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 rounded-2xl border border-emerald-200 dark:border-emerald-800/80 transition-colors text-sm font-semibold text-emerald-900 dark:text-emerald-200"

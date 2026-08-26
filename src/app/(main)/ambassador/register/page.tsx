@@ -7,6 +7,7 @@ import { registerAmbassador } from '@/services/ambassadorAuthService';
 import { useLanguage } from '@/context/LanguageContext';
 import DevSimulatorBar from '@/components/ambassador/DevSimulatorBar';
 import { UserCheck, ShieldCheck, Clock, CheckCircle2, ArrowRight, Sparkles } from 'lucide-react';
+import { PhoneInput } from '@/components/common/PhoneInput';
 
 export default function AmbassadorRegisterPage() {
   const router = useRouter();
@@ -143,16 +144,11 @@ export default function AmbassadorRegisterPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5">
-                  Phone Number *
-                </label>
-                <input
-                  type="tel"
+                <PhoneInput
+                  label="Phone Number"
                   required
-                  placeholder="054-111-2233"
                   value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  className="w-full px-4 py-3 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm transition-all"
+                  onChange={(val) => setFormData({ ...formData, phone: val })}
                 />
               </div>
 

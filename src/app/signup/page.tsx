@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { registerAmbassador } from "@/services/ambassadorAuthService";
 import DevSimulatorBar from "@/components/ambassador/DevSimulatorBar";
+import { PhoneInput } from "@/components/common/PhoneInput";
 
 const REFERRAL_SOURCES = [
   "Facebook / Social Media",
@@ -462,21 +463,13 @@ function SignupFormContent() {
                   </div>
                 </div>
 
-                <div className="space-y-1.5">
-                  <label className="text-sm font-semibold text-zinc-900 dark:text-zinc-200">Phone number (For Shabbat availability checks)</label>
-                  <div className="relative">
-                    <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5">
-                      <Phone className="h-5 w-5 text-zinc-400" />
-                    </div>
-                    <input
-                      type="tel"
-                      required
-                      value={ownerPhone}
-                      onChange={(e) => setOwnerPhone(e.target.value)}
-                      placeholder="+972 54-123-4567"
-                      className="block w-full rounded-xl border border-zinc-200 bg-white py-3 pl-11 pr-4 text-sm text-zinc-900 outline-none focus:border-[#4c55a4] focus:ring-4 focus:ring-[#4c55a4]/10 dark:border-zinc-800 dark:bg-zinc-950 dark:text-white dark:focus:ring-[#4c55a4]/20 transition-all shadow-sm"
-                    />
-                  </div>
+                <div>
+                  <PhoneInput
+                    label="Phone number (For Shabbat availability checks)"
+                    required
+                    value={ownerPhone}
+                    onChange={(val) => setOwnerPhone(val)}
+                  />
                 </div>
 
                 <div className="space-y-1.5">
@@ -720,14 +713,11 @@ function SignupFormContent() {
                     </div>
 
                     <div>
-                      <label className="block font-bold text-zinc-700 dark:text-zinc-300 mb-1">Phone Number *</label>
-                      <input
-                        type="tel"
+                      <PhoneInput
+                        label="Phone Number"
                         required
-                        placeholder="054-111-2233"
                         value={ambFormData.phone}
-                        onChange={(e) => setAmbFormData({ ...ambFormData, phone: e.target.value })}
-                        className="w-full px-4 py-3 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 text-zinc-900 dark:text-white text-sm outline-none focus:border-[#4c55a4]"
+                        onChange={(val) => setAmbFormData({ ...ambFormData, phone: val })}
                       />
                     </div>
 

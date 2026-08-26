@@ -5,6 +5,7 @@ import {
   getStoredAmbassadors,
 } from '@/data/mockAmbassadorData';
 import { createListingCommission } from '@/services/commissionService';
+import { normalizePhoneNumber, isSamePhone } from '@/utils/phoneUtils';
 
 const REFERRAL_COOKIE_KEY = 'shabos_rent_referral_code';
 
@@ -74,7 +75,7 @@ export function createAttributionFromListing(params: {
     listingId: params.listingId,
     apartmentTitle: params.apartmentTitle,
     ownerName: params.ownerName,
-    ownerPhone: params.ownerPhone.trim(),
+    ownerPhone: normalizePhoneNumber(params.ownerPhone),
     ownerEmail: params.ownerEmail.trim().toLowerCase(),
     ambassadorId: ambassador.id,
     model: null, // Pending 7-day ambassador selection!
@@ -190,7 +191,7 @@ export function manualClaimApartment(params: {
     return { success: false, error: 'Ambassador account is not active.' };
   }
 
-  const cleanPhone = params.ownerPhone.replace(/\D/g, '');
+  const normalizedPhone = normalizePhoneNumber(params.ownerPhone);
   const cleanEmail = params.ownerEmail.trim().toLowerCase();
 
   // Simulated property database check (or existing attributions)
@@ -198,7 +199,7 @@ export function manualClaimApartment(params: {
   const alreadyClaimed = attributions.find(
     (a) =>
       a.status === 'active' &&
-      (a.ownerPhone.replace(/\D/g, '') === cleanPhone ||
+      (isSamePhone(a.ownerPhone, normalizedPhone) ||
         a.ownerEmail.toLowerCase() === cleanEmail)
   );
 
@@ -216,7 +217,7 @@ export function manualClaimApartment(params: {
     listingId: `apt-manual-${Date.now()}`,
     apartmentTitle: `Apartment (${params.ownerName || 'Owner Listing'})`,
     ownerName: params.ownerName || 'Property Owner',
-    ownerPhone: params.ownerPhone.trim(),
+    ownerPhone: normalizedPhone,
     ownerEmail: cleanEmail,
     ambassadorId: ambassador.id,
     model: params.model,

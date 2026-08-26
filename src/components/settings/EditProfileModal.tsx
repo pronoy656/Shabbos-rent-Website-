@@ -1,17 +1,30 @@
 "use client";
 
 import { useState } from "react";
-import { X, User, Phone, MapPin, Camera } from "lucide-react";
+import { X, User, MapPin, Camera } from "lucide-react";
+import { PhoneInput } from '@/components/common/PhoneInput';
 
 interface EditProfileModalProps {
   isOpen: boolean;
   onClose: () => void;
+  user?: {
+    name: string;
+    email?: string;
+    phone?: string;
+    location?: string;
+  };
+  onSave?: (updatedData: { name: string; phone: string; location: string }) => void;
 }
 
-export default function EditProfileModal({ isOpen, onClose }: EditProfileModalProps) {
-  const [name, setName] = useState("User Name");
-  const [phone, setPhone] = useState("+972 50-123-4567");
-  const [location, setLocation] = useState("Jerusalem, Israel");
+export default function EditProfileModal({
+  isOpen,
+  onClose,
+  user = { name: "User Name", email: "user@example.com", phone: "972501234567", location: "Jerusalem, Israel" },
+  onSave,
+}: EditProfileModalProps) {
+  const [name, setName] = useState(user.name);
+  const [phone, setPhone] = useState(user.phone || "972501234567");
+  const [location, setLocation] = useState(user.location || "");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   if (!isOpen) return null;
@@ -74,19 +87,12 @@ export default function EditProfileModal({ isOpen, onClose }: EditProfileModalPr
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-1.5">Phone Number</label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Phone className="h-5 w-5 text-zinc-400" />
-                </div>
-                <input
-                  type="tel"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-sm text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#4c55a4]"
-                  required
-                />
-              </div>
+              <PhoneInput
+                label="Phone Number"
+                required
+                value={phone}
+                onChange={setPhone}
+              />
             </div>
 
             <div>

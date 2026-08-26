@@ -17,6 +17,7 @@ import {
   Zap
 } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
+import { PhoneInput } from "@/components/common/PhoneInput";
 
 interface AdItem {
   id: number;
@@ -42,6 +43,7 @@ export default function AdvertisementsSection() {
   const [activeCategory, setActiveCategory] = useState<string>("all");
   const [isAdModalOpen, setIsAdModalOpen] = useState<boolean>(false);
   const [submittedAdForm, setSubmittedAdForm] = useState<boolean>(false);
+  const [adPhone, setAdPhone] = useState<string>("");
 
   const categories = [
     { id: "all", label: isHebrew ? "כל הפרסומות" : "All Ads" },
@@ -362,14 +364,11 @@ export default function AdvertisementsSection() {
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1">
-                      {isHebrew ? "טלפון ליצירת קשר" : "Phone Number"}
-                    </label>
-                    <input
+                    <PhoneInput
+                      label={isHebrew ? "טלפון ליצירת קשר" : "Phone Number"}
                       required
-                      type="tel"
-                      placeholder="050-0000000"
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-sm focus:ring-2 focus:ring-purple-500 outline-none"
+                      value={adPhone}
+                      onChange={setAdPhone}
                     />
                   </div>
                 </div>
