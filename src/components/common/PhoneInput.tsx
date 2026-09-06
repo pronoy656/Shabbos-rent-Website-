@@ -28,7 +28,6 @@ export interface PhoneInputProps {
   name?: string;
   error?: string;
   showIcon?: boolean;
-  showPreview?: boolean;
 }
 
 export const PhoneInput: React.FC<PhoneInputProps> = ({
@@ -43,7 +42,6 @@ export const PhoneInput: React.FC<PhoneInputProps> = ({
   name,
   error,
   showIcon = true,
-  showPreview = false,
 }) => {
   const [selectedCountry, setSelectedCountry] = useState<CountryCodeOption>(COUNTRY_CODES[0]);
   const [nationalNumber, setNationalNumber] = useState('');
@@ -148,11 +146,6 @@ export const PhoneInput: React.FC<PhoneInputProps> = ({
 
       {error && <p className="text-xs font-medium text-red-500">{error}</p>}
 
-      {showPreview && formattedPreview && (
-        <p className="text-xs text-zinc-500 dark:text-zinc-400 flex items-center gap-1">
-          <span className="font-semibold text-emerald-600 dark:text-emerald-400">Normalized:</span> {formattedPreview} ({normalizedCurrent})
-        </p>
-      )}
     </div>
   );
 };

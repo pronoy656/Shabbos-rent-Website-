@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { registerAmbassador } from '@/services/ambassadorAuthService';
 import { useLanguage } from '@/context/LanguageContext';
 import DevSimulatorBar from '@/components/ambassador/DevSimulatorBar';
-import { UserCheck, ShieldCheck, Clock, CheckCircle2, ArrowRight, Sparkles } from 'lucide-react';
+import { UserCheck, ShieldCheck, Clock, CheckCircle2, ArrowRight, Sparkles, Eye, EyeOff } from 'lucide-react';
 import { PhoneInput } from '@/components/common/PhoneInput';
 
 export default function AmbassadorRegisterPage() {
@@ -17,8 +17,12 @@ export default function AmbassadorRegisterPage() {
     email: '',
     phone: '',
     password: '',
+    confirmPassword: '',
     recruitmentCode: '',
   });
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [noEmail, setNoEmail] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
 
@@ -26,12 +30,23 @@ export default function AmbassadorRegisterPage() {
     e.preventDefault();
     setError(null);
 
-    if (!formData.name || !formData.email || !formData.phone) {
+    const isEmailValid = noEmail || !!formData.email;
+    if (!formData.name || !isEmailValid || !formData.phone || !formData.password) {
       setError('Please fill in all required fields.');
       return;
     }
 
-    const res = registerAmbassador(formData);
+    if (formData.password !== formData.confirmPassword) {
+      setError('Passwords do not match.');
+      return;
+    }
+
+    const payload = {
+      ...formData,
+      email: noEmail && !formData.email ? `${formData.phone.replace(/[^0-9]/g, '')}@phone.shabosrent.com` : formData.email
+    };
+
+    const res = registerAmbassador(payload);
     if (!res.success) {
       setError(res.error || 'Registration failed.');
       return;
@@ -129,19 +144,21 @@ export default function AmbassadorRegisterPage() {
                 />
               </div>
 
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5">
-                  Email Address *
-                </label>
-                <input
-                  type="email"
-                  required
-                  placeholder="sara@example.com"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  className="w-full px-4 py-3 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm transition-all"
-                />
-              </div>
+              {!noEmail && (
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5">
+                    Email Address *
+                  </label>
+                  <input
+                    type="email"
+                    required
+                    placeholder="sara@example.com"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    className="w-full px-4 py-3 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm transition-all"
+                  />
+                </div>
+              )}
 
               <div>
                 <PhoneInput
@@ -150,20 +167,63 @@ export default function AmbassadorRegisterPage() {
                   value={formData.phone}
                   onChange={(val) => setFormData({ ...formData, phone: val })}
                 />
+                <label className="flex items-center gap-2 cursor-pointer pt-1.5 select-none">
+                  <input
+                    type="checkbox"
+                    checked={noEmail}
+                    onChange={(e) => setNoEmail(e.target.checked)}
+                    className="w-4 h-4 rounded border-zinc-300 text-[#4c55a4] focus:ring-[#4c55a4] accent-[#4c55a4]"
+                  />
+                  <span className="text-xs text-zinc-600 dark:text-zinc-400 font-medium">
+                    I do not have an email address
+                  </span>
+                </label>
               </div>
 
               <div>
                 <label className="block text-xs font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5">
                   Password *
                 </label>
-                <input
-                  type="password"
-                  required
-                  placeholder="••••••••"
-                  value={formData.password}
-                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  className="w-full px-4 py-3 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm transition-all"
-                />
+                <div className="relative">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    required
+                    placeholder="••••••••"
+                    value={formData.password}
+                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                    className="w-full px-4 py-3 pr-11 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm transition-all"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute inset-y-0 right-0 flex items-center pr-3.5 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors"
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5">
+                  Confirm Password *
+                </label>
+                <div className="relative">
+                  <input
+                    type={showConfirmPassword ? "text" : "password"}
+                    required
+                    placeholder="••••••••"
+                    value={formData.confirmPassword}
+                    onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                    className="w-full px-4 py-3 pr-11 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm transition-all"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute inset-y-0 right-0 flex items-center pr-3.5 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors"
+                  >
+                    {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
               </div>
 
               <div>

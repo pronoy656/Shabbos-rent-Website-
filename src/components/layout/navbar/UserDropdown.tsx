@@ -2,7 +2,7 @@
 
 import { useRef, useEffect } from "react";
 import Link from "next/link";
-import { ChevronDown, LayoutDashboard, Settings, LogOut } from "lucide-react";
+import { ChevronDown, LayoutDashboard, Settings, LogOut, Building } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
 
 interface UserDropdownProps {
@@ -28,6 +28,14 @@ export default function UserDropdown({ isOpen, userRole, onToggle, onClose, onLo
     }
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [isOpen, onClose]);
+
+  const handleMyApartmentClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    localStorage.setItem("pendingManageAction", "true");
+    sessionStorage.setItem("dashboardTab", "manage");
+    onClose();
+    window.location.href = "/user-dashboard?tab=manage";
+  };
 
   const handleSettingsClick = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -65,6 +73,14 @@ export default function UserDropdown({ isOpen, userRole, onToggle, onClose, onLo
           >
             <LayoutDashboard className="w-4 h-4" />
             {t("nav.dashboard")}
+          </Link>
+          <Link
+            href="/user-dashboard?tab=manage"
+            onClick={handleMyApartmentClick}
+            className="flex items-center gap-3 px-4 py-2 text-sm font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors"
+          >
+            <Building className="w-4 h-4" />
+            {t("nav.go_to_my_apartment") || "Go to my apartment"}
           </Link>
           <button
             onClick={handleSettingsClick}

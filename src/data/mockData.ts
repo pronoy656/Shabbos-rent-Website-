@@ -151,7 +151,7 @@ export const mockBaseApartments: ApartmentData[] = [
   },
 ];
 
-export const mockApartments: ApartmentData[] = Array.from({ length: 3 }).flatMap((_, i) => 
+export const mockApartments: ApartmentData[] = Array.from({ length: 15 }).flatMap((_, i) => 
   mockBaseApartments.map(apt => ({
     ...apt,
     id: `${apt.id}-${i}`,

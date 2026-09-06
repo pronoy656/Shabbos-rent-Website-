@@ -17,7 +17,6 @@ export default function ContactPage() {
       setIsSubmitting(false);
       setIsSuccess(true);
       setFormData({ name: "", email: "", subject: "", message: "" });
-      setTimeout(() => setIsSuccess(false), 3000);
     }, 1500);
   };
 
@@ -94,7 +93,28 @@ export default function ContactPage() {
                 <p className="text-zinc-500">Fill out the form below and we'll get back to you within 24 hours.</p>
               </div>
 
-              <form onSubmit={handleSubmit} className="space-y-6">
+              {isSuccess ? (
+              <div className="flex-1 flex flex-col items-center justify-center py-10 text-center animate-in fade-in duration-300">
+                <div className="w-20 h-20 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mb-6">
+                  <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center shadow-lg shadow-green-500/30">
+                    <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                </div>
+                <h4 className="text-2xl font-bold text-zinc-900 dark:text-white mb-3">Message Sent!</h4>
+                <p className="text-zinc-500 mb-8 max-w-sm mx-auto">
+                  Thank you for reaching out. We have received your message and will get back to you shortly.
+                </p>
+                <button
+                  onClick={() => setIsSuccess(false)}
+                  className="px-10 py-3 bg-[#4c55a4] hover:bg-[#3d4484] text-white rounded-xl font-bold transition-all shadow-md"
+                >
+                  OK
+                </button>
+              </div>
+            ) : (
+              <form onSubmit={handleSubmit} className="space-y-6 flex-1 flex flex-col justify-center">
                 <div className="grid md:grid-cols-2 gap-6">
                   <div>
                     <label className="block text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-2">Full Name</label>
@@ -104,7 +124,7 @@ export default function ContactPage() {
                       value={formData.name}
                       onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                       className="w-full px-4 py-3 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#4c55a4] transition-all"
-                      placeholder="e.g. John Doe"
+                      placeholder="John Doe"
                     />
                   </div>
                   <div>
@@ -151,8 +171,6 @@ export default function ContactPage() {
                 >
                   {isSubmitting ? (
                     <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  ) : isSuccess ? (
-                    "Message Sent Successfully!"
                   ) : (
                     <>
                       Send Message <Send className="w-5 h-5" />
@@ -160,6 +178,7 @@ export default function ContactPage() {
                   )}
                 </button>
               </form>
+            )}
             </div>
           </div>
         </div>

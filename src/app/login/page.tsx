@@ -4,6 +4,7 @@ import { useState, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Mail, Lock, Eye, EyeOff, ArrowRight, LockKeyhole } from "lucide-react";
+import { PhoneInput } from "@/components/common/PhoneInput";
 
 function LoginFormContent() {
   const router = useRouter();
@@ -12,6 +13,8 @@ function LoginFormContent() {
 
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [noEmail, setNoEmail] = useState(false);
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
@@ -80,8 +83,8 @@ function LoginFormContent() {
       </div>
 
       {/* Right Form Section (Formerly Left) */}
-      <div className="flex w-full flex-col justify-center px-4 py-12 sm:px-6 lg:flex-none lg:w-1/2 lg:px-20 xl:px-24 border-l border-zinc-100 dark:border-zinc-900 z-10 bg-white dark:bg-black">
-        <div className="mx-auto w-full max-w-md lg:w-[480px]">
+      <div className="flex w-full flex-col justify-center px-4 py-12 sm:px-8 lg:flex-none lg:w-[55%] xl:w-[52%] lg:px-14 xl:px-18 border-l border-zinc-100 dark:border-zinc-900 z-10 bg-white dark:bg-black">
+        <div className="mx-auto w-full max-w-lg lg:w-[540px] xl:max-w-[560px]">
           
           {/* Brand Logo */}
           <Link href="/" className="inline-flex items-center gap-2.5 mb-10 group">
@@ -117,22 +120,55 @@ function LoginFormContent() {
           <div className="mt-8">
             <div className="space-y-5">
               
-              <div className="space-y-1.5">
-                <label className="text-sm font-semibold text-zinc-900 dark:text-zinc-200">Email address</label>
-                <div className="relative">
-                  <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5">
-                    <Mail className="h-5 w-5 text-zinc-400" />
-                  </div>
-                  <input
-                    type="email"
+              {noEmail ? (
+                <div className="space-y-1.5">
+                  <PhoneInput
+                    label="Phone number"
                     required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="name@example.com"
-                    className="block w-full rounded-xl border border-zinc-200 bg-white py-3 pl-11 pr-4 text-sm text-zinc-900 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-zinc-800 dark:bg-zinc-950 dark:text-white dark:focus:ring-blue-500/20 transition-all shadow-sm"
+                    value={phone}
+                    onChange={(val) => setPhone(val)}
                   />
+                  <label className="flex items-center gap-2 cursor-pointer pt-1 select-none">
+                    <input
+                      type="checkbox"
+                      checked={noEmail}
+                      onChange={(e) => setNoEmail(e.target.checked)}
+                      className="w-4 h-4 rounded border-zinc-300 text-blue-600 focus:ring-blue-500 accent-blue-600"
+                    />
+                    <span className="text-xs text-zinc-600 dark:text-zinc-400 font-medium">
+                      I do not have an email address
+                    </span>
+                  </label>
                 </div>
-              </div>
+              ) : (
+                <div className="space-y-1.5">
+                  <label className="text-sm font-semibold text-zinc-900 dark:text-zinc-200">Email address</label>
+                  <div className="relative">
+                    <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5">
+                      <Mail className="h-5 w-5 text-zinc-400" />
+                    </div>
+                    <input
+                      type="email"
+                      required
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="name@example.com"
+                      className="block w-full rounded-xl border border-zinc-200 bg-white py-3 pl-11 pr-4 text-sm text-zinc-900 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-zinc-800 dark:bg-zinc-950 dark:text-white dark:focus:ring-blue-500/20 transition-all shadow-sm"
+                    />
+                  </div>
+                  <label className="flex items-center gap-2 cursor-pointer pt-1 select-none">
+                    <input
+                      type="checkbox"
+                      checked={noEmail}
+                      onChange={(e) => setNoEmail(e.target.checked)}
+                      className="w-4 h-4 rounded border-zinc-300 text-blue-600 focus:ring-blue-500 accent-blue-600"
+                    />
+                    <span className="text-xs text-zinc-600 dark:text-zinc-400 font-medium">
+                      I do not have an email address
+                    </span>
+                  </label>
+                </div>
+              )}
 
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">

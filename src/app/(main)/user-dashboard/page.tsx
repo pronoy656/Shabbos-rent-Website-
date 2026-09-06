@@ -238,11 +238,14 @@ export default function UserDashboardPage() {
   const [isHideReasonModalOpen, setIsHideReasonModalOpen] = useState(false);
   const [hideReason, setHideReason] = useState("");
   const [selectedShabbatot, setSelectedShabbatot] = useState<string[]>([]);
+  const [specialShabbatot, setSpecialShabbatot] = useState<string[]>([]);
   const [createdListingDate, setCreatedListingDate] = useState("");
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
   const [isEditProfileModalOpen, setIsEditProfileModalOpen] = useState(false);
   const { savedApartments } = useFavorites();
   const [isCopied, setIsCopied] = useState(false);
+  const [isPendingApproval, setIsPendingApproval] = useState(true);
+  const [isStatusInfoModalOpen, setIsStatusInfoModalOpen] = useState(false);
   
   // Dashboard Requests State
   const [notifyRequests, setNotifyRequests] = useState<any[]>([]);
@@ -479,6 +482,13 @@ export default function UserDashboardPage() {
         initialTabSet = true;
       }
 
+      if (localStorage.getItem("pendingManageAction") === "true") {
+        setActiveTab("manage");
+        sessionStorage.setItem("dashboardTab", "manage");
+        localStorage.removeItem("pendingManageAction");
+        initialTabSet = true;
+      }
+
       if (localStorage.getItem("pendingSwapAction") === "true") {
         setActiveTab("swap");
         sessionStorage.setItem("dashboardTab", "swap");
@@ -533,6 +543,15 @@ export default function UserDashboardPage() {
         }
       }
       
+      const savedSpecialShabbatot = localStorage.getItem("specialShabbatot");
+      if (savedSpecialShabbatot) {
+        try {
+          setSpecialShabbatot(JSON.parse(savedSpecialShabbatot));
+        } catch (e) {
+          console.error("Failed to parse special Shabbatot");
+        }
+      }
+      
       const savedDate = localStorage.getItem("createdListingDate");
       if (savedDate) {
         setCreatedListingDate(savedDate);
@@ -555,7 +574,7 @@ export default function UserDashboardPage() {
     { id: "swap", label: t("dashboard.nav.swap"), icon: RefreshCw, color: "text-indigo-500" },
     { id: "favorites", label: "Favorites & Saved", icon: Heart, color: "text-red-500" },
     { id: "bookings", label: "Booking History", icon: CalendarDays, color: "text-amber-500" },
-    { id: "affiliate", label: t("dashboard.nav.affiliate"), icon: Gift, color: "text-purple-500" },
+    { id: "reminders", label: "Reminder Settings", icon: Clock, color: "text-cyan-500" },
     { id: "notifications", label: t("dashboard.nav.notifications"), icon: Bell, color: "text-blue-500" },
     { id: "settings", label: t("dashboard.nav.settings"), icon: Settings, color: "text-zinc-600 dark:text-zinc-400" },
   ].filter(Boolean) as Array<{ id: string, label: string, icon: any, color: string }>;
@@ -666,44 +685,79 @@ export default function UserDashboardPage() {
               <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
                 
                 {hasListing ? (
-                  <div className="flex flex-col">
-                    <h1 className="text-3xl font-extrabold text-zinc-900 dark:text-white mb-2">{t("dashboard.manage.title")}</h1>
-                    <p className="text-zinc-500 mb-8">{t("dashboard.manage.desc")}</p>
+                  <div className="flex flex-col relative w-full">
+                    {/* Title with Absolute Pinned Earnings (4.3) */}
+                    <div className="relative mb-8 w-full pr-0 sm:pr-64 rtl:pr-0 rtl:pl-64">
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-2">
+                        <h1 className="text-3xl font-extrabold text-zinc-900 dark:text-white">{t("dashboard.manage.title")}</h1>
+                        
+                        {/* Status Badge inline with title */}
+                        {isPendingApproval ? (
+                          <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/50 rounded-xl px-3 py-1.5 flex items-center shadow-sm animate-in zoom-in-95 gap-3 w-max">
+                            <span className="font-semibold text-sm text-amber-700 dark:text-amber-400">Your apartment is currently being approved by admin</span>
+                            <button 
+                              onClick={() => setIsStatusInfoModalOpen(true)}
+                              className="shrink-0 text-xs font-bold px-2.5 py-1 bg-amber-100 hover:bg-amber-200 dark:bg-amber-800/40 dark:hover:bg-amber-700/50 text-amber-800 dark:text-amber-300 rounded-lg transition-colors"
+                            >
+                              Learn More
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800/50 rounded-lg px-3 py-1.5 flex items-center gap-2 shadow-sm w-max">
+                            <CheckCircle2 className="w-4 h-4 text-green-600 dark:text-green-400" />
+                            <span className="font-semibold text-sm text-green-700 dark:text-green-400">Listing Valid Until: Dec 31, 2026</span>
+                          </div>
+                        )}
+                      </div>
+                      
+                      <p className="text-zinc-500">{t("dashboard.manage.desc")}</p>
+                      
+                      <div className="mt-4 sm:mt-0 sm:absolute sm:top-0 sm:right-0 sm:rtl:left-0 sm:rtl:right-auto inline-flex items-center gap-3.5 bg-[#0fa563] rounded-2xl p-3 px-4 shadow-md z-10 w-max self-start text-white border border-[#108752] dark:border-[#0a6c40]">
+                        <div className="bg-white/20 p-2.5 rounded-xl flex items-center justify-center shrink-0">
+                          <Banknote className="w-6 h-6 text-white stroke-[2.5]" />
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="text-[11px] font-black uppercase tracking-widest text-white/90">Total Earnings</span>
+                          <span className="text-2xl font-black leading-none mt-0.5 tracking-tight">₪12,500</span>
+                        </div>
+                      </div>
+                    </div>
+
                     {/* Premium Tabs Above */}
-                    <div className="flex items-center p-1.5 bg-zinc-100/80 dark:bg-zinc-800/50 backdrop-blur-md rounded-2xl mb-8 border border-zinc-200/80 dark:border-zinc-700/50 w-fit shadow-sm">
+                    <div className="flex items-center p-1.5 bg-zinc-100/80 dark:bg-zinc-800/50 backdrop-blur-md rounded-2xl mb-8 border border-zinc-200/80 dark:border-zinc-700/50 w-full overflow-x-auto shadow-sm whitespace-nowrap scrollbar-hide">
                       <button 
                         onClick={() => setManageSubTab("my_listing")}
-                        className={`px-6 py-2.5 rounded-xl font-bold text-sm transition-all duration-300 ${manageSubTab === "my_listing" ? "bg-white dark:bg-zinc-900 text-[#4c55a4] dark:text-indigo-400 shadow-sm" : "text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 hover:bg-zinc-200/50 dark:hover:bg-zinc-800"}`}
+                        className={`shrink-0 px-6 py-2.5 rounded-xl font-bold text-sm transition-all duration-300 ${manageSubTab === "my_listing" ? "bg-white dark:bg-zinc-900 text-[#4c55a4] dark:text-indigo-400 shadow-sm" : "text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 hover:bg-zinc-200/50 dark:hover:bg-zinc-800"}`}
                       >
                         {t("dashboard.manage.tabs.my_listing")}
                       </button>
                       <button 
-                        onClick={() => setManageSubTab("interested_request")}
-                        className={`px-6 py-2.5 rounded-xl font-bold text-sm transition-all duration-300 ${manageSubTab === "interested_request" ? "bg-white dark:bg-zinc-900 text-[#4c55a4] dark:text-indigo-400 shadow-sm" : "text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 hover:bg-zinc-200/50 dark:hover:bg-zinc-800"}`}
-                      >
-                        {t("dashboard.manage.tabs.interested")}
-                      </button>
-                      <button 
                         onClick={() => setManageSubTab("report_renter")}
-                        className={`px-6 py-2.5 rounded-xl font-bold text-sm transition-all duration-300 ${manageSubTab === "report_renter" ? "bg-white dark:bg-zinc-900 text-[#4c55a4] dark:text-indigo-400 shadow-sm" : "text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 hover:bg-zinc-200/50 dark:hover:bg-zinc-800"}`}
+                        className={`shrink-0 px-6 py-2.5 rounded-xl font-bold text-sm transition-all duration-300 ${manageSubTab === "report_renter" ? "bg-white dark:bg-zinc-900 text-[#4c55a4] dark:text-indigo-400 shadow-sm" : "text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 hover:bg-zinc-200/50 dark:hover:bg-zinc-800"}`}
                       >
                         {t("dashboard.manage.tabs.report_renter")}
                       </button>
                       <button 
-                        onClick={() => setManageSubTab("report_history")}
-                        className={`px-6 py-2.5 rounded-xl font-bold text-sm transition-all duration-300 ${manageSubTab === "report_history" ? "bg-white dark:bg-zinc-900 text-[#4c55a4] dark:text-indigo-400 shadow-sm" : "text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 hover:bg-zinc-200/50 dark:hover:bg-zinc-800"}`}
-                      >
-                        {t("dashboard.manage.tabs.report_history")}
-                      </button>
-                      <button 
                         onClick={() => setManageSubTab("apartment_calendar")}
-                        className={`px-6 py-2.5 rounded-xl font-bold text-sm transition-all duration-300 ${manageSubTab === "apartment_calendar" ? "bg-white dark:bg-zinc-900 text-[#4c55a4] dark:text-indigo-400 shadow-sm" : "text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 hover:bg-zinc-200/50 dark:hover:bg-zinc-800"}`}
+                        className={`shrink-0 px-6 py-2.5 rounded-xl font-bold text-sm transition-all duration-300 ${manageSubTab === "apartment_calendar" ? "bg-white dark:bg-zinc-900 text-[#4c55a4] dark:text-indigo-400 shadow-sm" : "text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 hover:bg-zinc-200/50 dark:hover:bg-zinc-800"}`}
                       >
                         {t("dashboard.manage.tabs.calendar")}
                       </button>
                       <button 
+                        onClick={() => setManageSubTab("interested_request")}
+                        className={`shrink-0 px-6 py-2.5 rounded-xl font-bold text-sm transition-all duration-300 ${manageSubTab === "interested_request" ? "bg-white dark:bg-zinc-900 text-[#4c55a4] dark:text-indigo-400 shadow-sm" : "text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 hover:bg-zinc-200/50 dark:hover:bg-zinc-800"}`}
+                      >
+                        {t("dashboard.manage.tabs.interested")}
+                      </button>
+                      <button 
+                        onClick={() => setManageSubTab("report_history")}
+                        className={`shrink-0 px-6 py-2.5 rounded-xl font-bold text-sm transition-all duration-300 ${manageSubTab === "report_history" ? "bg-white dark:bg-zinc-900 text-[#4c55a4] dark:text-indigo-400 shadow-sm" : "text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 hover:bg-zinc-200/50 dark:hover:bg-zinc-800"}`}
+                      >
+                        Rental History
+                      </button>
+                      <button 
                         onClick={() => setManageSubTab("call_log")}
-                        className={`px-6 py-2.5 rounded-xl font-bold text-sm transition-all duration-300 ${manageSubTab === "call_log" ? "bg-white dark:bg-zinc-900 text-[#4c55a4] dark:text-indigo-400 shadow-sm" : "text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 hover:bg-zinc-200/50 dark:hover:bg-zinc-800"}`}
+                        className={`shrink-0 px-6 py-2.5 rounded-xl font-bold text-sm transition-all duration-300 ${manageSubTab === "call_log" ? "bg-white dark:bg-zinc-900 text-[#4c55a4] dark:text-indigo-400 shadow-sm" : "text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 hover:bg-zinc-200/50 dark:hover:bg-zinc-800"}`}
                       >
                         Call Log
                       </button>
@@ -1189,41 +1243,77 @@ export default function UserDashboardPage() {
                             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
                               {SHABBATOT.map((shabbat, index) => {
                                 const isSelected = selectedShabbatot.includes(shabbat.id);
+                                const isSpecial = specialShabbatot.includes(shabbat.id);
                                 const isUpcoming = index === 0;
 
+                                // Colors based on state
+                                const borderColor = isSpecial ? 'border-amber-400' : (isSelected ? 'border-[#8B5CF6]' : 'border-transparent');
+                                const bgColor = isSpecial ? 'bg-amber-50 dark:bg-amber-900/10' : 'bg-[#8B5CF6]/5 dark:bg-[#8B5CF6]/15';
+                                const hoverBorder = isSpecial ? 'hover:border-amber-500' : 'hover:border-[#8B5CF6]/40 dark:hover:border-[#8B5CF6]/40';
+                                const shadow = isSpecial ? 'shadow-sm shadow-amber-400/20' : (isSelected ? 'shadow-sm shadow-[#8B5CF6]/10' : '');
+
                                 return (
-                                  <button
-                                    key={shabbat.id}
-                                    onClick={() => {
-                                      setSelectedShabbatot(prev => 
-                                        prev.includes(shabbat.id) 
-                                          ? prev.filter(id => id !== shabbat.id)
-                                          : [...prev, shabbat.id]
-                                      );
-                                    }}
-                                    className={`relative text-left p-5 rounded-2xl border-2 transition-all duration-200 h-32 flex flex-col justify-end bg-[#8B5CF6]/5 dark:bg-[#8B5CF6]/15
-                                      ${isSelected 
-                                        ? 'border-[#8B5CF6] shadow-sm shadow-[#8B5CF6]/10' 
-                                        : 'border-transparent hover:border-[#8B5CF6]/40 dark:hover:border-[#8B5CF6]/40'
+                                  <div key={shabbat.id} className="relative group">
+                                    <button
+                                      onClick={() => {
+                                        setSelectedShabbatot(prev => 
+                                          prev.includes(shabbat.id) 
+                                            ? prev.filter(id => id !== shabbat.id)
+                                            : [...prev, shabbat.id]
+                                        );
+                                      }}
+                                      className={`w-full relative text-left p-5 rounded-2xl border-2 transition-all duration-200 h-32 flex flex-col justify-end ${bgColor} ${borderColor} ${hoverBorder} ${shadow}`}
+                                    >
+                                      {isUpcoming && (
+                                        <span className={`absolute top-4 left-4 text-[10px] font-black px-2.5 py-1 rounded tracking-wider uppercase ${isSpecial ? 'bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-400' : 'bg-[#E0E7FF] dark:bg-indigo-900/50 text-[#4c55a4] dark:text-indigo-300'}`}>
+                                          {t("dashboard.manage.upcoming_shabbat")}
+                                        </span>
+                                      )}
+                                      
+                                      {isSelected && !isSpecial && (
+                                        <div className="absolute top-4 right-4 bg-[#8B5CF6] text-white rounded-full w-6 h-6 flex items-center justify-center shadow-sm">
+                                          <Check className="w-3.5 h-3.5 stroke-[3]" />
+                                        </div>
+                                      )}
+
+                                      <div className="mt-auto pr-2">
+                                        <h4 className="font-extrabold text-zinc-900 dark:text-white text-[17px] leading-tight mb-1">{shabbat.name}</h4>
+                                        <p className="text-sm text-zinc-500 font-semibold">{shabbat.date}</p>
+                                      </div>
+                                    </button>
+
+                                    {/* Star Button for Special Shabbos */}
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setSpecialShabbatot(prev => {
+                                          const next = prev.includes(shabbat.id) 
+                                            ? prev.filter(id => id !== shabbat.id)
+                                            : [...prev, shabbat.id];
+                                          
+                                          // Automatically mark as available if marked as special
+                                          if (!prev.includes(shabbat.id) && !selectedShabbatot.includes(shabbat.id)) {
+                                            setSelectedShabbatot(s => [...s, shabbat.id]);
+                                          }
+                                          return next;
+                                        });
+                                      }}
+                                      className={`absolute top-3 p-1.5 rounded-full transition-all duration-200 z-10 ${isSelected && !isSpecial ? 'right-12' : 'right-3'} ${
+                                        isSpecial 
+                                          ? 'text-amber-500 bg-amber-100 hover:bg-amber-200 dark:bg-amber-900/30 dark:hover:bg-amber-900/50' 
+                                          : 'text-zinc-400 hover:text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-900/20 opacity-0 group-hover:opacity-100'
                                       }`}
-                                  >
-                                    {isUpcoming && (
-                                      <span className="absolute top-4 left-4 bg-[#E0E7FF] dark:bg-indigo-900/50 text-[#4c55a4] dark:text-indigo-300 text-[10px] font-black px-2.5 py-1 rounded tracking-wider uppercase">
-                                        {t("dashboard.manage.upcoming_shabbat")}
+                                      title="Mark as Special Shabbos"
+                                    >
+                                      <Star className={`w-4 h-4 ${isSpecial ? 'fill-current' : ''}`} />
+                                    </button>
+
+                                    {isSpecial && (
+                                      <span className="absolute bottom-4 right-4 bg-amber-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider shadow-sm">
+                                        Special Price
                                       </span>
                                     )}
-                                    
-                                    {isSelected && (
-                                      <div className="absolute top-4 right-4 bg-[#8B5CF6] text-white rounded-full w-6 h-6 flex items-center justify-center shadow-sm">
-                                        <Check className="w-3.5 h-3.5 stroke-[3]" />
-                                      </div>
-                                    )}
-
-                                    <div className="mt-auto">
-                                      <h4 className="font-extrabold text-zinc-900 dark:text-white text-[17px] leading-tight mb-1">{shabbat.name}</h4>
-                                      <p className="text-sm text-zinc-500 font-semibold">{shabbat.date}</p>
-                                    </div>
-                                  </button>
+                                  </div>
                                 );
                               })}
                             </div>
@@ -1239,6 +1329,13 @@ export default function UserDashboardPage() {
                                   } else {
                                     setSelectedShabbatot([]);
                                   }
+                                  
+                                  const savedSpecial = localStorage.getItem("specialShabbatot");
+                                  if (savedSpecial) {
+                                    try { setSpecialShabbatot(JSON.parse(savedSpecial)); } catch (e) {}
+                                  } else {
+                                    setSpecialShabbatot([]);
+                                  }
                                 }}
                                 className="px-6 py-3 rounded-xl font-bold text-[15px] text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors"
                               >
@@ -1247,6 +1344,7 @@ export default function UserDashboardPage() {
                               <button 
                                 onClick={() => {
                                   localStorage.setItem("selectedShabbatot", JSON.stringify(selectedShabbatot));
+                                  localStorage.setItem("specialShabbatot", JSON.stringify(specialShabbatot));
                                   setManageSubTab("my_listing");
                                 }}
                                 className="px-8 py-3 rounded-xl font-bold text-[15px] text-white bg-[#4c55a4] hover:bg-[#3d4484] shadow-md shadow-[#4c55a4]/20 transition-all"
@@ -1509,136 +1607,6 @@ export default function UserDashboardPage() {
               </div>
             )}
 
-            {activeTab === "affiliate" && (
-              <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-5xl mx-auto">
-                <div className="mb-10">
-                  <h1 className="text-4xl md:text-5xl font-black text-zinc-900 dark:text-white mb-4 tracking-tight">
-                    Refer Friends and Earn <br className="hidden md:block" /> 
-                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#4c55a4] to-indigo-500">Along the Way!</span>
-                  </h1>
-                  <p className="text-lg text-zinc-600 dark:text-zinc-400 max-w-2xl leading-relaxed">
-                    Help us grow and invite apartment owners to join the platform. Anyone who signs up through your link and rents their apartment for the first time earns you <span className="font-bold text-[#4c55a4] dark:text-indigo-400">₪40</span>.
-                  </p>
-                </div>
-                
-                {/* Sharing Link Card */}
-                <div className="bg-white dark:bg-zinc-900 rounded-3xl border border-zinc-200/80 dark:border-zinc-800 p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] mb-8 transition-all hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)]">
-                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-                    <div>
-                      <h3 className="text-xl font-bold text-zinc-900 dark:text-white mb-1">Your Personal Sharing Link</h3>
-                      <p className="text-sm text-zinc-500">Send this link to friends, family, and relevant groups.</p>
-                    </div>
-                    <div className="flex items-center gap-2 w-full md:w-auto">
-                      <div className="flex-1 md:w-96 bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-700 rounded-2xl px-5 py-3.5 text-zinc-700 dark:text-zinc-300 font-medium text-sm truncate">
-                        https://shabbosrent.co.il/?ref=B453V3
-                      </div>
-                      <button 
-                        onClick={() => {
-                          navigator.clipboard.writeText("https://shabbosrent.co.il/?ref=B453V3");
-                          setIsCopied(true);
-                          setTimeout(() => setIsCopied(false), 2000);
-                        }}
-                        className={`flex items-center gap-2 px-6 py-3.5 rounded-2xl font-bold transition-all shadow-sm shrink-0 ${isCopied ? "bg-green-500 text-white hover:bg-green-600" : "bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-700"}`}
-                      >
-                        {isCopied ? <CheckCircle2 className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                        {isCopied ? "Copied" : "Copy"}
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
-                {/* 3 Stat Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                  <div className="bg-white dark:bg-zinc-900 rounded-3xl border border-zinc-200/80 dark:border-zinc-800 p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] flex flex-col items-center text-center transition-all hover:-translate-y-1 hover:shadow-lg">
-                    <div className="w-14 h-14 rounded-full bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center mb-4 text-[#4c55a4] dark:text-blue-400">
-                      <UserPlus className="w-6 h-6" />
-                    </div>
-                    <div className="text-5xl font-black text-[#4c55a4] dark:text-indigo-400 mb-2">0</div>
-                    <p className="text-[11px] font-bold text-zinc-400 uppercase tracking-widest">Registered via your link</p>
-                  </div>
-
-                  <div className="bg-white dark:bg-zinc-900 rounded-3xl border border-zinc-200/80 dark:border-zinc-800 p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] flex flex-col items-center text-center transition-all hover:-translate-y-1 hover:shadow-lg">
-                    <div className="w-14 h-14 rounded-full bg-green-50 dark:bg-green-900/20 flex items-center justify-center mb-4 text-green-500">
-                      <CheckCircle2 className="w-6 h-6" />
-                    </div>
-                    <div className="text-5xl font-black text-[#4c55a4] dark:text-indigo-400 mb-2">0</div>
-                    <p className="text-[11px] font-bold text-zinc-400 uppercase tracking-widest">First rentals completed</p>
-                  </div>
-
-                  <div className="bg-white dark:bg-zinc-900 rounded-3xl border border-zinc-200/80 dark:border-zinc-800 p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] flex flex-col items-center text-center transition-all hover:-translate-y-1 hover:shadow-lg">
-                    <div className="w-14 h-14 rounded-full bg-amber-50 dark:bg-amber-900/20 flex items-center justify-center mb-4 text-amber-500">
-                      <MoreHorizontal className="w-6 h-6" />
-                    </div>
-                    <div className="text-5xl font-black text-[#4c55a4] dark:text-indigo-400 mb-2">0</div>
-                    <p className="text-[11px] font-bold text-zinc-400 uppercase tracking-widest">Rewards pending</p>
-                  </div>
-                </div>
-
-                {/* 2 Financial Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                  <div className="bg-white dark:bg-zinc-900 rounded-3xl border border-zinc-200/80 dark:border-zinc-800 p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden group">
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-zinc-50 dark:bg-zinc-800/50 rounded-bl-full -z-10 group-hover:scale-110 transition-transform duration-500" />
-                    <div className="flex items-center gap-3 mb-2">
-                      <Wallet className="w-6 h-6 text-[#4c55a4] dark:text-indigo-400" />
-                      <h3 className="text-xl font-bold text-zinc-900 dark:text-white">Money Owed to You</h3>
-                    </div>
-                    <p className="text-sm text-zinc-500 mb-8">Earnings available for withdrawal (successfully referred)</p>
-                    
-                    <div className="text-6xl font-black text-[#4c55a4] dark:text-indigo-400 mb-8 tracking-tighter">
-                      <span className="text-4xl mr-1">₪</span>0
-                    </div>
-                    
-                    <div className="inline-flex items-center gap-2 px-4 py-2 bg-zinc-50 dark:bg-zinc-800/50 rounded-xl text-sm font-medium text-zinc-600 dark:text-zinc-400">
-                      <Info className="w-4 h-4" /> No earnings available for withdrawal yet.
-                    </div>
-                  </div>
-
-                  <div className="bg-white dark:bg-zinc-900 rounded-3xl border border-zinc-200/80 dark:border-zinc-800 p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden group">
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-green-50 dark:bg-green-900/10 rounded-bl-full -z-10 group-hover:scale-110 transition-transform duration-500" />
-                    <div className="flex items-center gap-3 mb-2">
-                      <Banknote className="w-6 h-6 text-green-600 dark:text-green-500" />
-                      <h3 className="text-xl font-bold text-zinc-900 dark:text-white">Amount Paid to You</h3>
-                    </div>
-                    <p className="text-sm text-zinc-500 mb-8">Total amount previously transferred to you</p>
-                    
-                    <div className="text-6xl font-black text-[#4c55a4] dark:text-indigo-400 mb-8 tracking-tighter">
-                      <span className="text-4xl mr-1">₪</span>0
-                    </div>
-                    
-                    <div className="inline-flex items-center gap-2 text-sm font-bold text-green-600 dark:text-green-500">
-                      <CheckCircle2 className="w-4 h-4" /> Transaction history is empty.
-                    </div>
-                  </div>
-                </div>
-
-                {/* How It Works */}
-                <div className="bg-gradient-to-br from-[#f8f9fc] to-[#f1f3f9] dark:from-zinc-900/50 dark:to-zinc-800/30 rounded-3xl border border-zinc-200/80 dark:border-zinc-700/50 p-8 shadow-inner">
-                  <div className="flex flex-col md:flex-row gap-6">
-                    <div className="w-12 h-12 bg-[#002f5d] rounded-2xl flex items-center justify-center shrink-0 shadow-lg">
-                      <Lightbulb className="w-6 h-6 text-white" />
-                    </div>
-                    <div>
-                      <h3 className="text-xl font-bold text-[#002f5d] dark:text-indigo-300 mb-6">How It Works</h3>
-                      
-                      <div className="space-y-4">
-                        <p className="text-[15px] text-zinc-600 dark:text-zinc-300 leading-relaxed">
-                          <span className="font-bold text-[#002f5d] dark:text-indigo-400">1. Share:</span> Copy your unique link and send it to potential apartment owners who might want to list their property on Shabos Rent.
-                        </p>
-                        <p className="text-[15px] text-zinc-600 dark:text-zinc-300 leading-relaxed">
-                          <span className="font-bold text-[#002f5d] dark:text-indigo-400">2. Sign Up:</span> The owner must register using your link. You'll see them appear in your registered stats.
-                        </p>
-                        <p className="text-[15px] text-zinc-600 dark:text-zinc-300 leading-relaxed">
-                          <span className="font-bold text-[#002f5d] dark:text-indigo-400">3. First Booking:</span> Once their first guest completes their stay and the transaction is successfully processed, ₪40 will be credited to your account.
-                        </p>
-                        <p className="text-[15px] text-zinc-600 dark:text-zinc-300 leading-relaxed">
-                          <span className="font-bold text-[#002f5d] dark:text-indigo-400">4. Withdraw:</span> Requests for withdrawal are processed within 7 business days once your pending amount reaches the minimum threshold.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
 
             {activeTab === "favorites" && (
               <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-6xl mx-auto">
@@ -1792,24 +1760,25 @@ export default function UserDashboardPage() {
                       </div>
                     </div>
 
-                    {/* Notification Item 3 */}
-                    <div className="p-6 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors flex gap-4 cursor-pointer opacity-75">
-                      <div className="w-12 h-12 rounded-full bg-purple-100 dark:bg-purple-900/40 flex items-center justify-center shrink-0 border-2 border-white dark:border-zinc-900 shadow-sm">
-                        <Gift className="w-5 h-5 text-purple-600 dark:text-purple-400" />
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-1">
-                          <h4 className="font-bold text-zinc-900 dark:text-white text-base">Affiliate Points Earned</h4>
-                          <span className="text-xs font-medium text-zinc-500 whitespace-nowrap">Oct 12, 2026</span>
-                        </div>
-                        <p className="text-sm text-zinc-600 dark:text-zinc-300">
-                          You just earned <strong>50 points</strong> because Sarah Levy signed up using your referral link!
-                        </p>
-                      </div>
-                    </div>
 
                   </div>
                 </div>
+              </div>
+            )}
+
+            {activeTab === "reminders" && (
+              <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-4xl">
+                <h1 className="text-3xl font-extrabold text-zinc-900 dark:text-white mb-2">Reminder Settings</h1>
+                <p className="text-zinc-500 mb-8">Manage your automated reminders and communication preferences.</p>
+                
+                {emailSavedToast && (
+                  <div className="mb-6 p-4 bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800 rounded-2xl flex items-center gap-3 text-emerald-800 dark:text-emerald-300 font-semibold text-sm animate-in fade-in slide-in-from-top-2 duration-300">
+                    <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+                    Reminder preferences saved successfully!
+                  </div>
+                )}
+                
+                <OwnerReminderSettingsCard />
               </div>
             )}
 
@@ -1824,7 +1793,6 @@ export default function UserDashboardPage() {
                     {[
                       { id: "profile", label: "Profile", icon: User },
                       { id: "security", label: "Security & Password", icon: Lock },
-                      { id: "notifications", label: "Reminder Settings", icon: Bell },
                     ].map(tab => (
                       <button 
                         key={tab.id}
@@ -2034,22 +2002,6 @@ export default function UserDashboardPage() {
                       </div>
                     )}
 
-                    {/* Reminder Settings Tab */}
-                    {settingsSubTab === "notifications" && (
-                      <div className="space-y-6">
-                        {emailSavedToast && (
-                          <div className="p-4 bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800 rounded-2xl flex items-center gap-3 text-emerald-800 dark:text-emerald-300 font-semibold text-sm animate-in fade-in slide-in-from-top-2 duration-300">
-                            <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
-                            Reminder preferences saved successfully!
-                          </div>
-                        )}
-
-                        {/* Self-Service Owner Availability Reminders Card */}
-                        <div>
-                          <OwnerReminderSettingsCard />
-                        </div>
-                      </div>
-                    )}
                   </div>
                 </div>
               </div>

@@ -38,6 +38,14 @@ export default function MobileMenuDrawer({
     window.location.href = "/user-dashboard";
   };
 
+  const handleMyApartmentClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    onClose();
+    localStorage.setItem("pendingManageAction", "true");
+    sessionStorage.setItem("dashboardTab", "manage");
+    window.location.href = "/user-dashboard?tab=manage";
+  };
+
   return (
     <div className="fixed inset-0 z-50 lg:hidden">
       <div className="fixed inset-0 bg-zinc-950/50 backdrop-blur-sm" onClick={onClose} />
@@ -155,6 +163,12 @@ export default function MobileMenuDrawer({
                 >
                   <LayoutDashboard className="w-4 h-4" /> {t("nav.dashboard")}
                 </Link>
+                <button
+                  onClick={handleMyApartmentClick}
+                  className="w-full bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 py-3.5 rounded-xl font-extrabold flex items-center justify-center gap-2 text-zinc-900 dark:text-white transition-colors cursor-pointer"
+                >
+                  <Building className="w-4 h-4" /> {t("nav.go_to_my_apartment") || "Go to my apartment"}
+                </button>
                 <button
                   onClick={() => {
                     onClose();

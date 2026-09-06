@@ -24,6 +24,7 @@ export function registerAmbassador(data: {
   email: string;
   phone: string;
   password?: string;
+  confirmPassword?: string;
   recruitmentCode?: string;
 }): { success: boolean; ambassador?: Ambassador; error?: string } {
   const ambassadors = getStoredAmbassadors();

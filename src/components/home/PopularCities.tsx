@@ -5,11 +5,11 @@ import { useLanguage } from "@/context/LanguageContext";
 export default function PopularCities() {
   const { t } = useLanguage();
   const cities = [
-    { name: t("search_widget.jerusalem"), query: "jerusalem", count: 1245, image: "https://images.unsplash.com/photo-1572120360610-d971b9d7767c?q=80&w=800&auto=format&fit=crop" },
-    { name: t("popular_cities.bnei_brak"), query: "bnei-brak", count: 823, image: "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?q=80&w=800&auto=format&fit=crop" },
-    { name: t("search_widget.tzfat"), query: "tzfat", count: 312, image: "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?q=80&w=800&auto=format&fit=crop" },
-    { name: t("popular_cities.beit_shemesh"), query: "beit-shemesh", count: 276, image: "https://images.unsplash.com/photo-1555854877-bab0e564b8d5?q=80&w=800&auto=format&fit=crop" },
-    { name: t("popular_cities.modiin_illit"), query: "modiin-illit", count: 198, image: "https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?q=80&w=800&auto=format&fit=crop" },
+    { name: t("search_widget.jerusalem"), query: "jerusalem", image: "https://images.unsplash.com/photo-1572120360610-d971b9d7767c?q=80&w=800&auto=format&fit=crop" },
+    { name: t("popular_cities.bnei_brak"), query: "bnei-brak", image: "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?q=80&w=800&auto=format&fit=crop" },
+    { name: t("search_widget.tzfat"), query: "tzfat", image: "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?q=80&w=800&auto=format&fit=crop" },
+    { name: t("popular_cities.beit_shemesh"), query: "beit-shemesh", image: "https://images.unsplash.com/photo-1555854877-bab0e564b8d5?q=80&w=800&auto=format&fit=crop" },
+    { name: t("popular_cities.modiin_illit"), query: "modiin-illit", image: "https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?q=80&w=800&auto=format&fit=crop" },
   ];
 
   return (
@@ -40,10 +40,9 @@ export default function PopularCities() {
               <div className="absolute inset-0 bg-gradient-to-t from-[#0b1536]/90 via-[#0b1536]/20 to-transparent"></div>
               
               {/* Content */}
-              <div className="absolute bottom-0 left-0 right-0 p-5 flex items-end justify-between">
+              <div className="absolute bottom-0 left-0 right-0 p-5 flex items-center justify-between">
                 <div>
-                  <h3 className="text-white font-bold text-lg leading-tight mb-1">{city.name}</h3>
-                  <p className="text-white/80 text-[13px] font-medium">{city.count.toLocaleString()} {t("popular_cities.apartments")}</p>
+                  <h3 className="text-white font-bold text-lg leading-tight drop-shadow-sm">{city.name}</h3>
                 </div>
                 <div className="w-8 h-8 rounded-full bg-white text-zinc-900 flex items-center justify-center shadow-sm opacity-90 group-hover:opacity-100 transition-opacity">
                   <ArrowRight className="w-4 h-4 text-[#4c55a4]" />

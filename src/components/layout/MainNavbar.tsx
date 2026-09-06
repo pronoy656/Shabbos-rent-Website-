@@ -50,14 +50,14 @@ export default function MainNavbar() {
   return (
     <>
       <header className="sticky top-0 z-50 w-full bg-white/80 backdrop-blur-md border-b border-zinc-100 dark:bg-zinc-950/80 dark:border-zinc-800">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+        <div className="container mx-auto px-4 h-24 flex items-center justify-between">
           {/* Logo & Branding */}
           <Link href="/" className="flex items-center gap-3 group">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/__לוגו רקע שקוף-02_.png"
               alt="Shabos Rent Logo"
-              className="w-auto h-16 object-contain shrink-0 transition-transform group-hover:scale-105"
+              className="w-auto h-[88px] object-contain shrink-0 transition-transform group-hover:scale-105"
             />
           </Link>
 

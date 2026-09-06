@@ -18,7 +18,6 @@ export default function ContactSection() {
       setIsSubmitting(false);
       setIsSuccess(true);
       setFormData({ name: "", email: "", subject: "", message: "" });
-      setTimeout(() => setIsSuccess(false), 3000);
     }, 1500);
   };
 
@@ -122,70 +121,92 @@ export default function ContactSection() {
               <p className="text-zinc-500 text-[15px]">{t("contact.form_desc")}</p>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-7 flex-1 flex flex-col justify-between">
-              <div className="grid md:grid-cols-2 gap-7">
+            {isSuccess ? (
+              <div className="flex-1 flex flex-col items-center justify-center py-10 text-center animate-in fade-in duration-300">
+                <div className="w-20 h-20 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mb-6">
+                  <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center shadow-lg shadow-green-500/30">
+                    <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                </div>
+                <h4 className="text-2xl font-bold text-zinc-900 dark:text-white mb-3">Message Sent!</h4>
+                <p className="text-zinc-500 mb-8 max-w-sm mx-auto">
+                  Thank you for reaching out. We have received your message and will get back to you shortly.
+                </p>
+                <button
+                  onClick={() => setIsSuccess(false)}
+                  className="px-10 py-3 bg-[#4c55a4] hover:bg-[#3d4484] text-white rounded-xl font-bold transition-all shadow-md"
+                >
+                  OK
+                </button>
+              </div>
+            ) : (
+              <form onSubmit={handleSubmit} className="space-y-7 flex-1 flex flex-col justify-between">
+                <div className="grid md:grid-cols-2 gap-7">
+                  <div className="group">
+                    <label className="block text-sm font-bold text-zinc-700 dark:text-zinc-300 mb-2 group-focus-within:text-[#4c55a4] transition-colors">{t("contact.full_name")}</label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.name}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      className="w-full px-5 py-4 bg-zinc-50/50 dark:bg-zinc-950/50 border border-zinc-200 dark:border-zinc-800 rounded-2xl text-zinc-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-[#4c55a4]/10 focus:border-[#4c55a4] transition-all hover:bg-white dark:hover:bg-zinc-900 shadow-sm"
+                      placeholder={t("contact.placeholder_name")}
+                    />
+                  </div>
+                  <div className="group">
+                    <label className="block text-sm font-bold text-zinc-700 dark:text-zinc-300 mb-2 group-focus-within:text-[#4c55a4] transition-colors">{t("contact.email")}</label>
+                    <input
+                      type="email"
+                      required
+                      value={formData.email}
+                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                      className="w-full px-5 py-4 bg-zinc-50/50 dark:bg-zinc-950/50 border border-zinc-200 dark:border-zinc-800 rounded-2xl text-zinc-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-[#4c55a4]/10 focus:border-[#4c55a4] transition-all hover:bg-white dark:hover:bg-zinc-900 shadow-sm"
+                      placeholder={t("contact.placeholder_email")}
+                    />
+                  </div>
+                </div>
+
                 <div className="group">
-                  <label className="block text-sm font-bold text-zinc-700 dark:text-zinc-300 mb-2 group-focus-within:text-[#4c55a4] transition-colors">{t("contact.full_name")}</label>
+                  <label className="block text-sm font-bold text-zinc-700 dark:text-zinc-300 mb-2 group-focus-within:text-[#4c55a4] transition-colors">{t("contact.subject")}</label>
                   <input
                     type="text"
                     required
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    value={formData.subject}
+                    onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
                     className="w-full px-5 py-4 bg-zinc-50/50 dark:bg-zinc-950/50 border border-zinc-200 dark:border-zinc-800 rounded-2xl text-zinc-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-[#4c55a4]/10 focus:border-[#4c55a4] transition-all hover:bg-white dark:hover:bg-zinc-900 shadow-sm"
-                    placeholder={t("contact.placeholder_name")}
+                    placeholder={t("contact.placeholder_subject")}
                   />
                 </div>
-                <div className="group">
-                  <label className="block text-sm font-bold text-zinc-700 dark:text-zinc-300 mb-2 group-focus-within:text-[#4c55a4] transition-colors">{t("contact.email")}</label>
-                  <input
-                    type="email"
+
+                <div className="group flex-1 flex flex-col mb-4">
+                  <label className="block text-sm font-bold text-zinc-700 dark:text-zinc-300 mb-2 group-focus-within:text-[#4c55a4] transition-colors">{t("contact.message")}</label>
+                  <textarea
                     required
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    className="w-full px-5 py-4 bg-zinc-50/50 dark:bg-zinc-950/50 border border-zinc-200 dark:border-zinc-800 rounded-2xl text-zinc-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-[#4c55a4]/10 focus:border-[#4c55a4] transition-all hover:bg-white dark:hover:bg-zinc-900 shadow-sm"
-                    placeholder={t("contact.placeholder_email")}
+                    value={formData.message}
+                    onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+                    className="w-full h-full min-h-[140px] px-5 py-4 bg-zinc-50/50 dark:bg-zinc-950/50 border border-zinc-200 dark:border-zinc-800 rounded-2xl text-zinc-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-[#4c55a4]/10 focus:border-[#4c55a4] transition-all hover:bg-white dark:hover:bg-zinc-900 shadow-sm resize-none"
+                    placeholder={t("contact.placeholder_message")}
                   />
                 </div>
-              </div>
 
-              <div className="group">
-                <label className="block text-sm font-bold text-zinc-700 dark:text-zinc-300 mb-2 group-focus-within:text-[#4c55a4] transition-colors">{t("contact.subject")}</label>
-                <input
-                  type="text"
-                  required
-                  value={formData.subject}
-                  onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
-                  className="w-full px-5 py-4 bg-zinc-50/50 dark:bg-zinc-950/50 border border-zinc-200 dark:border-zinc-800 rounded-2xl text-zinc-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-[#4c55a4]/10 focus:border-[#4c55a4] transition-all hover:bg-white dark:hover:bg-zinc-900 shadow-sm"
-                  placeholder={t("contact.placeholder_subject")}
-                />
-              </div>
-
-              <div className="group flex-1 flex flex-col mb-4">
-                <label className="block text-sm font-bold text-zinc-700 dark:text-zinc-300 mb-2 group-focus-within:text-[#4c55a4] transition-colors">{t("contact.message")}</label>
-                <textarea
-                  required
-                  value={formData.message}
-                  onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                  className="w-full h-full min-h-[140px] px-5 py-4 bg-zinc-50/50 dark:bg-zinc-950/50 border border-zinc-200 dark:border-zinc-800 rounded-2xl text-zinc-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-[#4c55a4]/10 focus:border-[#4c55a4] transition-all hover:bg-white dark:hover:bg-zinc-900 shadow-sm resize-none"
-                  placeholder={t("contact.placeholder_message")}
-                />
-              </div>
-
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="w-full py-4 bg-[#4c55a4] hover:bg-[#3d4484] hover:shadow-lg hover:shadow-[#4c55a4]/20 text-white rounded-2xl font-bold text-lg transition-all flex items-center justify-center gap-2 disabled:opacity-70 mt-auto"
-              >
-                {isSubmitting ? (
-                  <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                ) : (
-                  <>
-                    {t("contact.send_btn")}
-                    <Send className="w-5 h-5 rtl:-scale-x-100" />
-                  </>
-                )}
-              </button>
-            </form>
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="w-full py-4 bg-[#4c55a4] hover:bg-[#3d4484] hover:shadow-lg hover:shadow-[#4c55a4]/20 text-white rounded-2xl font-bold text-lg transition-all flex items-center justify-center gap-2 disabled:opacity-70 mt-auto"
+                >
+                  {isSubmitting ? (
+                    <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  ) : (
+                    <>
+                      {t("contact.send_btn")}
+                      <Send className="w-5 h-5 rtl:-scale-x-100" />
+                    </>
+                  )}
+                </button>
+              </form>
+            )}
           </div>
         </div>
       </div>

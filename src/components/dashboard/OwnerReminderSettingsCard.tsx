@@ -251,7 +251,6 @@ export const OwnerReminderSettingsCard: React.FC<OwnerReminderSettingsCardProps>
                 required
                 value={config.phone}
                 onChange={(val) => setConfig({ ...config, phone: val })}
-                showPreview={true}
               />
             </div>
           )}

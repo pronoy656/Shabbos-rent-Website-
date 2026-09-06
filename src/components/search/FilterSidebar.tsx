@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { MapPin, Navigation, Calendar, BedDouble, Bath, DoorOpen, ChevronDown, Footprints, Check } from "lucide-react";
+import { Calendar, ChevronDown, Check } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
 import {
   DropdownMenu,
@@ -40,15 +40,6 @@ const AMENITIES_OPTIONS = [
   { key: "Coffee Machine", labelKey: "filters.amenities_list.coffee_machine", name: "Coffee Machine" },
 ];
 
-const WALKING_OPTIONS = [
-  { label: "Any distance", value: undefined },
-  { label: "Under 5 mins", value: 5 },
-  { label: "Under 10 mins", value: 10 },
-  { label: "Under 15 mins", value: 15 },
-  { label: "Under 20 mins", value: 20 },
-  { label: "Under 30 mins", value: 30 },
-];
-
 export default function FilterSidebar({
   selectedAmenities = [],
   maxWalkingMinutes,
@@ -58,19 +49,13 @@ export default function FilterSidebar({
   onClearFilters,
 }: FilterSidebarProps) {
   const { t } = useLanguage();
-  const [selectedCity, setSelectedCity] = useState("jerusalem");
-  const [selectedNeighborhood, setSelectedNeighborhood] = useState("rehavia");
   const [selectedWeekend, setSelectedWeekend] = useState("any");
-  const [selectedRooms, setSelectedRooms] = useState("any");
-  const [selectedBaths, setSelectedBaths] = useState("any");
-
-  const currentWalkingOption = WALKING_OPTIONS.find((opt) => opt.value === maxWalkingMinutes) || WALKING_OPTIONS[0];
 
   return (
     <div className="bg-white dark:bg-zinc-950 rounded-2xl border border-zinc-200 dark:border-zinc-800 p-6 sticky top-24">
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-lg font-bold text-zinc-900 dark:text-white">{t("filters.title")}</h2>
-        {(selectedAmenities.length > 0 || maxWalkingMinutes !== undefined) && (
+        {selectedAmenities.length > 0 && (
           <button
             onClick={onClearFilters}
             className="text-xs text-[#4c55a4] hover:underline font-semibold"
@@ -80,136 +65,40 @@ export default function FilterSidebar({
         )}
       </div>
 
-      {/* Walking Distance & Date Filter (Same Row, 2 Columns) */}
-      <div className="space-y-4 mb-6">
-        <div className="grid grid-cols-2 gap-3">
-          {/* Walking Distance Column */}
-          <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-zinc-600 dark:text-zinc-400">Walking Distance</label>
-            <DropdownMenu>
-              <DropdownMenuTrigger className="w-full flex items-center justify-between pl-3 pr-2 py-2 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-semibold text-zinc-700 dark:text-zinc-300 outline-none focus:ring-2 focus:ring-[#4c55a4] transition-all cursor-pointer">
-                <span className="truncate">{currentWalkingOption.label}</span>
-                <ChevronDown className="h-3.5 w-3.5 text-zinc-400 shrink-0 opacity-80" />
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="w-[160px] rounded-xl bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 p-1.5 shadow-2xl z-50">
-                {WALKING_OPTIONS.map((opt) => (
-                  <DropdownMenuItem
-                    key={opt.label}
-                    onClick={() => onMaxWalkingMinutesChange?.(opt.value)}
-                    className="flex items-center justify-between cursor-pointer rounded-lg py-2 px-3 text-xs font-semibold text-zinc-800 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-900"
-                  >
-                    <span>{opt.label}</span>
-                    {maxWalkingMinutes === opt.value && <Check className="w-3.5 h-3.5 text-[#4c55a4]" />}
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-
-          {/* Shabbat Date Column */}
-          <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-zinc-600 dark:text-zinc-400">{t("filters.date")}</label>
-            <DropdownMenu>
-              <DropdownMenuTrigger className="w-full flex items-center justify-between pl-3 pr-2 py-2 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-semibold text-zinc-700 dark:text-zinc-300 outline-none focus:ring-2 focus:ring-[#4c55a4] transition-all cursor-pointer">
-                <span className="truncate">
-                  {selectedWeekend === "next"
-                    ? t("search_widget.this_weekend")
-                    : selectedWeekend === "following"
-                    ? t("search_widget.next_weekend")
-                    : `${t("search_widget.any")} ${t("search_widget.weekend")}`}
-                </span>
-                <ChevronDown className="h-3.5 w-3.5 text-zinc-400 shrink-0 opacity-80" />
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="w-[180px] rounded-xl bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 p-1.5 shadow-2xl z-50">
-                {[
-                  { value: "any", label: `${t("search_widget.any")} ${t("search_widget.weekend")}` },
-                  { value: "next", label: t("search_widget.this_weekend") },
-                  { value: "following", label: t("search_widget.next_weekend") },
-                ].map((opt) => (
-                  <DropdownMenuItem
-                    key={opt.value}
-                    onClick={() => setSelectedWeekend(opt.value)}
-                    className="flex items-center justify-between cursor-pointer rounded-lg py-2 px-3 text-xs font-semibold text-zinc-800 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-900"
-                  >
-                    <span>{opt.label}</span>
-                    {selectedWeekend === opt.value && <Check className="w-3.5 h-3.5 text-[#4c55a4]" />}
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        </div>
-      </div>
-
-      <hr className="border-zinc-100 dark:border-zinc-800 mb-6" />
-
-      {/* Rooms & Details (Shadcn Dropdowns) */}
-      <div className="space-y-4 mb-6">
-        <h3 className="text-sm font-bold text-zinc-900 dark:text-white uppercase tracking-wider">{t("filters.rooms_details")}</h3>
-        
-        <div className="grid grid-cols-2 gap-3">
-          {/* Rooms Dropdown */}
-          <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-zinc-600 dark:text-zinc-400">{t("search_widget.rooms")}</label>
-            <DropdownMenu>
-              <DropdownMenuTrigger className="w-full flex items-center justify-between pl-3 pr-2.5 py-2 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-semibold text-zinc-700 dark:text-zinc-300 outline-none focus:ring-2 focus:ring-[#4c55a4] transition-all cursor-pointer">
-                <div className="flex items-center gap-1.5 truncate">
-                  <BedDouble className="h-3.5 w-3.5 text-zinc-400 shrink-0" />
-                  <span className="truncate">{selectedRooms === "any" ? t("search_widget.any") : `${selectedRooms}+`}</span>
-                </div>
-                <ChevronDown className="h-3.5 w-3.5 text-zinc-400 shrink-0 opacity-80" />
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="w-[140px] rounded-xl bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 p-1.5 shadow-2xl z-50">
-                {[
-                  { value: "any", label: t("search_widget.any") },
-                  { value: "1", label: t("search_widget.plus_1") },
-                  { value: "2", label: t("search_widget.plus_2") },
-                  { value: "3", label: t("search_widget.plus_3") },
-                  { value: "4", label: t("search_widget.plus_4") },
-                ].map((opt) => (
-                  <DropdownMenuItem
-                    key={opt.value}
-                    onClick={() => setSelectedRooms(opt.value)}
-                    className="flex items-center justify-between cursor-pointer rounded-lg py-2 px-3 text-xs font-semibold text-zinc-800 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-900"
-                  >
-                    <span>{opt.label}</span>
-                    {selectedRooms === opt.value && <Check className="w-3.5 h-3.5 text-[#4c55a4]" />}
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-
-          {/* Bathrooms Dropdown */}
-          <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-zinc-600 dark:text-zinc-400">{t("search_widget.bathrooms")}</label>
-            <DropdownMenu>
-              <DropdownMenuTrigger className="w-full flex items-center justify-between pl-3 pr-2.5 py-2 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-semibold text-zinc-700 dark:text-zinc-300 outline-none focus:ring-2 focus:ring-[#4c55a4] transition-all cursor-pointer">
-                <div className="flex items-center gap-1.5 truncate">
-                  <DoorOpen className="h-3.5 w-3.5 text-zinc-400 shrink-0" />
-                  <span className="truncate">{selectedBaths === "any" ? t("search_widget.any") : `${selectedBaths}+`}</span>
-                </div>
-                <ChevronDown className="h-3.5 w-3.5 text-zinc-400 shrink-0 opacity-80" />
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="w-[140px] rounded-xl bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 p-1.5 shadow-2xl z-50">
-                {[
-                  { value: "any", label: t("search_widget.any") },
-                  { value: "1", label: t("search_widget.plus_1") },
-                  { value: "2", label: t("search_widget.plus_2") },
-                ].map((opt) => (
-                  <DropdownMenuItem
-                    key={opt.value}
-                    onClick={() => setSelectedBaths(opt.value)}
-                    className="flex items-center justify-between cursor-pointer rounded-lg py-2 px-3 text-xs font-semibold text-zinc-800 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-900"
-                  >
-                    <span>{opt.label}</span>
-                    {selectedBaths === opt.value && <Check className="w-3.5 h-3.5 text-[#4c55a4]" />}
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        </div>
+      {/* Shabbat Date Column */}
+      <div className="space-y-1.5 mb-6">
+        <label className="text-xs font-semibold text-zinc-600 dark:text-zinc-400">{t("filters.date")}</label>
+        <DropdownMenu>
+          <DropdownMenuTrigger className="w-full flex items-center justify-between pl-3 pr-2 py-2 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-semibold text-zinc-700 dark:text-zinc-300 outline-none focus:ring-2 focus:ring-[#4c55a4] transition-all cursor-pointer">
+            <div className="flex items-center gap-1.5 truncate">
+              <Calendar className="h-3.5 w-3.5 text-zinc-400 shrink-0" />
+              <span className="truncate">
+                {selectedWeekend === "next"
+                  ? t("search_widget.this_weekend")
+                  : selectedWeekend === "following"
+                  ? t("search_widget.next_weekend")
+                  : `${t("search_widget.any")} ${t("search_widget.weekend")}`}
+              </span>
+            </div>
+            <ChevronDown className="h-3.5 w-3.5 text-zinc-400 shrink-0 opacity-80" />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="w-[180px] rounded-xl bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 p-1.5 shadow-2xl z-50">
+            {[
+              { value: "any", label: `${t("search_widget.any")} ${t("search_widget.weekend")}` },
+              { value: "next", label: t("search_widget.this_weekend") },
+              { value: "following", label: t("search_widget.next_weekend") },
+            ].map((opt) => (
+              <DropdownMenuItem
+                key={opt.value}
+                onClick={() => setSelectedWeekend(opt.value)}
+                className="flex items-center justify-between cursor-pointer rounded-lg py-2 px-3 text-xs font-semibold text-zinc-800 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-900"
+              >
+                <span>{opt.label}</span>
+                {selectedWeekend === opt.value && <Check className="w-3.5 h-3.5 text-[#4c55a4]" />}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       <hr className="border-zinc-100 dark:border-zinc-800 mb-6" />

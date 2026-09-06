@@ -12,6 +12,7 @@
     "news": "News",
     "add_apartment": "Add Your Apartment",
     "dashboard": "Dashboard",
+    "go_to_my_apartment": "Go to my apartment",
     "settings": "Settings",
     "logout": "Log out",
     "login": "Login",
@@ -366,7 +367,7 @@
       "add": "Add Your Apartment",
       "manage": "Manage My Apartment",
       "swap": "Apartment Swap",
-      "affiliate": "Affiliate Program",
+
       "notifications": "Notifications",
       "settings": "Settings",
       "home": "Home",

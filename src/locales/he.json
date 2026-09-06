@@ -12,6 +12,7 @@
     "news": "חדשות",
     "add_apartment": "הוסף את הדירה שלך",
     "dashboard": "לוח בקרה",
+    "go_to_my_apartment": "עבור לדירה שלי",
     "settings": "הגדרות",
     "logout": "התנתק",
     "login": "התחבר",
@@ -366,7 +367,7 @@
       "add": "הוסף את הדירה שלך",
       "manage": "נהל את הדירה שלי",
       "swap": "החלפת דירות",
-      "affiliate": "תוכנית שותפים",
+
       "notifications": "התראות",
       "settings": "הגדרות",
       "home": "דף הבית",

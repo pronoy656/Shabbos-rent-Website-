@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Search, MapPin, Calendar, BedDouble, Users, ArrowRightLeft, Home, Navigation, ChevronDown, Bath, Footprints } from "lucide-react";
+import { Search, MapPin, Calendar, BedDouble, Users, ArrowRightLeft, Home, Navigation, ChevronDown, Bath, Footprints, Lock, X } from "lucide-react";
 import { useEffect } from "react";
 import ApartmentCard from "@/components/search/ApartmentCard";
 import { ApartmentData } from "@/types";
@@ -26,55 +26,96 @@ interface CustomSelectProps {
   onChange: (val: string) => void;
   options: Option[];
   placeholder: string;
+  disabled?: boolean;
 }
 
-function CustomSelect({ icon: Icon, value, onChange, options, placeholder }: CustomSelectProps) {
+function CustomSelect({ icon: Icon, value, onChange, options, placeholder, disabled = false }: CustomSelectProps) {
   const selectedOption = options.find(opt => opt.value === value);
   return (
-    <div className="relative w-full">
+    <div className={`relative w-full ${disabled ? 'pointer-events-none' : ''}`}>
       <DropdownMenu>
-        <DropdownMenuTrigger className="w-full relative flex items-center bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl h-[48px] px-3 focus:outline-none focus:ring-2 focus:ring-[#4c55a4] transition-all">
+        <DropdownMenuTrigger
+          disabled={disabled}
+          className={`w-full relative flex items-center border rounded-xl h-[48px] px-3 focus:outline-none transition-all ${
+            disabled
+              ? 'bg-zinc-50 dark:bg-zinc-900/40 border-zinc-200/60 dark:border-zinc-800/60 cursor-not-allowed'
+              : 'bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 cursor-pointer focus:ring-2 focus:ring-[#4c55a4]'
+          }`}
+        >
           <div className="flex items-center pointer-events-none shrink-0">
-            <Icon className="h-4 w-4 text-zinc-400" />
+            <Icon className={`h-4 w-4 ${disabled ? 'text-zinc-300 dark:text-zinc-600' : 'text-zinc-400'}`} />
           </div>
-          <span className={`flex-1 text-start px-2.5 text-sm truncate ${value ? 'font-medium text-zinc-700 dark:text-zinc-300' : 'text-zinc-500'}`}>
+          <span className={`flex-1 text-start px-2.5 text-sm truncate ${
+            disabled
+              ? 'text-zinc-400 dark:text-zinc-600'
+              : value
+              ? 'font-medium text-zinc-700 dark:text-zinc-300'
+              : 'text-zinc-500'
+          }`}>
             {selectedOption ? selectedOption.label : placeholder}
           </span>
           <div className="flex items-center pointer-events-none shrink-0">
-            <ChevronDown className="h-4 w-4 text-zinc-400" />
+            <ChevronDown className={`h-4 w-4 ${disabled ? 'text-zinc-300 dark:text-zinc-600' : 'text-zinc-400'}`} />
           </div>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="start" className="w-[240px] rounded-xl border-zinc-200 dark:border-zinc-800 p-1.5 shadow-xl">
-          {options.map((option) => (
-            <DropdownMenuItem 
-              key={option.value} 
-              className={`cursor-pointer rounded-lg text-[13px] px-3 py-2 focus:bg-[#4c55a4]/10 focus:text-[#4c55a4] dark:focus:bg-[#4c55a4]/20 dark:focus:text-[#4c55a4] ${value === option.value ? 'font-bold bg-[#4c55a4]/10 dark:bg-[#4c55a4]/20 text-[#4c55a4]' : 'font-medium'}`}
-              onClick={() => onChange(option.value)}
-            >
-              {option.label}
-            </DropdownMenuItem>
-          ))}
-        </DropdownMenuContent>
+        {!disabled && (
+          <DropdownMenuContent align="start" className="w-[240px] rounded-xl border-zinc-200 dark:border-zinc-800 p-1.5 shadow-xl">
+            {options.map((option) => (
+              <DropdownMenuItem 
+                key={option.value} 
+                className={`cursor-pointer rounded-lg text-[13px] px-3 py-2 focus:bg-[#4c55a4]/10 focus:text-[#4c55a4] dark:focus:bg-[#4c55a4]/20 dark:focus:text-[#4c55a4] ${value === option.value ? 'font-bold bg-[#4c55a4]/10 dark:bg-[#4c55a4]/20 text-[#4c55a4]' : 'font-medium'}`}
+                onClick={() => onChange(option.value)}
+              >
+                {option.label}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        )}
       </DropdownMenu>
     </div>
   );
 }
 
-interface SearchWidgetProps {
-  onSearch?: (active: boolean) => void;
+export interface SearchFilters {
+  activeTab: "rent" | "swap";
+  city: string;
+  neighborhood: string;
+  walkingTime: string;
+  weekend: string;
+  rooms: string;
+  minPrice: string;
+  maxPrice: string;
+  guests: string;
+  destinationAddress: string;
 }
 
-export default function SearchWidget({ onSearch }: SearchWidgetProps) {
+export interface SearchWidgetProps {
+  onSearch?: (active: boolean) => void;
+  isSearchPage?: boolean;
+  initialCity?: string;
+  initialType?: "rent" | "swap";
+  hideResults?: boolean;
+  onFilterChange?: (filters: SearchFilters) => void;
+}
+
+export default function SearchWidget({ 
+  onSearch, 
+  isSearchPage = false,
+  initialCity = "",
+  initialType = "rent",
+  hideResults = false,
+  onFilterChange
+}: SearchWidgetProps) {
   const { t } = useLanguage();
-  const [activeTab, setActiveTab] = useState<"rent" | "swap">("rent");
+  const [activeTab, setActiveTab] = useState<"rent" | "swap">(initialType || "rent");
   const [isMySwipeOn, setIsMySwipeOn] = useState(false);
   const [showSwipeModal, setShowSwipeModal] = useState(false);
-  const [hasSearchedSwap, setHasSearchedSwap] = useState(false);
-  const [hasSearchedRent, setHasSearchedRent] = useState(false);
+  const [hasSearchedSwap, setHasSearchedSwap] = useState(isSearchPage && initialType === "swap");
+  const [hasSearchedRent, setHasSearchedRent] = useState(isSearchPage && initialType !== "swap");
   const [showMap, setShowMap] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   
-  const [city, setCity] = useState("");
+  const [city, setCity] = useState(initialCity || "");
   const [neighborhood, setNeighborhood] = useState("");
   const [walkingTime, setWalkingTime] = useState("10");
   const [weekend, setWeekend] = useState("");
@@ -85,15 +126,66 @@ export default function SearchWidget({ onSearch }: SearchWidgetProps) {
   const [guests, setGuests] = useState("");
   const [destinationAddress, setDestinationAddress] = useState("");
 
+  useEffect(() => {
+    if (initialCity) {
+      setCity(initialCity);
+    }
+  }, [initialCity]);
+
+  useEffect(() => {
+    if (initialType) {
+      setActiveTab(initialType);
+      if (isSearchPage) {
+        if (initialType === "swap") {
+          setHasSearchedSwap(true);
+        } else {
+          setHasSearchedRent(true);
+        }
+      }
+    }
+  }, [initialType, isSearchPage]);
+
+  useEffect(() => {
+    onFilterChange?.({
+      activeTab,
+      city,
+      neighborhood,
+      walkingTime,
+      weekend,
+      rooms,
+      minPrice,
+      maxPrice,
+      guests,
+      destinationAddress,
+    });
+  }, [
+    activeTab,
+    city,
+    neighborhood,
+    walkingTime,
+    weekend,
+    rooms,
+    minPrice,
+    maxPrice,
+    guests,
+    destinationAddress,
+    onFilterChange
+  ]);
+
+  const isTargetDestinationSet = Boolean(destinationAddress.trim().length > 0);
+
   return (
     <>
-      <div className="container mx-auto bg-white dark:bg-zinc-950 rounded-2xl shadow-xl border border-zinc-100 dark:border-zinc-800 p-6 relative z-10 -mt-12 md:-mt-20 lg:-mt-24">
+      <div className={`container mx-auto bg-white dark:bg-zinc-950 rounded-2xl shadow-xl border border-zinc-100 dark:border-zinc-800 p-6 relative z-10 ${
+        isSearchPage ? "mt-4 mb-8" : "-mt-12 md:-mt-20 lg:-mt-24"
+      }`}>
       
       {/* Tabs */}
       <div className="inline-flex items-center gap-1 p-1 mb-8 bg-zinc-100 dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800">
         <button
           onClick={() => {
             setActiveTab("rent");
+            if (isSearchPage) setHasSearchedRent(true);
             onSearch?.(false);
           }}
           className={`flex items-center justify-center gap-2 px-8 py-2.5 rounded-lg font-bold text-sm transition-all ${
@@ -111,6 +203,7 @@ export default function SearchWidget({ onSearch }: SearchWidgetProps) {
               setShowSwipeModal(true);
             } else {
               setActiveTab("swap");
+              if (isSearchPage) setHasSearchedSwap(true);
               onSearch?.(hasSearchedSwap);
             }
           }}
@@ -129,13 +222,23 @@ export default function SearchWidget({ onSearch }: SearchWidgetProps) {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-5 items-end">
         
         {/* Where (City) */}
-        <div className="lg:col-span-2 space-y-1.5">
-          <label className="text-xs font-bold text-zinc-900 dark:text-white">{t("search_widget.city")}</label>
+        <div className={`lg:col-span-2 space-y-1.5 transition-all duration-300 ${
+          isTargetDestinationSet ? "opacity-40 pointer-events-none select-none cursor-not-allowed" : "opacity-100"
+        }`}>
+          <label className="text-xs font-bold text-zinc-900 dark:text-white flex items-center justify-between">
+            <span>{t("search_widget.city")}</span>
+            {isTargetDestinationSet && (
+              <span className="text-[10px] font-normal text-zinc-400 dark:text-zinc-500 italic">
+                Inactive
+              </span>
+            )}
+          </label>
           <CustomSelect
             icon={MapPin}
             value={city}
             onChange={setCity}
             placeholder={t("search_widget.select_city")}
+            disabled={isTargetDestinationSet}
             options={[
               { value: "jerusalem", label: t("search_widget.jerusalem") },
               { value: "tel-aviv", label: t("search_widget.tel_aviv") },
@@ -145,13 +248,23 @@ export default function SearchWidget({ onSearch }: SearchWidgetProps) {
         </div>
 
         {/* Neighborhood */}
-        <div className="lg:col-span-3 space-y-1.5">
-          <label className="text-xs font-bold text-zinc-900 dark:text-white">{t("search_widget.neighborhood")}</label>
+        <div className={`lg:col-span-3 space-y-1.5 transition-all duration-300 ${
+          isTargetDestinationSet ? "opacity-40 pointer-events-none select-none cursor-not-allowed" : "opacity-100"
+        }`}>
+          <label className="text-xs font-bold text-zinc-900 dark:text-white flex items-center justify-between">
+            <span>{t("search_widget.neighborhood")}</span>
+            {isTargetDestinationSet && (
+              <span className="text-[10px] font-normal text-zinc-400 dark:text-zinc-500 italic">
+                Inactive
+              </span>
+            )}
+          </label>
           <CustomSelect
             icon={Navigation}
             value={neighborhood}
             onChange={setNeighborhood}
             placeholder={t("search_widget.select_neighborhood")}
+            disabled={isTargetDestinationSet}
             options={[
               { value: "rehavia", label: t("search_widget.rehavia") },
               { value: "geula", label: t("search_widget.geula") },
@@ -165,23 +278,47 @@ export default function SearchWidget({ onSearch }: SearchWidgetProps) {
           <label className="text-xs font-bold text-zinc-900 dark:text-white flex items-center gap-1">
             <Footprints className="w-3.5 h-3.5 text-[#4c55a4]" /> Target Destination / Shul Address
           </label>
-          <input 
-            type="text" 
-            placeholder="e.g. Kotel, Great Synagogue, Rehavia..." 
-            value={destinationAddress}
-            onChange={(e) => setDestinationAddress(e.target.value)}
-            className="w-full h-[48px] px-4 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#4c55a4] transition-all text-zinc-900 dark:text-white placeholder-zinc-400 font-medium"
-          />
+          <div className="relative">
+            <input 
+              type="text" 
+              placeholder="e.g. Kotel, Great Synagogue, Rehavia..." 
+              value={destinationAddress}
+              onChange={(e) => setDestinationAddress(e.target.value)}
+              className="w-full h-[48px] px-4 pr-9 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#4c55a4] transition-all text-zinc-900 dark:text-white placeholder-zinc-400 font-medium"
+            />
+            {destinationAddress && (
+              <button
+                type="button"
+                onClick={() => setDestinationAddress("")}
+                className="absolute ltr:right-3 rtl:left-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 p-1 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+                title="Clear destination"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Walking Time */}
-        <div className="lg:col-span-3 space-y-1.5">
-          <label className="text-xs font-bold text-zinc-900 dark:text-white">{t("search_widget.walking_time")}</label>
+        <div className={`lg:col-span-3 space-y-1.5 transition-all duration-300 ${
+          !isTargetDestinationSet ? "opacity-40 pointer-events-none select-none cursor-not-allowed" : "opacity-100"
+        }`}>
+          <label className="text-xs font-bold text-zinc-900 dark:text-white flex items-center justify-between">
+            <span className="flex items-center gap-1">
+              {t("search_widget.walking_time")}
+            </span>
+            {!isTargetDestinationSet && (
+              <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-zinc-400 dark:text-zinc-500">
+                <Lock className="w-2.5 h-2.5" /> Locked
+              </span>
+            )}
+          </label>
           <CustomSelect
-            icon={MapPin}
+            icon={!isTargetDestinationSet ? Lock : Footprints}
             value={walkingTime}
             onChange={setWalkingTime}
             placeholder={t("search_widget.select_walking_time")}
+            disabled={!isTargetDestinationSet}
             options={[
               { value: "5", label: t("search_widget.mins_5") },
               { value: "10", label: t("search_widget.mins_10") },
@@ -230,21 +367,54 @@ export default function SearchWidget({ onSearch }: SearchWidgetProps) {
 
         {/* Price Range */}
         <div className="lg:col-span-3 space-y-1.5">
-          <label className="text-xs font-bold text-zinc-900 dark:text-white">Price Range (₪)</label>
+          <label className="text-xs font-bold text-zinc-900 dark:text-white flex items-center justify-between">
+            <span>Price Range (₪)</span>
+            <span className="text-[11px] font-normal text-zinc-400 dark:text-zinc-500">Optional</span>
+          </label>
           <div className="flex items-center gap-2">
             <input 
               type="number" 
+              min="0"
               placeholder="Min" 
               value={minPrice}
-              onChange={(e) => setMinPrice(e.target.value)}
+              onChange={(e) => {
+                setMinPrice(e.target.value);
+                setCurrentPage(1);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  if (activeTab === "rent") {
+                    setHasSearchedRent(true);
+                    onSearch?.(false);
+                  } else {
+                    setHasSearchedSwap(true);
+                    onSearch?.(true);
+                  }
+                }
+              }}
               className="w-full h-[48px] px-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#4c55a4] transition-all"
             />
             <span className="text-zinc-400 font-bold">-</span>
             <input 
               type="number" 
+              min="0"
               placeholder="Max" 
               value={maxPrice}
-              onChange={(e) => setMaxPrice(e.target.value)}
+              onChange={(e) => {
+                setMaxPrice(e.target.value);
+                setCurrentPage(1);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  if (activeTab === "rent") {
+                    setHasSearchedRent(true);
+                    onSearch?.(false);
+                  } else {
+                    setHasSearchedSwap(true);
+                    onSearch?.(true);
+                  }
+                }
+              }}
               className="w-full h-[48px] px-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#4c55a4] transition-all"
             />
           </div>
@@ -301,14 +471,14 @@ export default function SearchWidget({ onSearch }: SearchWidgetProps) {
       </div>
 
       {/* Results Section */}
-      {(() => {
+      {!hideResults && (() => {
         const isShowingSwap = activeTab === "swap" && hasSearchedSwap;
         const isShowingRent = activeTab === "rent" && hasSearchedRent;
         const isShowingResults = isShowingSwap || isShowingRent;
 
         if (!isShowingResults) return null;
 
-        const demoApartments = Array.from({ length: 18 }).map((_, i) => {
+        const demoApartments = Array.from({ length: 90 }).map((_, i) => {
           const location = [
             "Rehavia, Jerusalem",
             "City Center, Jerusalem",
@@ -360,16 +530,68 @@ export default function SearchWidget({ onSearch }: SearchWidgetProps) {
         });
 
         const filteredApartments = demoApartments.filter(apt => {
-          if (!city) return true;
-          const locLower = apt.location.toLowerCase();
-          if (city === "jerusalem" && locLower.includes("jerusalem")) return true;
-          if (city === "tel-aviv" && locLower.includes("tel aviv")) return true;
-          if (city === "tzfat" && locLower.includes("tzfat")) return true;
-          return false;
+          // 1. Destination Address & Walking Time
+          if (destinationAddress.trim()) {
+            if (walkingTime) {
+              const destCoords = getCoordinatesForAddress(destinationAddress);
+              const aptLat = (apt as any).lat ?? 31.7725;
+              const aptLng = (apt as any).lng ?? 35.2136;
+              const walkingMins = calculateWalkingMinutes(destCoords.lat, destCoords.lng, aptLat, aptLng);
+              const maxWalking = parseInt(walkingTime, 10);
+              if (!isNaN(maxWalking) && walkingMins > maxWalking + 10) {
+                return false;
+              }
+            }
+          } else {
+            // 2. City & Neighborhood (inactive when destination is set)
+            if (city) {
+              const locLower = apt.location.toLowerCase();
+              if (city === "jerusalem" && !locLower.includes("jerusalem")) return false;
+              if (city === "tel-aviv" && !locLower.includes("tel aviv")) return false;
+              if (city === "tzfat" && !locLower.includes("tzfat")) return false;
+            }
+            if (neighborhood) {
+              const locLower = apt.location.toLowerCase();
+              if (neighborhood === "rehavia" && !locLower.includes("rehavia")) return false;
+              if (neighborhood === "geula" && !locLower.includes("geula")) return false;
+              if (neighborhood === "bakat" && !locLower.includes("baka")) return false;
+            }
+          }
+
+          // 3. Price Range (Rent mode): Both Min and Max are completely optional
+          if (activeTab === "rent") {
+            const min = minPrice.trim() !== "" ? parseFloat(minPrice) : null;
+            const max = maxPrice.trim() !== "" ? parseFloat(maxPrice) : null;
+
+            if (min !== null && !isNaN(min) && apt.price < min) {
+              return false;
+            }
+            if (max !== null && !isNaN(max) && apt.price > max) {
+              return false;
+            }
+          }
+
+          // 4. Rooms filter
+          if (rooms && rooms !== "any") {
+            const minRooms = parseInt(rooms, 10);
+            if (!isNaN(minRooms) && (apt.beds || 0) < minRooms) {
+              return false;
+            }
+          }
+
+          // 5. Guests filter
+          if (guests && guests !== "any") {
+            const minGuests = parseInt(guests, 10);
+            if (!isNaN(minGuests) && (apt.guests || 0) < minGuests) {
+              return false;
+            }
+          }
+
+          return true;
         });
 
-        const totalPages = Math.ceil(filteredApartments.length / 12) || 1;
-        const paginatedApartments = filteredApartments.slice((currentPage - 1) * 12, currentPage * 12);
+        const totalPages = Math.ceil(filteredApartments.length / 30) || 1;
+        const paginatedApartments = filteredApartments.slice((currentPage - 1) * 30, currentPage * 30);
 
         return (
           <div className="container mx-auto mt-12 mb-20 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -491,7 +713,8 @@ export default function SearchWidget({ onSearch }: SearchWidgetProps) {
                     setIsMySwipeOn(true);
                     setShowSwipeModal(false);
                     setActiveTab("swap");
-                    onSearch?.(hasSearchedSwap);
+                    if (isSearchPage) setHasSearchedSwap(true);
+                    onSearch?.(isSearchPage ? true : hasSearchedSwap);
                   }}
                   className="flex-1 py-3 bg-[#4c55a4] hover:bg-[#3d4484] text-white rounded-xl font-medium transition-all shadow-md shadow-[#4c55a4]/20"
                 >

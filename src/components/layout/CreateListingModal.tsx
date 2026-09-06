@@ -3,10 +3,16 @@
 import { useState, useRef, useEffect } from "react";
 import { 
   Info, MapPin, Phone, Building, Sparkles, Image as ImageIcon, 
-  UploadCloud, AlignLeft, Check, Plus, X, Search, DollarSign, ChevronDown, PartyPopper, Star, Clock
+  UploadCloud, AlignLeft, Check, Plus, X, Search, DollarSign, ChevronDown, PartyPopper, Star, Clock, Wand2, Calendar
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { PhoneInput } from '@/components/common/PhoneInput';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface CreateListingModalProps {
   isOpen: boolean;
@@ -17,7 +23,8 @@ interface CreateListingModalProps {
 
 export default function CreateListingModal({ isOpen, onClose, onSave, isEditMode }: CreateListingModalProps) {
   const router = useRouter();
-  const [phone, setPhone] = useState("");
+  const [phones, setPhones] = useState<string[]>([""]);
+  const [email, setEmail] = useState("");
   const [amenityInput, setAmenityInput] = useState("");
   const [amenities, setAmenities] = useState<string[]>([]);
   const [whatsappEnabled, setWhatsappEnabled] = useState(false);
@@ -27,8 +34,21 @@ export default function CreateListingModal({ isOpen, onClose, onSave, isEditMode
   const [coverImagePreview, setCoverImagePreview] = useState<string | null>(null);
   const [galleryPreviews, setGalleryPreviews] = useState<string[]>([]);
   const [modalStep, setModalStep] = useState<"form" | "success" | "payment" | "approval">("form");
+  const [isFirstYearFreeActive, setIsFirstYearFreeActive] = useState(false);
+  const [description, setDescription] = useState("");
+  const [isEnhancing, setIsEnhancing] = useState(false);
+  const [rentFrequency, setRentFrequency] = useState("");
+  const [hasAnsweredRentFrequency, setHasAnsweredRentFrequency] = useState(false);
+  
   const coverImageRef = useRef<HTMLInputElement>(null);
   const galleryRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setIsFirstYearFreeActive(localStorage.getItem("isFirstYearFreeActive") === "true");
+      setHasAnsweredRentFrequency(localStorage.getItem("hasAnsweredRentFrequency") === "true");
+    }
+  }, [isOpen]);
 
   useEffect(() => {
     if (isOpen && isEditMode) {
@@ -81,7 +101,18 @@ export default function CreateListingModal({ isOpen, onClose, onSave, isEditMode
   };
 
   const handleSaveAndContinue = () => {
+    if (!hasAnsweredRentFrequency && rentFrequency) {
+      localStorage.setItem("hasAnsweredRentFrequency", "true");
+    }
     setModalStep("success");
+  };
+
+  const handleEnhanceDescription = () => {
+    setIsEnhancing(true);
+    setTimeout(() => {
+      setDescription(description + (description ? " " : "") + "This beautiful apartment is perfectly located, featuring a stunning view and all the amenities needed for a comfortable Shabbat, including a Shabbat platter and close proximity to the synagogue.");
+      setIsEnhancing(false);
+    }, 1500);
   };
 
   const handleFinalClose = () => {
@@ -140,7 +171,7 @@ export default function CreateListingModal({ isOpen, onClose, onSave, isEditMode
                 onClick={() => setModalStep("payment")}
                 className="w-full sm:w-auto px-16 py-4 bg-[#4c55a4] hover:bg-[#3d4484] text-white text-[16px] font-bold rounded-full shadow-lg transition-colors"
               >
-                Awesome, I'm Done!
+                OK, Awesome!
               </button>
             </div>
           </div>
@@ -162,7 +193,14 @@ export default function CreateListingModal({ isOpen, onClose, onSave, isEditMode
             <div className="bg-white/80 dark:bg-zinc-900/80 backdrop-blur-sm border border-zinc-200 dark:border-zinc-800 rounded-2xl p-6 w-full max-w-sm mb-10 text-left shadow-sm">
               <div className="flex justify-between items-center mb-4 pb-4 border-b border-zinc-100 dark:border-zinc-800">
                 <span className="font-bold text-zinc-700 dark:text-zinc-300">Shabos Rent Yearly</span>
-                <span className="font-black text-2xl text-[#4c55a4] dark:text-indigo-400">₪28</span>
+                {isFirstYearFreeActive ? (
+                  <div className="flex flex-col items-end">
+                    <span className="font-black text-2xl text-green-600 dark:text-green-500">Free</span>
+                    <span className="text-xs text-zinc-500 line-through">₪28</span>
+                  </div>
+                ) : (
+                  <span className="font-black text-2xl text-[#4c55a4] dark:text-indigo-400">₪28</span>
+                )}
               </div>
               <div className="space-y-3">
                 <div className="flex items-center gap-3 text-[15px] font-medium text-zinc-600 dark:text-zinc-400">
@@ -184,7 +222,7 @@ export default function CreateListingModal({ isOpen, onClose, onSave, isEditMode
               onClick={() => setModalStep("approval")}
               className="w-full max-w-sm px-8 py-4 bg-[#4c55a4] hover:bg-[#3d4484] text-white text-[16px] font-bold rounded-xl shadow-lg transition-colors flex items-center justify-center gap-2"
             >
-              Pay ₪28 Now
+              {isFirstYearFreeActive ? "Get First Year Free" : "Pay ₪28 Now"}
             </button>
           </div>
         ) : modalStep === "approval" ? (
@@ -209,7 +247,7 @@ export default function CreateListingModal({ isOpen, onClose, onSave, isEditMode
               }}
               className="w-full sm:w-auto px-12 py-4 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-900 dark:text-white text-[16px] font-bold rounded-full transition-colors shadow-sm"
             >
-              Go to Dashboard
+              OK, Go to Dashboard
             </button>
           </div>
         ) : (
@@ -484,14 +522,48 @@ export default function CreateListingModal({ isOpen, onClose, onSave, isEditMode
                   <h2 className="text-xl font-bold text-zinc-900 dark:text-white">Contact Details & Specs</h2>
                 </div>
                 <div className="p-8">
-                  <div>
-                    <PhoneInput
-                      label="Phone Number"
-                      required
-                      value={phone}
-                      onChange={(val) => setPhone(val)}
-                      showPreview={true}
-                    />
+                  <div className="space-y-4">
+                    {phones.map((phoneVal, index) => (
+                      <div key={index} className="flex items-start gap-3">
+                        <div className="flex-1">
+                          <PhoneInput
+                            label={index === 0 ? "1.2 Number *" : "Additional Number"}
+                            required={index === 0}
+                            value={phoneVal}
+                            onChange={(val) => {
+                              const newPhones = [...phones];
+                              newPhones[index] = val;
+                              setPhones(newPhones);
+                            }}
+                          />
+                        </div>
+                        {phones.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const newPhones = [...phones];
+                              newPhones.splice(index, 1);
+                              setPhones(newPhones);
+                            }}
+                            className="mt-7 w-11 h-11 rounded-xl bg-red-50 hover:bg-red-100 dark:bg-red-950/30 dark:hover:bg-red-900/50 text-red-500 flex items-center justify-center transition-colors shrink-0"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                    
+                    <button
+                      type="button"
+                      onClick={() => setPhones([...phones, ""])}
+                      className="text-sm font-bold text-[#4c55a4] hover:text-[#3d4484] dark:text-indigo-400 dark:hover:text-indigo-300 flex items-center gap-1.5 transition-colors"
+                    >
+                      <Plus className="w-4 h-4" /> Add another number
+                    </button>
+                    
+                    <p className="text-xs text-zinc-500 leading-relaxed mt-1">
+                      more then one number gives you flexibility to manage your apartment with more then 1 phone ... or you can set then when a renter calls you it rings both phones...
+                    </p>
                   </div>
                 </div>
               </div>
@@ -531,19 +603,34 @@ export default function CreateListingModal({ isOpen, onClose, onSave, isEditMode
                     </button>
                   </div>
 
-                  {/* Available */}
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-bold text-zinc-900 dark:text-white">Available</p>
-                      <p className="text-sm text-zinc-500">Show renters you are currently available</p>
+                  {/* Email */}
+                  <div className="flex flex-col gap-3">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-bold text-zinc-900 dark:text-white">Email</p>
+                        <p className="text-sm text-zinc-500">Allow renters to contact you via email</p>
+                      </div>
+                      <button 
+                        type="button" 
+                        onClick={() => setEmailEnabled(!emailEnabled)}
+                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#4c55a4] ${emailEnabled ? 'bg-[#4c55a4]' : 'bg-zinc-200 dark:bg-zinc-700'}`}
+                      >
+                        <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${emailEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
+                      </button>
                     </div>
-                    <button 
-                      type="button" 
-                      onClick={() => setEmailEnabled(!emailEnabled)}
-                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#4c55a4] ${emailEnabled ? 'bg-[#4c55a4]' : 'bg-zinc-200 dark:bg-zinc-700'}`}
-                    >
-                      <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${emailEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
-                    </button>
+                    
+                    {emailEnabled && (
+                      <div className="animate-in fade-in slide-in-from-top-2 duration-200 pt-2">
+                        <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1.5">Email Address</label>
+                        <input 
+                          type="email" 
+                          value={email}
+                          onChange={(e) => setEmail(e.target.value)}
+                          placeholder="owner@example.com" 
+                          className="w-full px-4 py-2.5 border border-zinc-200 dark:border-zinc-700 rounded-xl text-sm bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-white focus:ring-2 focus:ring-[#4c55a4]/20 focus:border-[#4c55a4] outline-none transition-all" 
+                        />
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -604,13 +691,74 @@ export default function CreateListingModal({ isOpen, onClose, onSave, isEditMode
                     Write a few words to help people understand what's in the apartment and what makes it special.<br/>
                     For example: <span className="text-purple-500 font-medium">nice view, Shabbat platter, baby crib, close to synagogue.</span>
                   </p>
-                  <textarea 
-                    rows={5}
-                    placeholder="Write some details about the apartment here..."
-                    className="w-full px-5 py-4 bg-zinc-50/80 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-2xl text-[15px] text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:bg-white dark:focus:bg-zinc-900 focus:ring-4 focus:ring-purple-500/10 focus:border-purple-500 outline-none transition-all duration-200 resize-none"
-                  ></textarea>
+                  <div>
+                    <textarea 
+                      rows={5}
+                      value={description}
+                      onChange={(e) => setDescription(e.target.value)}
+                      placeholder="Write some details about the apartment here..."
+                      className="w-full px-5 py-4 bg-zinc-50/80 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-2xl text-[15px] text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:bg-white dark:focus:bg-zinc-900 focus:ring-4 focus:ring-purple-500/10 focus:border-purple-500 outline-none transition-all duration-200 resize-none"
+                    ></textarea>
+                    
+                    <button 
+                      type="button"
+                      onClick={handleEnhanceDescription}
+                      disabled={isEnhancing}
+                      className="mt-3 flex items-center justify-center gap-2 w-full py-3 bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700 text-white font-semibold rounded-xl shadow-md transition-all disabled:opacity-70"
+                    >
+                      {isEnhancing ? (
+                         <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      ) : (
+                         <Wand2 className="w-5 h-5" />
+                      )}
+                      {isEnhancing ? "Enhancing..." : "Enhance description with AI"}
+                    </button>
+                  </div>
                 </div>
               </div>
+
+              {/* One-time Question */}
+              {!hasAnsweredRentFrequency && (
+                <div className="bg-white dark:bg-zinc-900 rounded-3xl border border-zinc-200 dark:border-zinc-800 overflow-hidden shadow-sm shadow-zinc-200/50 dark:shadow-none mt-6">
+                  <div className="px-8 py-5 border-b border-zinc-100 dark:border-zinc-800/80 flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center">
+                      <Calendar className="w-5 h-5 text-blue-500" />
+                    </div>
+                    <h2 className="text-xl font-bold text-zinc-900 dark:text-white">Quick Question</h2>
+                  </div>
+                  <div className="p-8 space-y-4">
+                    <label className="block text-sm font-bold text-zinc-900 dark:text-white">
+                      How many times will you rent out your apartment a year?
+                    </label>
+                    <div className="relative">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger className="w-full px-5 py-4 bg-zinc-50/80 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-2xl text-[15px] text-zinc-900 dark:text-white outline-none transition-all duration-200 focus:bg-white dark:focus:bg-zinc-900 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 flex justify-between items-center text-left">
+                          {rentFrequency === "1-2" ? "1 - 2 times" :
+                           rentFrequency === "3-5" ? "3 - 5 times" :
+                           rentFrequency === "6-10" ? "6 - 10 times" :
+                           rentFrequency === "more-than-10" ? "More than 10 times" :
+                           <span className="text-zinc-500">Select an option</span>}
+                          <ChevronDown className="w-5 h-5 text-zinc-400 shrink-0" />
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent className="w-full min-w-[300px] p-2 rounded-2xl border-zinc-200 dark:border-zinc-800 shadow-xl bg-white dark:bg-[#121212]">
+                          <DropdownMenuItem onClick={() => setRentFrequency("1-2")} className="p-3 cursor-pointer rounded-xl font-medium text-[15px] hover:bg-zinc-100 dark:hover:bg-zinc-800">
+                            1 - 2 times
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => setRentFrequency("3-5")} className="p-3 cursor-pointer rounded-xl font-medium text-[15px] hover:bg-zinc-100 dark:hover:bg-zinc-800">
+                            3 - 5 times
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => setRentFrequency("6-10")} className="p-3 cursor-pointer rounded-xl font-medium text-[15px] hover:bg-zinc-100 dark:hover:bg-zinc-800">
+                            6 - 10 times
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => setRentFrequency("more-than-10")} className="p-3 cursor-pointer rounded-xl font-medium text-[15px] hover:bg-zinc-100 dark:hover:bg-zinc-800">
+                            More than 10 times
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
         </div>
 
