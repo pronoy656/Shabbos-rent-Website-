@@ -28,7 +28,8 @@ import {
   Trash2,
   Lock,
   Unlock,
-  Activity
+  Activity,
+  Building2
 } from "lucide-react";
 import { showToast } from "@/utils/toast";
 import { OwnerStatus } from "@/types";
@@ -43,6 +44,7 @@ import { useQueryClient, useMutation } from "@tanstack/react-query";
 import { sendAvailabilityReminder } from "@/services/ownerService";
 import type { NotificationChannel, SendReminderPayload } from "@/types/owner";
 import { getImageUrl } from "@/utils/imageUrl";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export type ReminderChannel = "email_only" | "phone_only" | "both";
 
@@ -340,18 +342,82 @@ export default function ApartmentsPage() {
             </thead>
             <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
               {isLoading ? (
-                <tr>
-                  <td colSpan={7} className="px-6 py-12 text-center text-zinc-500 dark:text-zinc-400 text-sm">
-                    <div className="flex items-center justify-center gap-2">
-                      <span className="h-4 w-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
-                      <span>Loading apartments data from server...</span>
-                    </div>
-                  </td>
-                </tr>
+                Array.from({ length: 6 }).map((_, idx) => (
+                  <tr key={idx} className="animate-pulse">
+                    <td className="px-5 py-4">
+                      <Skeleton className="h-11 w-11 rounded-xl" />
+                    </td>
+                    <td className="px-5 py-4 space-y-2">
+                      <Skeleton className="h-4 w-20" />
+                      <Skeleton className="h-3 w-32" />
+                    </td>
+                    <td className="px-5 py-4 space-y-2">
+                      <Skeleton className="h-3.5 w-24" />
+                      <Skeleton className="h-3 w-28" />
+                    </td>
+                    <td className="px-5 py-4">
+                      <Skeleton className="h-4 w-16" />
+                    </td>
+                    <td className="px-5 py-4">
+                      <Skeleton className="h-6 w-24 rounded-full" />
+                    </td>
+                    <td className="px-5 py-4">
+                      <Skeleton className="h-6 w-20 rounded-full" />
+                    </td>
+                    <td className="px-5 py-4 text-right">
+                      <div className="flex items-center justify-end gap-1.5">
+                        <Skeleton className="h-7 w-14 rounded-xl" />
+                        <Skeleton className="h-7 w-16 rounded-xl" />
+                        <Skeleton className="h-8 w-8 rounded-xl" />
+                      </div>
+                    </td>
+                  </tr>
+                ))
               ) : paginatedApartments.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-6 py-12 text-center text-zinc-500 dark:text-zinc-400 text-sm">
-                    No apartments match the selected filters.
+                  <td colSpan={7} className="px-6 py-16 text-center">
+                    <div className="max-w-md mx-auto flex flex-col items-center justify-center">
+                      <div className="relative mb-5">
+                        <div className="absolute -inset-2 bg-gradient-to-r from-blue-600/20 via-indigo-600/20 to-purple-600/20 rounded-full blur-xl opacity-60 dark:opacity-40" />
+                        <div className="relative w-16 h-16 rounded-2xl bg-gradient-to-tr from-zinc-100 to-zinc-50 dark:from-zinc-800 dark:to-zinc-800/60 border border-zinc-200 dark:border-zinc-700 flex items-center justify-center shadow-lg shadow-zinc-200/50 dark:shadow-none">
+                          <Building2 className="w-8 h-8 text-[#4c55a4] dark:text-blue-400" />
+                        </div>
+                      </div>
+
+                      {searchQuery || selectedCity !== "All Cities" || selectedListingStatus !== "All Statuses" || selectedOwnerStatus !== "All Shabbat Statuses" ? (
+                        <>
+                          <h3 className="text-lg font-extrabold text-zinc-900 dark:text-white mb-1.5">
+                            No Apartments Found Matching Filters
+                          </h3>
+                          <p className="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed mb-6 max-w-sm">
+                            We couldn&apos;t find any properties matching your current search or filter criteria. Try broadening your keywords or resetting filters.
+                          </p>
+                          <div className="flex items-center justify-center">
+                            <button
+                              onClick={() => {
+                                setSearchQuery("");
+                                setSelectedCity("All Cities");
+                                setSelectedListingStatus("All Statuses");
+                                setSelectedOwnerStatus("All Shabbat Statuses");
+                                setCurrentPage(1);
+                              }}
+                              className="inline-flex items-center px-5 py-2.5 bg-[#4c55a4] hover:bg-[#3d4484] text-white rounded-xl font-bold text-xs shadow-md shadow-[#4c55a4]/20 transition-all cursor-pointer"
+                            >
+                              Reset All Filters
+                            </button>
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <h3 className="text-lg font-extrabold text-zinc-900 dark:text-white mb-1.5">
+                            No Apartments Listed Yet
+                          </h3>
+                          <p className="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed max-w-sm">
+                            There are currently no apartment listings registered in the database. New listings created by homeowners will show up here automatically.
+                          </p>
+                        </>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ) : (

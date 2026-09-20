@@ -22,6 +22,7 @@ import { useWeekendCalendars } from "@/hooks/useWeekendCalendar";
 import { getImageUrl } from "@/utils/imageUrl";
 import CreateListingModal from "@/components/layout/CreateListingModal";
 import { SHABBATOT } from "@/components/dashboard/dashboardData";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function MyListingPage() {
   const { t } = useLanguage();
@@ -175,9 +176,24 @@ export default function MyListingPage() {
 
   if (isMyApartmentLoading) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 gap-3 text-zinc-500">
-        <div className="w-8 h-8 border-3 border-[#4c55a4] border-t-transparent rounded-full animate-spin" />
-        <p className="text-sm font-semibold">Loading apartment details...</p>
+      <div className="bg-white dark:bg-zinc-900 rounded-3xl border border-zinc-200 dark:border-zinc-800 p-6 sm:p-8 space-y-6 animate-pulse">
+        <div className="flex flex-col sm:flex-row justify-between gap-4">
+          <div className="space-y-3 flex-1">
+            <Skeleton className="h-7 w-64" />
+            <Skeleton className="h-4 w-48" />
+          </div>
+          <div className="flex gap-2">
+            <Skeleton className="h-10 w-24 rounded-xl" />
+            <Skeleton className="h-10 w-24 rounded-xl" />
+          </div>
+        </div>
+        <Skeleton className="h-72 w-full rounded-2xl" />
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <Skeleton className="h-20 rounded-2xl" />
+          <Skeleton className="h-20 rounded-2xl" />
+          <Skeleton className="h-20 rounded-2xl" />
+          <Skeleton className="h-20 rounded-2xl" />
+        </div>
       </div>
     );
   }

@@ -34,6 +34,7 @@ import {
 import { toast } from "sonner";
 import { useAllOwners, useSendAvailabilityReminder, useSendPaymentDueReminder } from "@/hooks/useAdminOwners";
 import type { NotificationChannel } from "@/types/owner";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function OwnersPage() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -303,12 +304,35 @@ export default function OwnersPage() {
             </thead>
             <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800/60 text-zinc-700 dark:text-zinc-300">
               {isLoading ? (
-                <tr>
-                  <td colSpan={7} className="text-center py-16 text-zinc-500">
-                    <div className="w-8 h-8 border-3 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-                    <p className="font-semibold text-xs">Loading owners data...</p>
-                  </td>
-                </tr>
+                Array.from({ length: 6 }).map((_, idx) => (
+                  <tr key={idx} className="animate-pulse">
+                    <td className="px-6 py-4 space-y-2">
+                      <Skeleton className="h-4 w-28" />
+                      <Skeleton className="h-3 w-36" />
+                    </td>
+                    <td className="px-6 py-4">
+                      <Skeleton className="h-4 w-24" />
+                    </td>
+                    <td className="px-6 py-4">
+                      <Skeleton className="h-6 w-24 rounded-full" />
+                    </td>
+                    <td className="px-6 py-4">
+                      <Skeleton className="h-4 w-20" />
+                    </td>
+                    <td className="px-6 py-4">
+                      <Skeleton className="h-4 w-16" />
+                    </td>
+                    <td className="px-6 py-4">
+                      <Skeleton className="h-5 w-16 rounded-full" />
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        <Skeleton className="h-8 w-20 rounded-xl" />
+                        <Skeleton className="h-8 w-8 rounded-xl" />
+                      </div>
+                    </td>
+                  </tr>
+                ))
               ) : paginatedOwners.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="text-center py-16 text-zinc-400">

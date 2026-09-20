@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function UserDashboardRootPage() {
   const router = useRouter();
@@ -11,8 +12,12 @@ export default function UserDashboardRootPage() {
   }, [router]);
 
   return (
-    <div className="flex items-center justify-center min-h-[50vh]">
-      <div className="w-8 h-8 border-3 border-[#4c55a4] border-t-transparent rounded-full animate-spin" />
+    <div className="bg-white dark:bg-zinc-900 rounded-3xl border border-zinc-200 dark:border-zinc-800 p-8 space-y-6 animate-pulse max-w-5xl mx-auto mt-6">
+      <div className="flex justify-between items-center">
+        <Skeleton className="h-8 w-48" />
+        <Skeleton className="h-10 w-28 rounded-xl" />
+      </div>
+      <Skeleton className="h-64 w-full rounded-2xl" />
     </div>
   );
 }

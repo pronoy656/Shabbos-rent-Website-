@@ -18,6 +18,7 @@ import {
 } from "@/hooks/useReportRented";
 import { useWeekendCalendars } from "@/hooks/useWeekendCalendar";
 import { toast } from "sonner";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function RentalHistoryPage() {
   const { data: reportedRentals = [], isLoading } = useMyReportRentedHistory();
@@ -88,7 +89,20 @@ export default function RentalHistoryPage() {
         </div>
 
         {isLoading ? (
-          <div className="p-16 text-center text-zinc-500">Loading rental history...</div>
+          <div className="p-6 space-y-4">
+            {Array.from({ length: 4 }).map((_, idx) => (
+              <div key={idx} className="flex items-center justify-between p-4 border border-zinc-100 dark:border-zinc-800 rounded-2xl animate-pulse">
+                <div className="flex items-center gap-3">
+                  <Skeleton className="w-10 h-10 rounded-xl" />
+                  <div className="space-y-2">
+                    <Skeleton className="h-4 w-32" />
+                    <Skeleton className="h-3 w-24" />
+                  </div>
+                </div>
+                <Skeleton className="h-6 w-20 rounded-full" />
+              </div>
+            ))}
+          </div>
         ) : reportedRentals.length === 0 ? (
           <div className="p-16 text-center">
             <div className="w-16 h-16 bg-zinc-100 dark:bg-zinc-800 rounded-full flex items-center justify-center mx-auto mb-4">

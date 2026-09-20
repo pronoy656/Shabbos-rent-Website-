@@ -5,6 +5,7 @@ import { Mail, Bell, Sparkles, Hand } from "lucide-react";
 import { useMyNotifyRequests } from "@/hooks/useNotifyRequests";
 import { useMyInterestedRequests } from "@/hooks/useInterestedRequests";
 import { useMyOffers } from "@/hooks/useOfferRequests";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function InterestedRequestsPage() {
   const [subTab, setSubTab] = useState<"notify" | "interested" | "offer">("notify");
@@ -60,7 +61,21 @@ export default function InterestedRequestsPage() {
         {subTab === "notify" && (
           <>
             {isNotifyLoading ? (
-              <p className="text-zinc-500 text-center py-8 text-sm">Loading...</p>
+              <div className="space-y-3">
+                {Array.from({ length: 3 }).map((_, idx) => (
+                  <div key={idx} className="flex items-center justify-between p-5 border border-zinc-200 dark:border-zinc-800 rounded-2xl bg-zinc-50/50 dark:bg-zinc-800/30 animate-pulse">
+                    <div className="flex items-center gap-4">
+                      <Skeleton className="w-12 h-12 rounded-full" />
+                      <div className="space-y-2">
+                        <Skeleton className="h-4 w-36" />
+                        <Skeleton className="h-3 w-28" />
+                        <Skeleton className="h-5 w-24 rounded-lg" />
+                      </div>
+                    </div>
+                    <Skeleton className="w-10 h-10 rounded-full" />
+                  </div>
+                ))}
+              </div>
             ) : notifyRequests.length === 0 ? (
               <p className="text-zinc-500 text-center py-8 text-sm">
                 No notification requests yet.
@@ -108,7 +123,21 @@ export default function InterestedRequestsPage() {
         {subTab === "interested" && (
           <>
             {isInterestedLoading ? (
-              <p className="text-zinc-500 text-center py-8 text-sm">Loading...</p>
+              <div className="space-y-3">
+                {Array.from({ length: 3 }).map((_, idx) => (
+                  <div key={idx} className="flex items-center justify-between p-5 border border-zinc-200 dark:border-zinc-800 rounded-2xl bg-zinc-50/50 dark:bg-zinc-800/30 animate-pulse">
+                    <div className="flex items-center gap-4">
+                      <Skeleton className="w-12 h-12 rounded-full" />
+                      <div className="space-y-2">
+                        <Skeleton className="h-4 w-36" />
+                        <Skeleton className="h-3 w-28" />
+                        <Skeleton className="h-5 w-24 rounded-lg" />
+                      </div>
+                    </div>
+                    <Skeleton className="h-8 w-20 rounded-xl" />
+                  </div>
+                ))}
+              </div>
             ) : interestedRequests.length === 0 ? (
               <p className="text-zinc-500 text-center py-8 text-sm">
                 No interested requests yet.
@@ -155,7 +184,19 @@ export default function InterestedRequestsPage() {
         {subTab === "offer" && (
           <>
             {isOfferLoading ? (
-              <p className="text-zinc-500 text-center py-8 text-sm">Loading...</p>
+              <div className="space-y-3">
+                {Array.from({ length: 3 }).map((_, idx) => (
+                  <div key={idx} className="flex items-center justify-between p-5 border border-zinc-200 dark:border-zinc-800 rounded-2xl bg-zinc-50/50 dark:bg-zinc-800/30 animate-pulse">
+                    <div className="flex items-center gap-4">
+                      <Skeleton className="w-12 h-12 rounded-full" />
+                      <div className="space-y-2">
+                        <Skeleton className="h-4 w-36" />
+                        <Skeleton className="h-3 w-28" />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
             ) : offerRequests.length === 0 ? (
               <p className="text-zinc-500 text-center py-8 text-sm">
                 No price offers yet.

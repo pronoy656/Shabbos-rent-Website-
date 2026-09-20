@@ -51,6 +51,7 @@ import { logout, clearAuthSession } from "@/services/auth.service";
 import { useMe } from "@/hooks/useAuth";
 import UserAvatar from "@/components/common/UserAvatar";
 import { toast } from "sonner";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function AdminLayout({
   children,
@@ -128,11 +129,25 @@ export default function AdminLayout({
 
   if (isAuthenticated === null || !isAuthenticated) {
     return (
-      <div className="min-h-screen bg-zinc-50 dark:bg-black flex items-center justify-center">
-        <div className="flex flex-col items-center gap-3">
-          <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
-          <span className="text-xs text-zinc-500 font-medium">Checking authorization...</span>
-        </div>
+      <div className="flex min-h-screen bg-zinc-50 dark:bg-black font-sans animate-pulse">
+        <aside className="fixed inset-y-0 left-0 w-72 border-r border-zinc-200 bg-white dark:border-zinc-800 dark:bg-[#121212] hidden md:flex flex-col p-4 space-y-4">
+          <div className="flex items-center gap-3 px-2 py-3 border-b border-zinc-100 dark:border-zinc-800">
+            <Skeleton className="w-8 h-8 rounded-lg" />
+            <Skeleton className="h-5 w-28" />
+          </div>
+          <div className="space-y-2 flex-1">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <Skeleton key={i} className="h-10 w-full rounded-xl" />
+            ))}
+          </div>
+        </aside>
+        <main className="flex-1 md:pl-72 p-6 sm:p-8 space-y-6">
+          <div className="flex justify-between items-center pb-4 border-b border-zinc-200 dark:border-zinc-800">
+            <Skeleton className="h-8 w-48" />
+            <Skeleton className="h-10 w-32 rounded-full" />
+          </div>
+          <Skeleton className="h-80 w-full rounded-3xl" />
+        </main>
       </div>
     );
   }
