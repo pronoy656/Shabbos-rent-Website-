@@ -11,6 +11,7 @@ import GooglePlacesAutocomplete, { PlaceSuggestion } from "@/components/common/G
 import { toast } from "sonner";
 import { useCreateApartment, useUpdateApartment } from "@/hooks/useApartments";
 import { getImageUrl } from "@/utils/imageUrl";
+import { getCoordinatesForAddress } from "@/utils/distanceUtils";
 
 const PROPERTY_TYPES = [
   "Apartment",
@@ -240,10 +241,17 @@ export default function CreateListingModal({
       toast.error("Please enter or select a city.");
       return;
     }
-    if (!streetAddress.trim() || !isAddressVerified || !coordinates) {
-      toast.error("Please choose your address from the dropdown suggestions to continue.");
+    if (!streetAddress.trim()) {
+      toast.error("Please enter a street address.");
       return;
     }
+
+    // Ensure valid coordinates (from Google Places or calculated fallback)
+    let finalCoords = coordinates;
+    if (!finalCoords || !finalCoords.lat || !finalCoords.lng) {
+      finalCoords = getCoordinatesForAddress(`${streetAddress} ${neighborhood ? neighborhood + " " : ""}${city}`);
+    }
+
     if (!propertyType) {
       toast.error("Please select a property type.");
       return;
@@ -271,8 +279,8 @@ export default function CreateListingModal({
     formData.append("city", city.trim());
     formData.append("neighborhood", neighborhood.trim() || city.trim());
     formData.append("street1", streetAddress.trim());
-    if (coordinates?.lat) formData.append("lat", String(coordinates.lat));
-    if (coordinates?.lng) formData.append("lng", String(coordinates.lng));
+    if (finalCoords?.lat) formData.append("lat", String(finalCoords.lat));
+    if (finalCoords?.lng) formData.append("lng", String(finalCoords.lng));
     formData.append("propertyType", propertyType.toUpperCase().replace(/\s+/g, "_"));
     formData.append("bedrooms", String(parseInt(bedrooms, 10) || 1));
     formData.append("bathrooms", String(parseInt(bathrooms, 10) || 1));

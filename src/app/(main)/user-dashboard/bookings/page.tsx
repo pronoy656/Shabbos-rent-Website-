@@ -1,3 +1,4 @@
+/*
 "use client";
 
 import { useState, useEffect } from "react";
@@ -180,7 +181,6 @@ export default function BookingHistoryPage() {
         ))}
       </div>
 
-      {/* Contact Host Modal */}
       {selectedContactBooking && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white dark:bg-zinc-900 rounded-3xl p-6 md:p-8 max-w-md w-full border border-zinc-200 dark:border-zinc-800 shadow-2xl relative animate-in fade-in zoom-in-95 duration-200">
@@ -240,7 +240,6 @@ export default function BookingHistoryPage() {
         </div>
       )}
 
-      {/* Write Review Modal */}
       {isWriteReviewModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white dark:bg-zinc-900 rounded-3xl p-6 md:p-8 max-w-lg w-full border border-zinc-200 dark:border-zinc-800 shadow-2xl relative animate-in fade-in zoom-in-95 duration-200">
@@ -258,7 +257,6 @@ export default function BookingHistoryPage() {
             <p className="text-xs text-zinc-500 mb-6">{selectedBookingForReview?.title}</p>
 
             <form onSubmit={handleReviewSubmit} className="space-y-4">
-              {/* Star Rating Selection */}
               <div>
                 <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-2">
                   Rating
@@ -336,7 +334,6 @@ export default function BookingHistoryPage() {
         </div>
       )}
 
-      {/* Review Success Modal */}
       {isReviewSuccessModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white dark:bg-zinc-900 rounded-3xl p-6 md:p-8 max-w-md w-full border border-zinc-200 dark:border-zinc-800 shadow-2xl text-center animate-in fade-in zoom-in-95 duration-200">
@@ -359,4 +356,9 @@ export default function BookingHistoryPage() {
       )}
     </div>
   );
+}
+*/
+
+export default function BookingHistoryPage() {
+  return null;
 }

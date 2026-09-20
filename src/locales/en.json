@@ -415,7 +415,27 @@
       "hide_desc": "Temporarily hide the apartment from search results (does not delete it). Useful for maintenance periods or personal use.",
       "manage_availability": "Manage availability by weekly Torah portions",
       "mark_shabatot": "Mark the Shabatot when the apartment is available for rent. The list shows only upcoming Shabatot.",
-      "upcoming_shabbat": "Upcoming Shabbat"
+      "upcoming_shabbat": "Upcoming Shabbat",
+      "no_calendar_dates": "No Shabbat Dates Available",
+      "no_calendar_dates_desc": "There are currently no upcoming Shabbatot configured in the system calendar. Please check back later.",
+      "no_notify_requests": "No Request Available",
+      "no_notify_requests_desc": "When renters ask to be notified when your apartment becomes available, they will appear here.",
+      "no_interested_requests": "No Request Available",
+      "no_interested_requests_desc": "When renters express interest in booking your apartment, their inquiries will appear here.",
+      "no_offers": "No Offers Available",
+      "no_offers_desc": "When renters submit custom price offers for specific dates, you'll find them here."
+    },
+    "swap": {
+      "title": "Apartment Swap Program",
+      "desc": "Swap apartments with verified Jewish homeowners across Israel for Shabbat & Yom Tov weekends at zero rental cost.",
+      "enabled": "Swap Enabled",
+      "paused": "Swap Paused",
+      "listing_required_title": "Apartment Listing Required",
+      "listing_required_desc": "You must have at least one active apartment listing to enable swap and participate in community Shabbat swaps.",
+      "create_listing_btn": "Create Apartment Listing",
+      "matches_tab": "Swap Matches",
+      "received_tab": "Received Requests",
+      "sent_tab": "Sent Requests"
     }
   },
   "admin": {

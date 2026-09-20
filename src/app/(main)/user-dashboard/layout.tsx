@@ -93,14 +93,14 @@ export default function UserDashboardLayout({
       color: "text-red-500",
       isActive: pathname.startsWith("/user-dashboard/favorites"),
     },
-    {
-      id: "bookings",
-      href: "/user-dashboard/bookings",
-      label: "Booking History",
-      icon: CalendarDays,
-      color: "text-amber-500",
-      isActive: pathname.startsWith("/user-dashboard/bookings"),
-    },
+    // {
+    //   id: "bookings",
+    //   href: "/user-dashboard/bookings",
+    //   label: "Booking History",
+    //   icon: CalendarDays,
+    //   color: "text-amber-500",
+    //   isActive: pathname.startsWith("/user-dashboard/bookings"),
+    // },
     {
       id: "reminders",
       href: "/user-dashboard/reminders",

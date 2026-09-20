@@ -19,7 +19,7 @@ const ApartmentMap = dynamic(() => import("@/components/search/ApartmentMap"), {
   ssr: false,
   loading: () => (
     <div className="w-full h-[380px] bg-zinc-100 dark:bg-zinc-900 rounded-2xl flex items-center justify-center text-zinc-400 font-bold border border-zinc-200 dark:border-zinc-800 animate-pulse">
-      Loading Free Map...
+      Loading Google Map...
     </div>
   ),
 });

@@ -2,12 +2,14 @@
 
 import { useState } from "react";
 import { Mail, Bell, Sparkles, Hand } from "lucide-react";
+import { useLanguage } from "@/context/LanguageContext";
 import { useMyNotifyRequests } from "@/hooks/useNotifyRequests";
 import { useMyInterestedRequests } from "@/hooks/useInterestedRequests";
 import { useMyOffers } from "@/hooks/useOfferRequests";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function InterestedRequestsPage() {
+  const { t } = useLanguage();
   const [subTab, setSubTab] = useState<"notify" | "interested" | "offer">("notify");
 
   const { data: notifyData, isLoading: isNotifyLoading } = useMyNotifyRequests();
@@ -77,9 +79,18 @@ export default function InterestedRequestsPage() {
                 ))}
               </div>
             ) : notifyRequests.length === 0 ? (
-              <p className="text-zinc-500 text-center py-8 text-sm">
-                No notification requests yet.
-              </p>
+              <div className="py-16 px-6 text-center bg-gradient-to-b from-zinc-50/80 to-zinc-50 dark:from-zinc-800/20 dark:to-zinc-800/40 rounded-3xl border border-dashed border-zinc-200 dark:border-zinc-800/80 max-w-xl mx-auto my-6">
+                <div className="w-16 h-16 bg-blue-100/80 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-sm border border-blue-200/50 dark:border-blue-900/50">
+                  <Bell className="w-8 h-8 stroke-[1.8]" />
+                </div>
+                <h4 className="text-lg font-extrabold text-zinc-900 dark:text-zinc-100 mb-2">
+                  {t("dashboard.manage.no_notify_requests") || "No Request Available"}
+                </h4>
+                <p className="text-sm text-zinc-500 dark:text-zinc-400 max-w-md mx-auto leading-relaxed">
+                  {t("dashboard.manage.no_notify_requests_desc") ||
+                    "When renters ask to be notified when your apartment becomes available, they will appear here."}
+                </p>
+              </div>
             ) : (
               notifyRequests.map((req) => (
                 <div
@@ -139,9 +150,18 @@ export default function InterestedRequestsPage() {
                 ))}
               </div>
             ) : interestedRequests.length === 0 ? (
-              <p className="text-zinc-500 text-center py-8 text-sm">
-                No interested requests yet.
-              </p>
+              <div className="py-16 px-6 text-center bg-gradient-to-b from-zinc-50/80 to-zinc-50 dark:from-zinc-800/20 dark:to-zinc-800/40 rounded-3xl border border-dashed border-zinc-200 dark:border-zinc-800/80 max-w-xl mx-auto my-6">
+                <div className="w-16 h-16 bg-indigo-100/80 dark:bg-indigo-950/50 text-[#4c55a4] dark:text-indigo-400 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-sm border border-[#4c55a4]/20">
+                  <Hand className="w-8 h-8 stroke-[1.8]" />
+                </div>
+                <h4 className="text-lg font-extrabold text-zinc-900 dark:text-zinc-100 mb-2">
+                  {t("dashboard.manage.no_interested_requests") || "No Request Available"}
+                </h4>
+                <p className="text-sm text-zinc-500 dark:text-zinc-400 max-w-md mx-auto leading-relaxed">
+                  {t("dashboard.manage.no_interested_requests_desc") ||
+                    "When renters express interest in booking your apartment, their inquiries will appear here."}
+                </p>
+              </div>
             ) : (
               interestedRequests.map((req) => (
                 <div
@@ -198,9 +218,18 @@ export default function InterestedRequestsPage() {
                 ))}
               </div>
             ) : offerRequests.length === 0 ? (
-              <p className="text-zinc-500 text-center py-8 text-sm">
-                No price offers yet.
-              </p>
+              <div className="py-16 px-6 text-center bg-gradient-to-b from-zinc-50/80 to-zinc-50 dark:from-zinc-800/20 dark:to-zinc-800/40 rounded-3xl border border-dashed border-zinc-200 dark:border-zinc-800/80 max-w-xl mx-auto my-6">
+                <div className="w-16 h-16 bg-amber-100/80 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-sm border border-amber-200/50 dark:border-amber-900/50">
+                  <Sparkles className="w-8 h-8 stroke-[1.8]" />
+                </div>
+                <h4 className="text-lg font-extrabold text-zinc-900 dark:text-zinc-100 mb-2">
+                  {t("dashboard.manage.no_offers") || "No Offers Available"}
+                </h4>
+                <p className="text-sm text-zinc-500 dark:text-zinc-400 max-w-md mx-auto leading-relaxed">
+                  {t("dashboard.manage.no_offers_desc") ||
+                    "When renters submit custom price offers for specific dates, you'll find them here."}
+                </p>
+              </div>
             ) : (
               offerRequests.map((req) => (
                 <div

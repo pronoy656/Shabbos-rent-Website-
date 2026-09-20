@@ -21,7 +21,6 @@ import { useMyApartment, useApartmentAvailabilities } from "@/hooks/useApartment
 import { useWeekendCalendars } from "@/hooks/useWeekendCalendar";
 import { getImageUrl } from "@/utils/imageUrl";
 import CreateListingModal from "@/components/layout/CreateListingModal";
-import { SHABBATOT } from "@/components/dashboard/dashboardData";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function MyListingPage() {
@@ -85,7 +84,7 @@ export default function MyListingPage() {
               rawDate: w.date,
             };
           })
-      : SHABBATOT;
+      : [];
 
   // Availabilities API Query for this apartment
   const { data: myAvailabilitiesData } = useApartmentAvailabilities(myApartment?.id || "");

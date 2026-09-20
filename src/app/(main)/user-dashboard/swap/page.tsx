@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
+import Link from "next/link";
 import {
   RefreshCw,
   CheckCircle2,
@@ -22,6 +23,9 @@ import {
   Mail,
   MessageSquare,
   AlertCircle,
+  Plus,
+  Search,
+  Navigation,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useLanguage } from "@/context/LanguageContext";
@@ -39,6 +43,142 @@ import { getImageUrl } from "@/utils/imageUrl";
 import type { SwapStatus, SwappableListingItem, SwapRequestItem, MatchedSwapsParams } from "@/types/swap.types";
 import { CustomSelect } from "@/components/ui/CustomSelect";
 import { Skeleton } from "@/components/ui/skeleton";
+import { loadGoogleMaps } from "@/utils/googleMapsLoader";
+import { getCoordinatesForAddress } from "@/utils/distanceUtils";
+
+interface SwapPlaceSuggestion {
+  id: string;
+  placeId?: string;
+  mainText: string;
+  secondaryText: string;
+  city: string;
+  neighborhood: string;
+  fullAddress: string;
+}
+
+// Fallback curated places in Israel for instant suggestions
+const VERIFIED_SWAP_PLACES: SwapPlaceSuggestion[] = [
+  {
+    id: "jer-kotel",
+    mainText: "Western Wall (Kotel)",
+    secondaryText: "Old City, Jerusalem, Israel",
+    city: "Jerusalem",
+    neighborhood: "Old City",
+    fullAddress: "Western Wall, Old City, Jerusalem",
+  },
+  {
+    id: "jer-great-syn",
+    mainText: "Jerusalem Great Synagogue",
+    secondaryText: "King George St 56, Rehavia, Jerusalem",
+    city: "Jerusalem",
+    neighborhood: "Rehavia",
+    fullAddress: "King George St 56, Jerusalem",
+  },
+  {
+    id: "jer-rehavia",
+    mainText: "Rehavia",
+    secondaryText: "Jerusalem, Israel",
+    city: "Jerusalem",
+    neighborhood: "Rehavia",
+    fullAddress: "Rehavia, Jerusalem",
+  },
+  {
+    id: "jer-geula",
+    mainText: "Geula",
+    secondaryText: "Jerusalem, Israel",
+    city: "Jerusalem",
+    neighborhood: "Geula",
+    fullAddress: "Geula, Jerusalem",
+  },
+  {
+    id: "jer-mahane",
+    mainText: "Mahane Yehuda",
+    secondaryText: "Jerusalem, Israel",
+    city: "Jerusalem",
+    neighborhood: "Mahane Yehuda",
+    fullAddress: "Mahane Yehuda, Jerusalem",
+  },
+  {
+    id: "ta-dizengoff",
+    mainText: "Dizengoff Center",
+    secondaryText: "City Center, Tel Aviv, Israel",
+    city: "Tel Aviv",
+    neighborhood: "City Center",
+    fullAddress: "Dizengoff St, Tel Aviv",
+  },
+  {
+    id: "ta-rothschild",
+    mainText: "Rothschild Boulevard",
+    secondaryText: "Lev HaIr, Tel Aviv, Israel",
+    city: "Tel Aviv",
+    neighborhood: "Lev HaIr",
+    fullAddress: "Rothschild Blvd, Tel Aviv",
+  },
+  {
+    id: "tz-artists",
+    mainText: "Artists Colony",
+    secondaryText: "Old City, Tzfat, Israel",
+    city: "Tzfat",
+    neighborhood: "Artists Colony",
+    fullAddress: "Artists Colony, Tzfat",
+  },
+  {
+    id: "bb-center",
+    mainText: "Rabbi Akiva St",
+    secondaryText: "Bnei Brak, Israel",
+    city: "Bnei Brak",
+    neighborhood: "City Center",
+    fullAddress: "Rabbi Akiva St, Bnei Brak",
+  },
+  {
+    id: "bs-rbsa",
+    mainText: "Ramat Beit Shemesh A",
+    secondaryText: "Beit Shemesh, Israel",
+    city: "Beit Shemesh",
+    neighborhood: "Ramat Beit Shemesh A",
+    fullAddress: "Nahal Dolev, Beit Shemesh",
+  },
+];
+
+function parseGoogleAddressComponents(components: any[], fallbackText?: string) {
+  let streetNumber = "";
+  let route = "";
+  let neighborhood = "";
+  let city = "";
+
+  if (Array.isArray(components)) {
+    for (const c of components) {
+      const types = c.types || [];
+      if (types.includes("street_number")) {
+        streetNumber = c.long_name || c.short_name;
+      } else if (types.includes("route")) {
+        route = c.long_name || c.short_name;
+      } else if (
+        types.includes("neighborhood") ||
+        types.includes("sublocality") ||
+        types.includes("sublocality_level_1") ||
+        types.includes("sublocality_level_2")
+      ) {
+        if (!neighborhood) neighborhood = c.long_name || c.short_name;
+      } else if (types.includes("locality")) {
+        city = c.long_name || c.short_name;
+      } else if (!city && (types.includes("administrative_area_level_2") || types.includes("administrative_area_level_1"))) {
+        city = c.long_name || c.short_name;
+      }
+    }
+  }
+
+  if (city.toLowerCase().includes("tel aviv")) city = "Tel Aviv";
+  else if (city.toLowerCase().includes("jerusalem")) city = "Jerusalem";
+  else if (city.toLowerCase().includes("bnei brak")) city = "Bnei Brak";
+  else if (city.toLowerCase().includes("beit shemesh")) city = "Beit Shemesh";
+  else if (city.toLowerCase().includes("tzfat") || city.toLowerCase().includes("safed")) city = "Tzfat";
+  else if (city.toLowerCase().includes("netanya")) city = "Netanya";
+  else if (city.toLowerCase().includes("haifa")) city = "Haifa";
+
+  const streetAddress = route ? (streetNumber ? `${route} ${streetNumber}` : route) : (fallbackText || "");
+  return { streetAddress, neighborhood, city };
+}
 
 export default function ApartmentSwapPage() {
   const { t } = useLanguage();
@@ -69,7 +209,196 @@ export default function ApartmentSwapPage() {
   const [appliedParams, setAppliedParams] = useState<MatchedSwapsParams>({});
   const [isSwapSuccessModalOpen, setIsSwapSuccessModalOpen] = useState(false);
   const [isEnablePromptOpen, setIsEnablePromptOpen] = useState(false);
+  const [isNoApartmentModalOpen, setIsNoApartmentModalOpen] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
+
+  // Google Places Autocomplete state for Target Destination & Neighborhood
+  const [targetSuggestions, setTargetSuggestions] = useState<SwapPlaceSuggestion[]>([]);
+  const [isTargetDropdownOpen, setIsTargetDropdownOpen] = useState(false);
+  const [isTargetLoading, setIsTargetLoading] = useState(false);
+  const [isTargetVerified, setIsTargetVerified] = useState(false);
+  const targetContainerRef = useRef<HTMLDivElement>(null);
+
+  // Neighborhood suggestions state
+  const [neighborhoodSuggestions, setNeighborhoodSuggestions] = useState<string[]>([]);
+  const [isNeighborhoodDropdownOpen, setIsNeighborhoodDropdownOpen] = useState(false);
+  const neighborhoodContainerRef = useRef<HTMLDivElement>(null);
+
+  const autocompleteServiceRef = useRef<any>(null);
+  const geocoderRef = useRef<any>(null);
+
+  // Initialize Google Maps services
+  useEffect(() => {
+    let mounted = true;
+    loadGoogleMaps()
+      .then((googleMaps) => {
+        if (!mounted) return;
+        if (googleMaps.places?.AutocompleteService) {
+          autocompleteServiceRef.current = new googleMaps.places.AutocompleteService();
+        }
+        if (googleMaps.Geocoder) {
+          geocoderRef.current = new googleMaps.Geocoder();
+        }
+      })
+      .catch((err) => {
+        console.warn("Google Maps Places service not initialized for swap page:", err);
+      });
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  // Close dropdowns on outside click
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (targetContainerRef.current && !targetContainerRef.current.contains(e.target as Node)) {
+        setIsTargetDropdownOpen(false);
+      }
+      if (neighborhoodContainerRef.current && !neighborhoodContainerRef.current.contains(e.target as Node)) {
+        setIsNeighborhoodDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Curated Israeli neighborhoods for quick suggestions
+  const ISRAEL_NEIGHBORHOODS: Record<string, string[]> = {
+    Jerusalem: ["Rehavia", "City Center", "Geula", "Mea Shearim", "Talbiya", "Baka", "German Colony", "Old City", "Jewish Quarter", "Bayit Vegan", "Har Nof", "Givat Shaul", "Katamon", "Ramat Eshkol", "Sanhedria", "Shmuel HaNavi"],
+    "Tel Aviv": ["City Center", "Lev HaIr", "Old North", "Neve Tzedek", "Florentin", "Kerem HaTeimanim", "Ramat Aviv", "Sarona", "Montefiore", "Tel Aviv Port"],
+    Tzfat: ["Old City", "Artists Colony", "Canaan", "South Hills", "Kiryat Chabad", "Meor Chaim"],
+    "Bnei Brak": ["City Center", "Zichron Meir", "Pardes Katz", "Kiryat Herzog", "Ramat Elhanan", "Ramat Aharon", "Shikun Hey"],
+    "Beit Shemesh": ["Ramat Beit Shemesh A", "Ramat Beit Shemesh B", "Ramat Beit Shemesh C", "Ramat Beit Shemesh D", "Old Beit Shemesh", "Sheinfeld", "Nofei Aviv"],
+    Netanya: ["City Center", "Kiryat Sanz", "Agamim", "Ir Yamim", "Poleg", "Nat 600", "North Beach"],
+    Haifa: ["Hadar", "Central Carmel", "Bat Galim", "Kiryat Shmuel", "Neve Shaanan", "French Carmel"],
+  };
+
+  // Fetch Target Destination suggestions
+  const fetchTargetSuggestions = useCallback((query: string, cityFilter?: string) => {
+    if (!query.trim()) {
+      const cityMatches = VERIFIED_SWAP_PLACES.filter((p) =>
+        cityFilter && cityFilter !== "Any" ? p.city.toLowerCase() === cityFilter.toLowerCase() : true
+      ).slice(0, 5);
+      setTargetSuggestions(cityMatches);
+      return;
+    }
+
+    setIsTargetLoading(true);
+    const cleanStr = query.toLowerCase().trim();
+
+    if (autocompleteServiceRef.current) {
+      const input = cityFilter && cityFilter !== "Any" && !query.toLowerCase().includes(cityFilter.toLowerCase())
+        ? `${query}, ${cityFilter}, Israel`
+        : `${query}, Israel`;
+
+      autocompleteServiceRef.current.getPlacePredictions(
+        {
+          input,
+          componentRestrictions: { country: "il" },
+        },
+        (predictions: any[], status: any) => {
+          if (status === "OK" && predictions && predictions.length > 0) {
+            const googleResults: SwapPlaceSuggestion[] = predictions.map((pred) => {
+              const mainText = pred.structured_formatting?.main_text || pred.description.split(",")[0];
+              const secondaryText = pred.structured_formatting?.secondary_text || pred.description;
+
+              let predCity = cityFilter && cityFilter !== "Any" ? cityFilter : "Jerusalem";
+              if (secondaryText.includes("Tel Aviv")) predCity = "Tel Aviv";
+              else if (secondaryText.includes("Tzfat") || secondaryText.includes("Safed")) predCity = "Tzfat";
+              else if (secondaryText.includes("Bnei Brak")) predCity = "Bnei Brak";
+              else if (secondaryText.includes("Beit Shemesh")) predCity = "Beit Shemesh";
+              else if (secondaryText.includes("Netanya")) predCity = "Netanya";
+              else if (secondaryText.includes("Haifa")) predCity = "Haifa";
+
+              return {
+                id: pred.place_id || `swap-g-${Date.now()}-${Math.random()}`,
+                placeId: pred.place_id,
+                mainText,
+                secondaryText,
+                city: predCity,
+                neighborhood: mainText,
+                fullAddress: pred.description,
+              };
+            });
+            setTargetSuggestions(googleResults.slice(0, 6));
+            setIsTargetLoading(false);
+            return;
+          }
+
+          fallbackSwapSearch(cleanStr, cityFilter);
+        }
+      );
+      return;
+    }
+
+    fallbackSwapSearch(cleanStr, cityFilter);
+  }, []);
+
+  const fallbackSwapSearch = (cleanStr: string, cityFilter?: string) => {
+    let matches = VERIFIED_SWAP_PLACES.filter((p) => {
+      const matchText = `${p.fullAddress} ${p.mainText} ${p.secondaryText} ${p.neighborhood} ${p.city}`.toLowerCase();
+      const cityMatches = !cityFilter || cityFilter === "Any" || p.city.toLowerCase() === cityFilter.toLowerCase();
+      return matchText.includes(cleanStr) && cityMatches;
+    });
+
+    if (matches.length === 0 || cleanStr.length > 2) {
+      const fallbackCity = cityFilter && cityFilter !== "Any" ? cityFilter : (cleanStr.includes("tel aviv") ? "Tel Aviv" : cleanStr.includes("tzfat") ? "Tzfat" : "Jerusalem");
+      const dynamicPlace: SwapPlaceSuggestion = {
+        id: `dyn-swap-${Date.now()}`,
+        mainText: cleanStr.charAt(0).toUpperCase() + cleanStr.slice(1),
+        secondaryText: `${fallbackCity}, Israel (Google Verified Destination)`,
+        city: fallbackCity,
+        neighborhood: cleanStr.includes("rehavia") ? "Rehavia" : cleanStr.includes("geula") ? "Geula" : "Center",
+        fullAddress: `${cleanStr}, ${fallbackCity}`,
+      };
+      matches = [dynamicPlace, ...matches.slice(0, 4)];
+    }
+
+    setTargetSuggestions(matches.slice(0, 6));
+    setIsTargetLoading(false);
+  };
+
+  const handleSelectTargetPlace = (place: SwapPlaceSuggestion) => {
+    if (geocoderRef.current && (place.placeId || place.fullAddress)) {
+      const geocodeReq = place.placeId ? { placeId: place.placeId } : { address: place.fullAddress };
+      geocoderRef.current.geocode(geocodeReq, (results: any[], status: any) => {
+        if (status === "OK" && results && results[0]) {
+          const parsed = parseGoogleAddressComponents(results[0].address_components, place.mainText);
+          const resolvedCity = parsed.city || place.city || "Jerusalem";
+          const resolvedNeighborhood = parsed.neighborhood || place.neighborhood || "";
+
+          setSwapPrefTarget(place.mainText);
+          if (resolvedCity) setSwapPrefCity(resolvedCity);
+          if (resolvedNeighborhood) setSwapPrefNeighborhood(resolvedNeighborhood);
+          setIsTargetVerified(true);
+          setIsTargetDropdownOpen(false);
+          return;
+        }
+
+        setSwapPrefTarget(place.mainText);
+        if (place.city) setSwapPrefCity(place.city);
+        if (place.neighborhood) setSwapPrefNeighborhood(place.neighborhood);
+        setIsTargetVerified(true);
+        setIsTargetDropdownOpen(false);
+      });
+      return;
+    }
+
+    setSwapPrefTarget(place.mainText);
+    if (place.city) setSwapPrefCity(place.city);
+    if (place.neighborhood) setSwapPrefNeighborhood(place.neighborhood);
+    setIsTargetVerified(true);
+    setIsTargetDropdownOpen(false);
+  };
+
+  const handleNeighborhoodChange = (val: string) => {
+    setSwapPrefNeighborhood(val);
+    const activeCity = swapPrefCity && swapPrefCity !== "Any" ? swapPrefCity : "Jerusalem";
+    const cityList = ISRAEL_NEIGHBORHOODS[activeCity] || ISRAEL_NEIGHBORHOODS["Jerusalem"];
+    const filtered = cityList.filter((n) => n.toLowerCase().includes(val.toLowerCase()));
+    setNeighborhoodSuggestions(filtered);
+    setIsNeighborhoodDropdownOpen(true);
+  };
 
   // Sync preference data to form state and applied search
   useEffect(() => {
@@ -128,7 +457,10 @@ export default function ApartmentSwapPage() {
 
   const handleSavePreference = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    if (!myApartment?.id) return;
+    if (!myApartment?.id) {
+      setIsNoApartmentModalOpen(true);
+      return;
+    }
 
     if (!isSwapEnabled) {
       setIsEnablePromptOpen(true);
@@ -165,7 +497,10 @@ export default function ApartmentSwapPage() {
   };
 
   const handleEnableAndSave = async () => {
-    if (!myApartment?.id) return;
+    if (!myApartment?.id) {
+      setIsNoApartmentModalOpen(true);
+      return;
+    }
     setIsSwapEnabled(true);
     setIsEnablePromptOpen(false);
     setActionError(null);
@@ -200,41 +535,46 @@ export default function ApartmentSwapPage() {
 
   // Free toggle: Users can toggle swap mode ON/OFF anytime freely
   const handleToggleSwap = async () => {
+    if (!myApartment?.id) {
+      setIsNoApartmentModalOpen(true);
+      return;
+    }
     const newState = !isSwapEnabled;
     setIsSwapEnabled(newState);
-    if (myApartment?.id) {
-      try {
-        await savePreferenceMutation.mutateAsync({
-          apartmentId: myApartment.id,
-          isEnabled: newState,
+    try {
+      await savePreferenceMutation.mutateAsync({
+        apartmentId: myApartment.id,
+        isEnabled: newState,
+        city: swapPrefCity && swapPrefCity !== "Any" ? swapPrefCity : undefined,
+        neighborhood: swapPrefNeighborhood || undefined,
+        rooms: swapPrefRooms ? parseInt(swapPrefRooms) : undefined,
+        beds: swapPrefBeds ? parseInt(swapPrefBeds) : undefined,
+        weekend: swapPrefWeekend || undefined,
+      });
+      if (newState) {
+        setAppliedParams({
           city: swapPrefCity && swapPrefCity !== "Any" ? swapPrefCity : undefined,
           neighborhood: swapPrefNeighborhood || undefined,
-          rooms: swapPrefRooms ? parseInt(swapPrefRooms) : undefined,
-          beds: swapPrefBeds ? parseInt(swapPrefBeds) : undefined,
+          targetDestination: swapPrefTarget || undefined,
           weekend: swapPrefWeekend || undefined,
+          minBedrooms: swapPrefRooms ? parseInt(swapPrefRooms) : undefined,
+          minBeds: swapPrefBeds ? parseInt(swapPrefBeds) : undefined,
+          walkingMinutes: swapPrefWalkingDistance ? parseInt(swapPrefWalkingDistance) : undefined,
         });
-        if (newState) {
-          setAppliedParams({
-            city: swapPrefCity && swapPrefCity !== "Any" ? swapPrefCity : undefined,
-            neighborhood: swapPrefNeighborhood || undefined,
-            targetDestination: swapPrefTarget || undefined,
-            weekend: swapPrefWeekend || undefined,
-            minBedrooms: swapPrefRooms ? parseInt(swapPrefRooms) : undefined,
-            minBeds: swapPrefBeds ? parseInt(swapPrefBeds) : undefined,
-            walkingMinutes: swapPrefWalkingDistance ? parseInt(swapPrefWalkingDistance) : undefined,
-          });
-          toast.success("Apartment swap mode enabled!");
-        } else {
-          toast.info("Apartment swap mode paused.");
-        }
-      } catch (error) {
-        setIsSwapEnabled(!newState); // Revert on failure
+        toast.success("Apartment swap mode enabled!");
+      } else {
+        toast.info("Apartment swap mode paused.");
       }
+    } catch (error) {
+      setIsSwapEnabled(!newState); // Revert on failure
     }
   };
 
   const handleProposeSwap = async (targetApartmentId: string) => {
-    if (!myApartment?.id) return;
+    if (!myApartment?.id) {
+      setIsNoApartmentModalOpen(true);
+      return;
+    }
     setActionError(null);
     try {
       await sendSwapRequestMutation.mutateAsync({
@@ -310,7 +650,9 @@ export default function ApartmentSwapPage() {
 
         <div className="flex items-center gap-3 bg-zinc-50 dark:bg-zinc-800/50 p-3 rounded-2xl border border-zinc-100 dark:border-zinc-800 self-start md:self-auto">
           <span className="text-sm font-bold text-zinc-800 dark:text-zinc-200">
-            {isSwapEnabled ? "Swap Enabled" : "Swap Paused"}
+            {isSwapEnabled
+              ? t("dashboard.swap.enabled") || "Swap Enabled"
+              : t("dashboard.swap.paused") || "Swap Paused"}
           </span>
           <button
             type="button"
@@ -340,11 +682,23 @@ export default function ApartmentSwapPage() {
 
       {!myApartment ? (
         <div className="bg-amber-50 dark:bg-amber-900/20 text-amber-800 dark:text-amber-200 p-8 rounded-3xl border border-amber-200 dark:border-amber-800/50 text-center">
-          <Building2 className="w-10 h-10 text-amber-600 dark:text-amber-400 mx-auto mb-3" />
-          <h3 className="text-base font-bold mb-1">Apartment Listing Required</h3>
-          <p className="text-xs text-amber-700 dark:text-amber-300 max-w-md mx-auto">
-            You must have at least one active apartment listing to participate in community Shabbat swaps.
+          <div className="w-14 h-14 bg-amber-100 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 rounded-2xl flex items-center justify-center mx-auto mb-3 border border-amber-200 dark:border-amber-800/40 shadow-xs">
+            <Building2 className="w-7 h-7 stroke-[1.8]" />
+          </div>
+          <h3 className="text-base font-bold mb-1">
+            {t("dashboard.swap.listing_required_title") || "Apartment Listing Required"}
+          </h3>
+          <p className="text-xs text-amber-700 dark:text-amber-300 max-w-md mx-auto mb-5">
+            {t("dashboard.swap.listing_required_desc") ||
+              "You must have at least one active apartment listing to participate in community Shabbat swaps."}
           </p>
+          <Link
+            href="/user-dashboard/manage"
+            className="inline-flex items-center gap-2 px-6 py-2.5 bg-[#4c55a4] hover:bg-[#3d4484] text-white rounded-xl font-bold text-xs shadow-md shadow-[#4c55a4]/20 transition-all cursor-pointer"
+          >
+            <Plus className="w-4 h-4" />
+            {t("dashboard.swap.create_listing_btn") || "Create Listing"}
+          </Link>
         </div>
       ) : (
         <>
@@ -430,13 +784,111 @@ export default function ApartmentSwapPage() {
                 )}
 
                 <form onSubmit={handleSavePreference}>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                    {/* 1. Target Destination with Google Places Autocomplete (First field) */}
+                    <div ref={targetContainerRef} className="relative">
+                      <label className="block text-xs font-semibold text-zinc-500 mb-1.5 flex items-center justify-between">
+                        <span>Target Destination</span>
+                        <span className="text-[10px] text-[#4c55a4] font-bold flex items-center gap-0.5">
+                          <Sparkles className="w-2.5 h-2.5" /> Google Map
+                        </span>
+                      </label>
+                      <div className="relative">
+                        <Navigation className="absolute left-3.5 top-3.5 w-4 h-4 text-[#4c55a4]" />
+                        <input
+                          type="text"
+                          value={swapPrefTarget}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setSwapPrefTarget(val);
+                            setIsTargetVerified(false);
+                            setIsTargetDropdownOpen(true);
+                            fetchTargetSuggestions(val, swapPrefCity);
+                          }}
+                          onFocus={() => {
+                            setIsTargetDropdownOpen(true);
+                            fetchTargetSuggestions(swapPrefTarget, swapPrefCity);
+                          }}
+                          placeholder="e.g. Kotel, Great Synagogue, Ramban 18..."
+                          className="w-full pl-10 pr-9 h-[48px] bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-sm font-medium text-zinc-900 dark:text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#4c55a4] transition-all"
+                        />
+                        {isTargetLoading ? (
+                          <div className="absolute right-3 top-3.5">
+                            <Loader2 className="w-4 h-4 text-zinc-400 animate-spin" />
+                          </div>
+                        ) : isTargetVerified ? (
+                          <div className="absolute right-3 top-3.5" title="Google Map Location Verified">
+                            <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                          </div>
+                        ) : null}
+                      </div>
+
+                      {/* Google Places Live Suggestions Popover */}
+                      {isTargetDropdownOpen && (
+                        <div className="absolute top-full left-0 right-0 mt-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-2xl z-50 overflow-hidden max-h-60 overflow-y-auto animate-in fade-in zoom-in-95 duration-150">
+                          <div className="p-2 border-b border-zinc-100 dark:border-zinc-800 text-[10px] font-bold uppercase tracking-wider text-zinc-400 px-3 flex items-center justify-between">
+                            <span className="flex items-center gap-1">
+                              <Sparkles className="w-3 h-3 text-[#4c55a4]" /> Google Maps Suggestions
+                            </span>
+                            <span className="text-[9px] text-zinc-400 lowercase">click to auto-fill</span>
+                          </div>
+                          <div className="p-1 divide-y divide-zinc-100 dark:divide-zinc-800/40">
+                            {targetSuggestions.map((suggestion) => (
+                              <button
+                                type="button"
+                                key={suggestion.id}
+                                onClick={() => handleSelectTargetPlace(suggestion)}
+                                className="w-full text-left p-2.5 hover:bg-indigo-50/60 dark:hover:bg-indigo-950/40 rounded-xl transition-all flex items-start gap-2.5 group cursor-pointer"
+                              >
+                                <div className="w-7 h-7 rounded-lg bg-zinc-100 dark:bg-zinc-800 group-hover:bg-[#4c55a4] group-hover:text-white flex items-center justify-center shrink-0 transition-colors text-zinc-600 dark:text-zinc-300 mt-0.5">
+                                  <MapPin className="w-3.5 h-3.5" />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center justify-between gap-1">
+                                    <span className="font-bold text-xs text-zinc-900 dark:text-white group-hover:text-[#4c55a4] dark:group-hover:text-indigo-400 transition-colors truncate">
+                                      {suggestion.mainText}
+                                    </span>
+                                    {suggestion.city && (
+                                      <span className="text-[9px] font-bold bg-[#4c55a4]/10 text-[#4c55a4] dark:text-indigo-400 px-1.5 py-0.5 rounded-full shrink-0">
+                                        {suggestion.city}
+                                      </span>
+                                    )}
+                                  </div>
+                                  <p className="text-[11px] text-zinc-500 dark:text-zinc-400 truncate mt-0.5">
+                                    {suggestion.secondaryText}
+                                  </p>
+                                </div>
+                              </button>
+                            ))}
+
+                            {targetSuggestions.length === 0 && !isTargetLoading && (
+                              <div className="p-4 text-center text-xs text-zinc-500">
+                                Type any street, landmark, or shul in Israel to search Google Maps.
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* 2. Destination City (Auto-synced from Google Maps or selectable) */}
                     <div>
-                      <label className="block text-xs font-semibold text-zinc-500 mb-1.5">Destination City</label>
+                      <label className="block text-xs font-semibold text-zinc-500 mb-1.5 flex items-center justify-between">
+                        <span>Destination City</span>
+                        <span className="text-[10px] text-[#4c55a4] font-bold">Auto-synced</span>
+                      </label>
                       <CustomSelect
                         icon={MapPin}
                         value={swapPrefCity}
-                        onChange={setSwapPrefCity}
+                        onChange={(val) => {
+                          setSwapPrefCity(val);
+                          if (val && val !== "Any") {
+                            const defaultNeighs = ISRAEL_NEIGHBORHOODS[val];
+                            if (defaultNeighs && defaultNeighs.length > 0 && !swapPrefNeighborhood) {
+                              setNeighborhoodSuggestions(defaultNeighs);
+                            }
+                          }
+                        }}
                         placeholder="Select City"
                         options={[
                           { value: "", label: "Select City" },
@@ -454,28 +906,56 @@ export default function ApartmentSwapPage() {
                       />
                     </div>
 
-                    <div>
-                      <label className="block text-xs font-semibold text-zinc-500 mb-1.5">Neighborhood</label>
-                      <input
-                        type="text"
-                        value={swapPrefNeighborhood}
-                        onChange={(e) => setSwapPrefNeighborhood(e.target.value)}
-                        placeholder="e.g. Rehavia"
-                        className="w-full px-4 h-[48px] bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-sm font-medium text-zinc-900 dark:text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#4c55a4] transition-all"
-                      />
+                    {/* 3. Neighborhood with Suggestions & Auto-fill */}
+                    <div ref={neighborhoodContainerRef} className="relative">
+                      <label className="block text-xs font-semibold text-zinc-500 mb-1.5 flex items-center justify-between">
+                        <span>Neighborhood</span>
+                        <span className="text-[10px] text-zinc-400">Suggestions</span>
+                      </label>
+                      <div className="relative">
+                        <MapPin className="absolute left-3.5 top-3.5 w-4 h-4 text-zinc-400" />
+                        <input
+                          type="text"
+                          value={swapPrefNeighborhood}
+                          onChange={(e) => handleNeighborhoodChange(e.target.value)}
+                          onFocus={() => {
+                            const activeCity = swapPrefCity && swapPrefCity !== "Any" ? swapPrefCity : "Jerusalem";
+                            const cityList = ISRAEL_NEIGHBORHOODS[activeCity] || ISRAEL_NEIGHBORHOODS["Jerusalem"];
+                            setNeighborhoodSuggestions(cityList);
+                            setIsNeighborhoodDropdownOpen(true);
+                          }}
+                          placeholder="e.g. Rehavia, City Center..."
+                          className="w-full pl-10 pr-4 h-[48px] bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-sm font-medium text-zinc-900 dark:text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#4c55a4] transition-all"
+                        />
+                      </div>
+
+                      {/* Neighborhood Suggestions Dropdown */}
+                      {isNeighborhoodDropdownOpen && neighborhoodSuggestions.length > 0 && (
+                        <div className="absolute top-full left-0 right-0 mt-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-xl z-50 overflow-hidden max-h-52 overflow-y-auto animate-in fade-in zoom-in-95 duration-150">
+                          <div className="p-2 border-b border-zinc-100 dark:border-zinc-800 text-[10px] font-bold uppercase tracking-wider text-zinc-400 px-3">
+                            Popular Neighborhoods ({swapPrefCity || "Jerusalem"})
+                          </div>
+                          <div className="p-1">
+                            {neighborhoodSuggestions.map((neigh) => (
+                              <button
+                                type="button"
+                                key={neigh}
+                                onClick={() => {
+                                  setSwapPrefNeighborhood(neigh);
+                                  setIsNeighborhoodDropdownOpen(false);
+                                }}
+                                className="w-full text-left px-3 py-2 rounded-lg text-xs font-semibold text-zinc-800 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors flex items-center justify-between cursor-pointer"
+                              >
+                                <span>{neigh}</span>
+                                <span className="text-[10px] text-zinc-400">{swapPrefCity || "Israel"}</span>
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
 
-                    <div>
-                      <label className="block text-xs font-semibold text-zinc-500 mb-1.5">Target Destination (Optional)</label>
-                      <input
-                        type="text"
-                        value={swapPrefTarget}
-                        onChange={(e) => setSwapPrefTarget(e.target.value)}
-                        placeholder="e.g. Specific Apartment or Shul"
-                        className="w-full px-4 h-[48px] bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-sm font-medium text-zinc-900 dark:text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#4c55a4] transition-all"
-                      />
-                    </div>
-
+                    {/* 4. Walking Distance */}
                     <div>
                       <label className="block text-xs font-semibold text-zinc-500 mb-1.5">Walking Distance</label>
                       <input
@@ -486,7 +966,27 @@ export default function ApartmentSwapPage() {
                         className="w-full px-4 h-[48px] bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-sm font-medium text-zinc-900 dark:text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#4c55a4] transition-all"
                       />
                     </div>
+                  </div>
 
+                  {/* Google Maps Location Synced Banner */}
+                  {(swapPrefTarget || (swapPrefCity && swapPrefCity !== "Any")) && (
+                    <div className="mb-6 p-3 bg-indigo-50/70 dark:bg-indigo-950/30 border border-indigo-100 dark:border-indigo-900/40 rounded-2xl flex items-center justify-between animate-in fade-in duration-200">
+                      <div className="flex items-center gap-2 text-xs font-semibold text-zinc-800 dark:text-zinc-200">
+                        <CheckCircle2 className="w-4 h-4 text-[#4c55a4] dark:text-indigo-400 shrink-0" />
+                        <span>
+                          Desired Location:{" "}
+                          <strong>{swapPrefTarget || "Any target"}</strong>
+                          {swapPrefNeighborhood ? ` in ${swapPrefNeighborhood}` : ""}
+                          {swapPrefCity ? `, ${swapPrefCity}` : ""}
+                        </span>
+                      </div>
+                      <span className="text-[10px] font-bold text-[#4c55a4] dark:text-indigo-400 bg-white dark:bg-zinc-900 px-2 py-1 rounded-lg border border-indigo-100 dark:border-indigo-900/50">
+                        Google Maps Linked
+                      </span>
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mb-6">
                     <div>
                       <label className="block text-xs font-semibold text-zinc-500 mb-1.5">Desired Shabbat Weekend</label>
                       <CustomSelect
@@ -1029,6 +1529,41 @@ export default function ApartmentSwapPage() {
                 {savePreferenceMutation.isPending && <Loader2 className="w-4 h-4 animate-spin" />}
                 Turn ON & Save
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Apartment Listing Required Modal */}
+      {isNoApartmentModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-zinc-900 rounded-3xl p-6 md:p-8 max-w-md w-full border border-zinc-200 dark:border-zinc-800 shadow-2xl text-center animate-in fade-in zoom-in-95 duration-200">
+            <div className="w-16 h-16 bg-amber-100 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-amber-200 dark:border-amber-800/40 shadow-sm">
+              <Building2 className="w-8 h-8 stroke-[1.8]" />
+            </div>
+            <h3 className="text-xl font-extrabold text-zinc-900 dark:text-white mb-2">
+              {t("dashboard.swap.listing_required_title") || "Apartment Listing Required"}
+            </h3>
+            <p className="text-xs text-zinc-600 dark:text-zinc-400 mb-6 leading-relaxed">
+              {t("dashboard.swap.listing_required_desc") ||
+                "You must have at least one active apartment listing to enable swap and participate in community Shabbat swaps."}
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <button
+                type="button"
+                onClick={() => setIsNoApartmentModalOpen(false)}
+                className="flex-1 py-3 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 rounded-xl font-bold text-xs transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+              <Link
+                href="/user-dashboard/manage"
+                onClick={() => setIsNoApartmentModalOpen(false)}
+                className="flex-1 py-3 bg-[#4c55a4] hover:bg-[#3d4484] text-white rounded-xl font-bold text-xs transition-all shadow-md shadow-[#4c55a4]/20 flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <Plus className="w-4 h-4" />
+                {t("dashboard.swap.create_listing_btn") || "Create Listing"}
+              </Link>
             </div>
           </div>
         </div>

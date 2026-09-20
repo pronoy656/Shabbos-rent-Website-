@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Search, MapPin, CheckCircle2, AlertCircle, Loader2, Sparkles, Navigation } from "lucide-react";
 import { getCoordinatesForAddress } from "@/utils/distanceUtils";
+import { loadGoogleMaps } from "@/utils/googleMapsLoader";
 
 export interface PlaceSuggestion {
   id: string;
@@ -14,6 +15,7 @@ export interface PlaceSuggestion {
   fullAddress: string;
   lat: number;
   lng: number;
+  placeId?: string;
 }
 
 // Curated verified Israeli addresses for instantaneous, high-accuracy autocomplete
@@ -268,6 +270,47 @@ const VERIFIED_ISRAEL_PLACES: PlaceSuggestion[] = [
   },
 ];
 
+function parseGoogleAddressComponents(components: any[], fallbackMainText?: string) {
+  let streetNumber = "";
+  let route = "";
+  let neighborhood = "";
+  let city = "";
+
+  if (Array.isArray(components)) {
+    for (const c of components) {
+      const types = c.types || [];
+      if (types.includes("street_number")) {
+        streetNumber = c.long_name || c.short_name;
+      } else if (types.includes("route")) {
+        route = c.long_name || c.short_name;
+      } else if (
+        types.includes("neighborhood") ||
+        types.includes("sublocality") ||
+        types.includes("sublocality_level_1") ||
+        types.includes("sublocality_level_2")
+      ) {
+        if (!neighborhood) neighborhood = c.long_name || c.short_name;
+      } else if (types.includes("locality")) {
+        city = c.long_name || c.short_name;
+      } else if (!city && (types.includes("administrative_area_level_2") || types.includes("administrative_area_level_1"))) {
+        city = c.long_name || c.short_name;
+      }
+    }
+  }
+
+  // City normalization
+  if (city.toLowerCase().includes("tel aviv")) city = "Tel Aviv";
+  else if (city.toLowerCase().includes("jerusalem")) city = "Jerusalem";
+  else if (city.toLowerCase().includes("bnei brak")) city = "Bnei Brak";
+  else if (city.toLowerCase().includes("beit shemesh")) city = "Beit Shemesh";
+  else if (city.toLowerCase().includes("tzfat") || city.toLowerCase().includes("safed")) city = "Tzfat";
+  else if (city.toLowerCase().includes("netanya")) city = "Netanya";
+  else if (city.toLowerCase().includes("haifa")) city = "Haifa";
+
+  const streetAddress = route ? (streetNumber ? `${route} ${streetNumber}` : route) : (fallbackMainText || "");
+  return { streetAddress, route, streetNumber, neighborhood, city };
+}
+
 interface GooglePlacesAutocompleteProps {
   streetAddress: string;
   city: string;
@@ -295,11 +338,35 @@ export default function GooglePlacesAutocomplete({
 }: GooglePlacesAutocompleteProps) {
   const [query, setQuery] = useState(streetAddress);
   const [cityQuery, setCityQuery] = useState(city);
+  const [neighborhoodQuery, setNeighborhoodQuery] = useState(neighborhood);
   const [suggestions, setSuggestions] = useState<PlaceSuggestion[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isCityDropdownOpen, setIsCityDropdownOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const autocompleteServiceRef = useRef<any>(null);
+  const geocoderRef = useRef<any>(null);
+
+  // Initialize Google Maps services
+  useEffect(() => {
+    let mounted = true;
+    loadGoogleMaps()
+      .then((googleMaps) => {
+        if (!mounted) return;
+        if (googleMaps.places?.AutocompleteService) {
+          autocompleteServiceRef.current = new googleMaps.places.AutocompleteService();
+        }
+        if (googleMaps.Geocoder) {
+          geocoderRef.current = new googleMaps.Geocoder();
+        }
+      })
+      .catch((err) => {
+        console.warn("Google Maps Places service not initialized, using local fallback:", err);
+      });
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   // Sync external props with internal input states
   useEffect(() => {
@@ -309,6 +376,10 @@ export default function GooglePlacesAutocomplete({
   useEffect(() => {
     setCityQuery(city);
   }, [city]);
+
+  useEffect(() => {
+    setNeighborhoodQuery(neighborhood);
+  }, [neighborhood]);
 
   // Click outside to close suggestion dropdown
   useEffect(() => {
@@ -326,7 +397,7 @@ export default function GooglePlacesAutocomplete({
   const fetchSuggestions = useCallback((searchStr: string, filterCity?: string) => {
     if (!searchStr.trim()) {
       // Show default top recommendations for the current city
-      const matched = VERIFIED_ISRAEL_PLACES.filter(p =>
+      const matched = VERIFIED_ISRAEL_PLACES.filter((p) =>
         filterCity ? p.city.toLowerCase() === filterCity.toLowerCase() : true
       ).slice(0, 5);
       setSuggestions(matched);
@@ -336,25 +407,80 @@ export default function GooglePlacesAutocomplete({
     setIsLoading(true);
     const cleanStr = searchStr.toLowerCase().trim();
 
-    // 1. Check local Israeli verified places database
-    let matches = VERIFIED_ISRAEL_PLACES.filter(p => {
+    // If Google Places AutocompleteService is available, query live API
+    if (autocompleteServiceRef.current) {
+      const input = filterCity && !searchStr.toLowerCase().includes(filterCity.toLowerCase())
+        ? `${searchStr}, ${filterCity}`
+        : searchStr;
+
+      autocompleteServiceRef.current.getPlacePredictions(
+        {
+          input,
+          componentRestrictions: { country: "il" },
+          types: ["geocode", "establishment"],
+        },
+        (predictions: any[], status: any) => {
+          if (status === "OK" && predictions && predictions.length > 0) {
+            const googleResults: PlaceSuggestion[] = predictions.map((pred) => {
+              const mainText = pred.structured_formatting?.main_text || pred.description.split(",")[0];
+              const secondaryText = pred.structured_formatting?.secondary_text || pred.description;
+              const extractedCoords = getCoordinatesForAddress(pred.description);
+
+              let predCity = filterCity || "Jerusalem";
+              if (secondaryText.includes("Tel Aviv")) predCity = "Tel Aviv";
+              else if (secondaryText.includes("Tzfat") || secondaryText.includes("Safed")) predCity = "Tzfat";
+              else if (secondaryText.includes("Bnei Brak")) predCity = "Bnei Brak";
+              else if (secondaryText.includes("Beit Shemesh")) predCity = "Beit Shemesh";
+              else if (secondaryText.includes("Netanya")) predCity = "Netanya";
+              else if (secondaryText.includes("Haifa")) predCity = "Haifa";
+
+              return {
+                id: pred.place_id || `g-${Date.now()}-${Math.random()}`,
+                placeId: pred.place_id,
+                mainText,
+                secondaryText,
+                city: predCity,
+                neighborhood: mainText,
+                streetNumber: mainText.replace(/[^0-9]/g, "") || "1",
+                fullAddress: pred.description,
+                lat: Number(extractedCoords.lat.toFixed(4)),
+                lng: Number(extractedCoords.lng.toFixed(4)),
+              };
+            });
+            setSuggestions(googleResults.slice(0, 6));
+            setIsLoading(false);
+            return;
+          }
+
+          // Fallback to local Israeli database if Google returns no predictions
+          fallbackLocalSearch(cleanStr, filterCity);
+        }
+      );
+      return;
+    }
+
+    // Fallback to local Israeli verified places database
+    fallbackLocalSearch(cleanStr, filterCity);
+  }, []);
+
+  const fallbackLocalSearch = (cleanStr: string, filterCity?: string) => {
+    let matches = VERIFIED_ISRAEL_PLACES.filter((p) => {
       const matchText = `${p.fullAddress} ${p.mainText} ${p.secondaryText} ${p.neighborhood} ${p.city}`.toLowerCase();
       const cityMatches = !filterCity || p.city.toLowerCase() === filterCity.toLowerCase();
       return matchText.includes(cleanStr) && cityMatches;
     });
 
-    // 2. If no exact match or custom address typed, synthesize structured verified place with real calculated geo-coordinates
     if (matches.length === 0 || cleanStr.length > 3) {
-      const extractedCoords = getCoordinatesForAddress(searchStr + (filterCity ? ` ${filterCity}` : ""));
+      const extractedCoords = getCoordinatesForAddress(cleanStr + (filterCity ? ` ${filterCity}` : ""));
       const fallbackCity = filterCity || (cleanStr.includes("tel aviv") ? "Tel Aviv" : cleanStr.includes("tzfat") ? "Tzfat" : "Jerusalem");
       const dynamicPlace: PlaceSuggestion = {
         id: `dyn-${Date.now()}`,
-        mainText: searchStr.charAt(0).toUpperCase() + searchStr.slice(1),
+        mainText: cleanStr.charAt(0).toUpperCase() + cleanStr.slice(1),
         secondaryText: `${fallbackCity}, Israel (Verified via Geocoding Engine)`,
         city: fallbackCity,
         neighborhood: cleanStr.includes("rehavia") ? "Rehavia" : cleanStr.includes("geula") ? "Geula" : "Center",
-        streetNumber: searchStr.replace(/[^0-9]/g, "") || "1",
-        fullAddress: `${searchStr}, ${fallbackCity}`,
+        streetNumber: cleanStr.replace(/[^0-9]/g, "") || "1",
+        fullAddress: `${cleanStr}, ${fallbackCity}`,
         lat: Number(extractedCoords.lat.toFixed(4)),
         lng: Number(extractedCoords.lng.toFixed(4)),
       };
@@ -364,7 +490,7 @@ export default function GooglePlacesAutocomplete({
 
     setSuggestions(matches.slice(0, 6));
     setIsLoading(false);
-  }, []);
+  };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
@@ -376,8 +502,54 @@ export default function GooglePlacesAutocomplete({
   };
 
   const handleSelectPlace = (place: PlaceSuggestion) => {
+    // If we have geocoder and placeId, fetch exact coordinates & address components from Google
+    if (geocoderRef.current && (place.placeId || place.fullAddress)) {
+      const geocodeReq = place.placeId ? { placeId: place.placeId } : { address: place.fullAddress };
+      geocoderRef.current.geocode(geocodeReq, (results: any[], status: any) => {
+        if (status === "OK" && results && results[0]) {
+          const lat = results[0].geometry?.location ? results[0].geometry.location.lat() : place.lat;
+          const lng = results[0].geometry?.location ? results[0].geometry.location.lng() : place.lng;
+          
+          const parsed = parseGoogleAddressComponents(results[0].address_components, place.mainText);
+          const resolvedStreet = parsed.streetAddress || place.mainText;
+          const resolvedCity = parsed.city || place.city || "Jerusalem";
+          const resolvedNeighborhood = parsed.neighborhood || place.neighborhood || "";
+
+          const updatedPlace: PlaceSuggestion = {
+            ...place,
+            mainText: resolvedStreet,
+            city: resolvedCity,
+            neighborhood: resolvedNeighborhood,
+            lat: Number(lat.toFixed(6)),
+            lng: Number(lng.toFixed(6)),
+            fullAddress: results[0].formatted_address || place.fullAddress,
+          };
+
+          setQuery(resolvedStreet);
+          setCityQuery(resolvedCity);
+          setNeighborhoodQuery(resolvedNeighborhood);
+
+          onAddressSelect(updatedPlace);
+          if (onCityChange) onCityChange(resolvedCity);
+          if (onNeighborhoodChange) onNeighborhoodChange(resolvedNeighborhood);
+          setIsOpen(false);
+          return;
+        }
+
+        // Standard fallback select
+        applySelectedPlace(place);
+      });
+      return;
+    }
+
+    applySelectedPlace(place);
+  };
+
+  const applySelectedPlace = (place: PlaceSuggestion) => {
     setQuery(place.mainText);
     setCityQuery(place.city);
+    setNeighborhoodQuery(place.neighborhood);
+
     onAddressSelect(place);
     if (onCityChange) onCityChange(place.city);
     if (onNeighborhoodChange) onNeighborhoodChange(place.neighborhood);
@@ -394,8 +566,99 @@ export default function GooglePlacesAutocomplete({
   const popularCities = ["Jerusalem", "Tel Aviv", "Tzfat", "Bnei Brak", "Netanya", "Beit Shemesh", "Haifa"];
 
   return (
-    <div ref={containerRef} className="space-y-6 relative">
-      {/* City + Neighborhood row */}
+    <div ref={containerRef} className="space-y-5 relative">
+      {/* Primary Google Map Address & Location Search */}
+      <div className={`relative ${isOpen ? 'z-40' : 'z-10'}`}>
+        <div className="flex items-center justify-between mb-2">
+          <label className="block text-sm font-bold text-zinc-800 dark:text-zinc-200">
+            Street & Number <span className="text-red-500">*</span>
+          </label>
+          <span className="text-xs font-semibold text-[#4c55a4] dark:text-indigo-400 flex items-center gap-1">
+            <Sparkles className="w-3.5 h-3.5" /> Google Places Autocomplete
+          </span>
+        </div>
+
+        <div className="relative">
+          <MapPin className={`absolute left-4 top-4 h-5 w-5 transition-colors ${isAddressVerified ? "text-emerald-500" : "text-zinc-400"}`} />
+          <input
+            type="text"
+            value={query}
+            onChange={handleInputChange}
+            onFocus={() => {
+              setIsCityDropdownOpen(false);
+              setIsOpen(true);
+              fetchSuggestions(query, city);
+            }}
+            placeholder="Type street name & number (e.g. King George 15, Ramban 18, Dizengoff 100)..."
+            className={`w-full pl-12 pr-12 py-3.5 bg-zinc-50/80 dark:bg-zinc-950 border rounded-2xl text-[15px] text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:bg-white dark:focus:bg-zinc-900 outline-none transition-all duration-200 ${
+              isAddressVerified
+                ? "border-emerald-400 dark:border-emerald-600 focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500"
+                : "border-zinc-200 dark:border-zinc-800 focus:ring-4 focus:ring-[#4c55a4]/10 focus:border-[#4c55a4]"
+            }`}
+          />
+          {isLoading ? (
+            <div className="absolute right-4 top-4">
+              <Loader2 className="w-5 h-5 text-zinc-400 animate-spin" />
+            </div>
+          ) : isAddressVerified ? (
+            <div className="absolute right-4 top-4" title="Address Verified & Coordinates Locked">
+              <CheckCircle2 className="w-5 h-5 text-emerald-500" />
+            </div>
+          ) : null}
+        </div>
+
+        {/* Live Dropdown of matched addresses from Google Places */}
+        {isOpen && (
+          <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl shadow-2xl z-[120] overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div className="p-3 bg-zinc-50 dark:bg-zinc-800/60 border-b border-zinc-100 dark:border-zinc-800 flex items-center justify-between">
+              <span className="text-xs font-bold text-zinc-500 uppercase tracking-wider flex items-center gap-1.5">
+                <Navigation className="w-3.5 h-3.5 text-[#4c55a4]" /> Google Maps Address Suggestions
+              </span>
+              <span className="text-[11px] font-semibold text-zinc-500 bg-zinc-100 dark:bg-zinc-800 px-2 py-0.5 rounded-md">
+                Click to Auto-fill City & Neighborhood
+              </span>
+            </div>
+
+            <div className="p-2 max-h-72 overflow-y-auto divide-y divide-zinc-100 dark:divide-zinc-800/50">
+              {suggestions.map((suggestion) => (
+                <button
+                  type="button"
+                  key={suggestion.id}
+                  onClick={() => handleSelectPlace(suggestion)}
+                  className="w-full text-left p-3.5 hover:bg-indigo-50/60 dark:hover:bg-indigo-950/40 rounded-2xl transition-all flex items-start gap-3.5 group cursor-pointer"
+                >
+                  <div className="w-9 h-9 rounded-xl bg-zinc-100 dark:bg-zinc-800 group-hover:bg-[#4c55a4] group-hover:text-white flex items-center justify-center shrink-0 transition-colors text-zinc-600 dark:text-zinc-300 mt-0.5">
+                    <MapPin className="w-4 h-4" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-sm text-zinc-900 dark:text-white group-hover:text-[#4c55a4] dark:group-hover:text-indigo-400 transition-colors truncate">
+                        {suggestion.mainText}
+                      </span>
+                      {suggestion.city && (
+                        <span className="text-[10px] font-bold bg-[#4c55a4]/10 dark:bg-indigo-900/40 text-[#4c55a4] dark:text-indigo-400 px-2 py-0.5 rounded-full shrink-0">
+                          {suggestion.city}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-zinc-500 dark:text-zinc-400 truncate mt-0.5">
+                      {suggestion.secondaryText}
+                    </p>
+                  </div>
+                </button>
+              ))}
+
+              {suggestions.length === 0 && !isLoading && (
+                <div className="p-6 text-center text-sm text-zinc-500">
+                  No matching address found. Try typing your street and city name.
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* City + Neighborhood auto-populated fields */}
       <div className={`grid grid-cols-1 md:grid-cols-2 gap-6 ${isCityDropdownOpen ? 'relative z-50' : 'relative z-20'}`}>
         {/* City Input with Autocomplete Dropdown */}
         <div className={`relative ${isCityDropdownOpen ? 'z-50' : 'z-10'}`}>
@@ -459,130 +722,51 @@ export default function GooglePlacesAutocomplete({
             <MapPin className="absolute left-4 top-4 h-5 w-5 text-zinc-400" />
             <input
               type="text"
-              value={neighborhood}
+              value={neighborhoodQuery}
               onChange={(e) => {
+                setNeighborhoodQuery(e.target.value);
                 if (onNeighborhoodChange) onNeighborhoodChange(e.target.value);
               }}
-              placeholder={city ? `e.g. City Center, Rehavia, etc.` : "Select a city first..."}
+              placeholder={cityQuery ? `e.g. City Center, Rehavia, etc.` : "Select address or city first..."}
               className="w-full pl-12 pr-4 py-3.5 bg-zinc-50/80 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-2xl text-[15px] text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:bg-white dark:focus:bg-zinc-900 focus:ring-4 focus:ring-[#4c55a4]/10 focus:border-[#4c55a4] outline-none transition-all duration-200"
             />
           </div>
         </div>
       </div>
 
-      {/* Street & Number with Google Places Autocomplete */}
-      <div className={`relative ${isOpen ? 'z-40' : 'z-10'}`}>
-        <div className="flex items-center justify-between mb-2">
-          <label className="block text-sm font-bold text-zinc-800 dark:text-zinc-200">
-            Street & Number <span className="text-red-500">*</span>
-          </label>
-          <span className="text-xs font-semibold text-[#4c55a4] dark:text-indigo-400 flex items-center gap-1">
-            <Sparkles className="w-3.5 h-3.5" /> Google Places Autocomplete
-          </span>
-        </div>
-
-        <div className="relative">
-          <MapPin className={`absolute left-4 top-4 h-5 w-5 transition-colors ${isAddressVerified ? "text-emerald-500" : "text-zinc-400"}`} />
-          <input
-            type="text"
-            value={query}
-            onChange={handleInputChange}
-            onFocus={() => {
-              setIsCityDropdownOpen(false);
-              setIsOpen(true);
-              fetchSuggestions(query, city);
-            }}
-            placeholder="Start typing street name and number (e.g. King George 15)..."
-            className={`w-full pl-12 pr-12 py-3.5 bg-zinc-50/80 dark:bg-zinc-950 border rounded-2xl text-[15px] text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:bg-white dark:focus:bg-zinc-900 outline-none transition-all duration-200 ${
-              isAddressVerified
-                ? "border-emerald-400 dark:border-emerald-600 focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500"
-                : "border-zinc-200 dark:border-zinc-800 focus:ring-4 focus:ring-[#4c55a4]/10 focus:border-[#4c55a4]"
-            }`}
-          />
-          {isLoading ? (
-            <div className="absolute right-4 top-4">
-              <Loader2 className="w-5 h-5 text-zinc-400 animate-spin" />
-            </div>
-          ) : isAddressVerified ? (
-            <div className="absolute right-4 top-4" title="Address Verified & Coordinates Locked">
-              <CheckCircle2 className="w-5 h-5 text-emerald-500" />
-            </div>
-          ) : null}
-        </div>
-
-        {/* Live Dropdown of matched addresses */}
-        {isOpen && (
-          <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl shadow-2xl z-[120] overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-            <div className="p-3 bg-zinc-50 dark:bg-zinc-800/60 border-b border-zinc-100 dark:border-zinc-800 flex items-center justify-between">
-              <span className="text-xs font-bold text-zinc-500 uppercase tracking-wider flex items-center gap-1.5">
-                <Navigation className="w-3.5 h-3.5 text-[#4c55a4]" /> Suggested Addresses
-              </span>
-              <span className="text-[11px] font-semibold text-zinc-500 bg-zinc-100 dark:bg-zinc-800 px-2 py-0.5 rounded-md">
-                Click to select
-              </span>
-            </div>
-
-            <div className="p-2 max-h-72 overflow-y-auto divide-y divide-zinc-100 dark:divide-zinc-800/50">
-              {suggestions.map((suggestion) => (
-                <button
-                  type="button"
-                  key={suggestion.id}
-                  onClick={() => handleSelectPlace(suggestion)}
-                  className="w-full text-left p-3.5 hover:bg-indigo-50/60 dark:hover:bg-indigo-950/40 rounded-2xl transition-all flex items-start gap-3.5 group cursor-pointer"
-                >
-                  <div className="w-9 h-9 rounded-xl bg-zinc-100 dark:bg-zinc-800 group-hover:bg-[#4c55a4] group-hover:text-white flex items-center justify-center shrink-0 transition-colors text-zinc-600 dark:text-zinc-300 mt-0.5">
-                    <MapPin className="w-4 h-4" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="font-bold text-sm text-zinc-900 dark:text-white group-hover:text-[#4c55a4] dark:group-hover:text-indigo-400 transition-colors truncate">
-                        {suggestion.mainText}
-                      </span>
-                    </div>
-                    <p className="text-xs text-zinc-500 dark:text-zinc-400 truncate mt-0.5">
-                      {suggestion.secondaryText}
-                    </p>
-                  </div>
-                </button>
-              ))}
-
-              {suggestions.length === 0 && !isLoading && (
-                <div className="p-6 text-center text-sm text-zinc-500">
-                  No matching address found. Try typing your street and city.
+      {/* Verification Status & Helper Display */}
+      {showCoordinatesLock && (
+        <div>
+          {isAddressVerified && coordinates ? (
+            <div className="p-3.5 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/60 rounded-2xl flex items-center justify-between animate-in fade-in duration-300">
+              <div className="flex items-center gap-2.5">
+                <div className="w-6 h-6 rounded-full bg-emerald-100 dark:bg-emerald-900/50 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shrink-0">
+                  <CheckCircle2 className="w-3.5 h-3.5" />
                 </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Verification Status & Helper Display */}
-        {showCoordinatesLock && (
-          <div className="mt-2.5">
-            {isAddressVerified && coordinates ? (
-              <div className="p-3 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/60 rounded-2xl flex items-center justify-between animate-in fade-in duration-300">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-6 h-6 rounded-full bg-emerald-100 dark:bg-emerald-900/50 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shrink-0">
-                    <CheckCircle2 className="w-3.5 h-3.5" />
-                  </div>
-                  <span className="text-xs font-bold text-emerald-900 dark:text-emerald-200">
-                    Address confirmed
+                <div>
+                  <span className="text-xs font-bold text-emerald-900 dark:text-emerald-200 block">
+                    Address confirmed via Google Maps
+                  </span>
+                  <span className="text-[11px] text-emerald-700 dark:text-emerald-400">
+                    {streetAddress}{neighborhood ? `, ${neighborhood}` : ""}{city ? `, ${city}` : ""} ({coordinates.lat.toFixed(4)}, {coordinates.lng.toFixed(4)})
                   </span>
                 </div>
-                <span className="text-[11px] font-semibold text-emerald-700 dark:text-emerald-400">
-                  {city}
-                </span>
               </div>
-            ) : (
-              <div className="p-3 bg-blue-50/70 dark:bg-blue-950/30 border border-blue-200/70 dark:border-blue-800/50 rounded-2xl flex items-center gap-2.5 text-xs text-blue-800 dark:text-blue-300 animate-in fade-in duration-200">
-                <Sparkles className="w-4 h-4 text-[#4c55a4] dark:text-indigo-400 shrink-0" />
-                <span>
-                  Please select your address from the dropdown list so guests can easily find your apartment.
-                </span>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
+              <span className="text-xs font-bold bg-emerald-100 dark:bg-emerald-900/60 text-emerald-800 dark:text-emerald-300 px-2.5 py-1 rounded-lg shrink-0">
+                Verified
+              </span>
+            </div>
+          ) : (
+            <div className="p-3 bg-blue-50/70 dark:bg-blue-950/30 border border-blue-200/70 dark:border-blue-800/50 rounded-2xl flex items-center gap-2.5 text-xs text-blue-800 dark:text-blue-300 animate-in fade-in duration-200">
+              <Sparkles className="w-4 h-4 text-[#4c55a4] dark:text-indigo-400 shrink-0" />
+              <span>
+                Select your address from the Google Maps suggestions to automatically populate your <strong>City</strong>, <strong>Neighborhood</strong>, and <strong>Street</strong>.
+              </span>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
+

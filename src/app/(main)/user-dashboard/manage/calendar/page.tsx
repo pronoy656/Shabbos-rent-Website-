@@ -17,7 +17,6 @@ import {
 } from "@/hooks/useApartments";
 import { useWeekendCalendars } from "@/hooks/useWeekendCalendar";
 import { toast } from "sonner";
-import { SHABBATOT } from "@/components/dashboard/dashboardData";
 
 export default function ApartmentCalendarPage() {
   const { t } = useLanguage();
@@ -29,7 +28,7 @@ export default function ApartmentCalendarPage() {
   const [isSavingAvailability, setIsSavingAvailability] = useState(false);
 
   // Weekend Calendar API Query
-  const { data: weekendCalendarsRaw } = useWeekendCalendars();
+  const { data: weekendCalendarsRaw, isLoading: isWeekendLoading } = useWeekendCalendars();
   const rawData = weekendCalendarsRaw as any;
   const weekendCalendarsList: any[] = Array.isArray(rawData)
     ? rawData
@@ -73,7 +72,7 @@ export default function ApartmentCalendarPage() {
               rawDate: w.date,
             };
           })
-      : SHABBATOT;
+      : [];
 
   // Scheduled Availability API Query
   const { data: myAvailabilitiesData } = useApartmentAvailabilities(myApartment?.id || "");
@@ -202,148 +201,177 @@ export default function ApartmentCalendarPage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-          {displayShabbatot.map((shabbat, index) => {
-            const isSelected = selectedShabbatot.includes(shabbat.id);
-            const isSpecial = specialShabbatot.includes(shabbat.id);
-            const isUpcoming = index === 0;
+        {isWeekendLoading ? (
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+            {Array.from({ length: 10 }).map((_, i) => (
+              <div
+                key={i}
+                className="h-32 rounded-2xl bg-zinc-100 dark:bg-zinc-800 animate-pulse border-2 border-transparent p-5 flex flex-col justify-end"
+              >
+                <div className="h-4 w-24 bg-zinc-200 dark:bg-zinc-700 rounded mb-2" />
+                <div className="h-3 w-16 bg-zinc-200 dark:bg-zinc-700 rounded" />
+              </div>
+            ))}
+          </div>
+        ) : displayShabbatot.length === 0 ? (
+          <div className="py-16 px-6 text-center bg-gradient-to-b from-zinc-50/80 to-zinc-50 dark:from-zinc-800/20 dark:to-zinc-800/40 rounded-3xl border border-dashed border-zinc-200 dark:border-zinc-800/80 max-w-2xl mx-auto my-4">
+            <div className="w-16 h-16 bg-[#4c55a4]/10 dark:bg-indigo-950/50 text-[#4c55a4] dark:text-indigo-300 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-sm border border-[#4c55a4]/15">
+              <CalendarCheck className="w-8 h-8 stroke-[1.8]" />
+            </div>
+            <h4 className="text-lg font-extrabold text-zinc-900 dark:text-zinc-100 mb-2">
+              {t("dashboard.manage.no_calendar_dates") || "No Shabbat Dates Available"}
+            </h4>
+            <p className="text-sm text-zinc-500 dark:text-zinc-400 max-w-md mx-auto leading-relaxed">
+              {t("dashboard.manage.no_calendar_dates_desc") ||
+                "There are currently no upcoming Shabbatot configured in the calendar. Please check back later."}
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+            {displayShabbatot.map((shabbat, index) => {
+              const isSelected = selectedShabbatot.includes(shabbat.id);
+              const isSpecial = specialShabbatot.includes(shabbat.id);
+              const isUpcoming = index === 0;
 
-            // Colors based on state
-            const borderColor = isSpecial
-              ? "border-amber-400"
-              : isSelected
-              ? "border-[#8B5CF6]"
-              : "border-transparent";
-            const bgColor = isSpecial
-              ? "bg-amber-50 dark:bg-amber-900/10"
-              : "bg-[#8B5CF6]/5 dark:bg-[#8B5CF6]/15";
-            const hoverBorder = isSpecial
-              ? "hover:border-amber-500"
-              : "hover:border-[#8B5CF6]/40 dark:hover:border-[#8B5CF6]/40";
-            const shadow = isSpecial
-              ? "shadow-sm shadow-amber-400/20"
-              : isSelected
-              ? "shadow-sm shadow-[#8B5CF6]/10"
-              : "";
+              // Colors based on state
+              const borderColor = isSpecial
+                ? "border-amber-400"
+                : isSelected
+                ? "border-[#8B5CF6]"
+                : "border-transparent";
+              const bgColor = isSpecial
+                ? "bg-amber-50 dark:bg-amber-900/10"
+                : "bg-[#8B5CF6]/5 dark:bg-[#8B5CF6]/15";
+              const hoverBorder = isSpecial
+                ? "hover:border-amber-500"
+                : "hover:border-[#8B5CF6]/40 dark:hover:border-[#8B5CF6]/40";
+              const shadow = isSpecial
+                ? "shadow-sm shadow-amber-400/20"
+                : isSelected
+                ? "shadow-sm shadow-[#8B5CF6]/10"
+                : "";
 
-            return (
-              <div key={shabbat.id} className="relative group">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSelectedShabbatot((prev) =>
-                      prev.includes(shabbat.id)
-                        ? prev.filter((id) => id !== shabbat.id)
-                        : [...prev, shabbat.id]
-                    );
-                  }}
-                  className={`w-full relative text-left p-5 rounded-2xl border-2 transition-all duration-200 h-32 flex flex-col justify-end cursor-pointer ${bgColor} ${borderColor} ${hoverBorder} ${shadow}`}
-                >
-                  {isUpcoming && (
-                    <span
-                      className={`absolute top-4 left-4 text-[10px] font-black px-2.5 py-1 rounded tracking-wider uppercase ${
-                        isSpecial
-                          ? "bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-400"
-                          : "bg-[#E0E7FF] dark:bg-indigo-900/50 text-[#4c55a4] dark:text-indigo-300"
-                      }`}
-                    >
-                      {t("dashboard.manage.upcoming_shabbat") || "Upcoming Shabbat"}
+              return (
+                <div key={shabbat.id} className="relative group">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedShabbatot((prev) =>
+                        prev.includes(shabbat.id)
+                          ? prev.filter((id) => id !== shabbat.id)
+                          : [...prev, shabbat.id]
+                      );
+                    }}
+                    className={`w-full relative text-left p-5 rounded-2xl border-2 transition-all duration-200 h-32 flex flex-col justify-end cursor-pointer ${bgColor} ${borderColor} ${hoverBorder} ${shadow}`}
+                  >
+                    {isUpcoming && (
+                      <span
+                        className={`absolute top-4 left-4 text-[10px] font-black px-2.5 py-1 rounded tracking-wider uppercase ${
+                          isSpecial
+                            ? "bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-400"
+                            : "bg-[#E0E7FF] dark:bg-indigo-900/50 text-[#4c55a4] dark:text-indigo-300"
+                        }`}
+                      >
+                        {t("dashboard.manage.upcoming_shabbat") || "Upcoming Shabbat"}
+                      </span>
+                    )}
+
+                    {isSelected && !isSpecial && (
+                      <div className="absolute top-4 right-4 bg-[#8B5CF6] text-white rounded-full w-6 h-6 flex items-center justify-center shadow-sm">
+                        <Check className="w-3.5 h-3.5 stroke-[3]" />
+                      </div>
+                    )}
+
+                    <div className="mt-auto pr-2">
+                      <h4 className="font-extrabold text-zinc-900 dark:text-white text-[17px] leading-tight mb-1">
+                        {shabbat.name}
+                      </h4>
+                      <p className="text-sm text-zinc-500 font-semibold">{shabbat.date}</p>
+                    </div>
+                  </button>
+
+                  {/* Star Button for Special Shabbos */}
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSpecialShabbatot((prev) => {
+                        const next = prev.includes(shabbat.id)
+                          ? prev.filter((id) => id !== shabbat.id)
+                          : [...prev, shabbat.id];
+
+                        // Automatically mark as available if marked as special
+                        if (!prev.includes(shabbat.id) && !selectedShabbatot.includes(shabbat.id)) {
+                          setSelectedShabbatot((s) => [...s, shabbat.id]);
+                        }
+                        return next;
+                      });
+                    }}
+                    className={`absolute top-3 p-1.5 rounded-full transition-all duration-200 z-10 cursor-pointer ${
+                      isSelected && !isSpecial ? "right-12" : "right-3"
+                    } ${
+                      isSpecial
+                        ? "text-amber-500 bg-amber-100 hover:bg-amber-200 dark:bg-amber-900/30 dark:hover:bg-amber-900/50"
+                        : "text-zinc-400 hover:text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-900/20 opacity-0 group-hover:opacity-100"
+                    }`}
+                    title="Mark as Special Shabbos"
+                  >
+                    <Star className={`w-4 h-4 ${isSpecial ? "fill-current" : ""}`} />
+                  </button>
+
+                  {isSpecial && (
+                    <span className="absolute bottom-4 right-4 bg-amber-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider shadow-sm">
+                      Special Price
                     </span>
                   )}
+                </div>
+              );
+            })}
+          </div>
+        )}
 
-                  {isSelected && !isSpecial && (
-                    <div className="absolute top-4 right-4 bg-[#8B5CF6] text-white rounded-full w-6 h-6 flex items-center justify-center shadow-sm">
-                      <Check className="w-3.5 h-3.5 stroke-[3]" />
-                    </div>
-                  )}
+        {/* Action Buttons - Only show when there are calendar dates available */}
+        {displayShabbatot.length > 0 && (
+          <div className="mt-10 pt-8 border-t border-zinc-100 dark:border-zinc-800 flex justify-end gap-4">
+            <button
+              type="button"
+              onClick={() => {
+                const saved = localStorage.getItem("selectedShabbatot");
+                if (saved) {
+                  try {
+                    setSelectedShabbatot(JSON.parse(saved));
+                  } catch {}
+                } else {
+                  setSelectedShabbatot([]);
+                }
 
-                  <div className="mt-auto pr-2">
-                    <h4 className="font-extrabold text-zinc-900 dark:text-white text-[17px] leading-tight mb-1">
-                      {shabbat.name}
-                    </h4>
-                    <p className="text-sm text-zinc-500 font-semibold">{shabbat.date}</p>
-                  </div>
-                </button>
-
-                {/* Star Button for Special Shabbos */}
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setSpecialShabbatot((prev) => {
-                      const next = prev.includes(shabbat.id)
-                        ? prev.filter((id) => id !== shabbat.id)
-                        : [...prev, shabbat.id];
-
-                      // Automatically mark as available if marked as special
-                      if (!prev.includes(shabbat.id) && !selectedShabbatot.includes(shabbat.id)) {
-                        setSelectedShabbatot((s) => [...s, shabbat.id]);
-                      }
-                      return next;
-                    });
-                  }}
-                  className={`absolute top-3 p-1.5 rounded-full transition-all duration-200 z-10 cursor-pointer ${
-                    isSelected && !isSpecial ? "right-12" : "right-3"
-                  } ${
-                    isSpecial
-                      ? "text-amber-500 bg-amber-100 hover:bg-amber-200 dark:bg-amber-900/30 dark:hover:bg-amber-900/50"
-                      : "text-zinc-400 hover:text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-900/20 opacity-0 group-hover:opacity-100"
-                  }`}
-                  title="Mark as Special Shabbos"
-                >
-                  <Star className={`w-4 h-4 ${isSpecial ? "fill-current" : ""}`} />
-                </button>
-
-                {isSpecial && (
-                  <span className="absolute bottom-4 right-4 bg-amber-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider shadow-sm">
-                    Special Price
-                  </span>
-                )}
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Action Buttons */}
-        <div className="mt-10 pt-8 border-t border-zinc-100 dark:border-zinc-800 flex justify-end gap-4">
-          <button
-            type="button"
-            onClick={() => {
-              const saved = localStorage.getItem("selectedShabbatot");
-              if (saved) {
-                try {
-                  setSelectedShabbatot(JSON.parse(saved));
-                } catch {}
-              } else {
-                setSelectedShabbatot([]);
-              }
-
-              const savedSpecial = localStorage.getItem("specialShabbatot");
-              if (savedSpecial) {
-                try {
-                  setSpecialShabbatot(JSON.parse(savedSpecial));
-                } catch {}
-              } else {
-                setSpecialShabbatot([]);
-              }
-              toast.info("Changes discarded");
-            }}
-            className="px-6 py-3 rounded-xl font-bold text-[15px] text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
-          >
-            Discard Changes
-          </button>
-          <button
-            type="button"
-            onClick={handleSaveAvailability}
-            disabled={isSavingAvailability}
-            className="px-8 py-3 rounded-xl font-bold text-[15px] text-white bg-[#4c55a4] hover:bg-[#3d4484] shadow-md shadow-[#4c55a4]/20 transition-all cursor-pointer disabled:opacity-50 flex items-center gap-2"
-          >
-            {isSavingAvailability && (
-              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-            )}
-            Save Availability
-          </button>
-        </div>
+                const savedSpecial = localStorage.getItem("specialShabbatot");
+                if (savedSpecial) {
+                  try {
+                    setSpecialShabbatot(JSON.parse(savedSpecial));
+                  } catch {}
+                } else {
+                  setSpecialShabbatot([]);
+                }
+                toast.info("Changes discarded");
+              }}
+              className="px-6 py-3 rounded-xl font-bold text-[15px] text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+            >
+              Discard Changes
+            </button>
+            <button
+              type="button"
+              onClick={handleSaveAvailability}
+              disabled={isSavingAvailability}
+              className="px-8 py-3 rounded-xl font-bold text-[15px] text-white bg-[#4c55a4] hover:bg-[#3d4484] shadow-md shadow-[#4c55a4]/20 transition-all cursor-pointer disabled:opacity-50 flex items-center gap-2"
+            >
+              {isSavingAvailability && (
+                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              )}
+              Save Availability
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
