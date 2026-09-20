@@ -1,15 +1,30 @@
 import axios from "axios";
 
 // ─────────────────────────────────────────────
-// Axios instance — base URL comes from .env.local
-// NEXT_PUBLIC_API_URL will be set when credentials are available
+// Axios instance — base URL comes from environment or production default
+// Ensures '/api/v1' is always included even if misconfigured in hosting dashboard
 // ─────────────────────────────────────────────
+export const getApiBaseUrl = (): string => {
+  const envUrl = process.env.NEXT_PUBLIC_API_URL?.trim();
+  let base = envUrl || "https://chaim-backend.onrender.com/api/v1";
+
+  // Remove trailing slashes
+  base = base.replace(/\/+$/, "");
+
+  // Ensure /api/v1 suffix is present
+  if (!base.endsWith("/api/v1")) {
+    base = `${base}/api/v1`;
+  }
+
+  return base;
+};
+
 export const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL ?? "",
+  baseURL: getApiBaseUrl(),
   headers: {
     "Content-Type": "application/json",
   },
-  timeout: 15000,
+  timeout: 20000,
 });
 
 // ─── Request Interceptor ──────────────────────

@@ -22,11 +22,11 @@ export function getImageUrl(
     return trimmed;
   }
 
-  const rawApiUrl = process.env.NEXT_PUBLIC_API_URL || "http://10.10.26.200:5000/api/v1";
+  const rawApiUrl = process.env.NEXT_PUBLIC_API_URL || "https://chaim-backend.onrender.com/api/v1";
   const backendHost =
     process.env.NEXT_PUBLIC_IMAGE_URL ||
     rawApiUrl.replace(/\/api\/v1\/?$/, "") ||
-    "http://10.10.26.200:5000";
+    "https://chaim-backend.onrender.com";
 
   const cleanHost = backendHost.replace(/\/+$/, "");
   const cleanPath = trimmed.startsWith("/") ? trimmed : `/${trimmed}`;
