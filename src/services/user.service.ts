@@ -16,3 +16,8 @@ export const updateProfile = (payload: UpdateProfilePayload): Promise<UserProfil
 /** Save the one-time "rent frequency" answer to the user account */
 export const saveRentFrequency = (frequency: string): Promise<void> =>
   api.post("/user/rent-frequency", { frequency }).then((res) => res.data);
+
+/** Update user profile and avatar via FormData or JSON */
+export const updateMe = (payload: FormData | any): Promise<any> => {
+  return api.patch("/user/update-me", payload).then((res) => res.data);
+};

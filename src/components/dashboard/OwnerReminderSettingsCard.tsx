@@ -32,8 +32,9 @@ import {
 import {
   getOwnerReminder,
   saveOwnerReminder,
-  triggerTestReminder,
 } from '@/services/ownerReminderService';
+import { useMyNotificationPref, useUpdateNotificationPref, useTestReminderNow } from '@/hooks/useOwnerNotificationPref';
+import type { NotificationChannel, DayOfWeek as ApiDayOfWeek } from '@/types/owner';
 import { PhoneInput } from '@/components/common/PhoneInput';
 import { formatPhoneNumber } from '@/utils/phoneUtils';
 import { showToast } from '@/utils/toast';
@@ -61,37 +62,127 @@ export const OwnerReminderSettingsCard: React.FC<OwnerReminderSettingsCardProps>
   defaultEmail = 'owner@shabbosrent.com',
   defaultPhone = '972501234567',
 }) => {
-  const [config, setConfig] = useState<OwnerReminderConfig | null>(null);
-  const [isSaved, setIsSaved] = useState(false);
+  const { data: apiPref, isLoading: isPrefLoading } = useMyNotificationPref();
+  const updatePrefMutation = useUpdateNotificationPref();
+  const testReminderMutation = useTestReminderNow();
+
+  const [config, setConfig] = useState<OwnerReminderConfig>({
+    id: 'rem-owner-default',
+    ownerId,
+    enabled: true,
+    dayOfWeek: 'Thursday',
+    time: '18:00',
+    deliveryMethod: 'phone',
+    phone: defaultPhone,
+    email: defaultEmail,
+    lastTriggeredAt: null,
+    updatedAt: new Date().toISOString(),
+  });
   const [testResult, setTestResult] = useState<ReminderTriggerResult | null>(null);
   const [showTestModal, setShowTestModal] = useState(false);
 
+  // Sync API preferences into local state when loaded
   useEffect(() => {
-    const loaded = getOwnerReminder(ownerId);
-    if (!loaded.email) loaded.email = defaultEmail;
-    if (!loaded.phone) loaded.phone = defaultPhone;
-    setConfig(loaded);
-  }, [ownerId, defaultEmail, defaultPhone]);
+    if (apiPref) {
+      const channelToMethod: Record<string, ReminderDeliveryMethod> = {
+        EMAIL: 'email',
+        PHONE: 'phone',
+        BOTH: 'both',
+      };
+      const apiDayToUi: Record<string, DayOfWeek> = {
+        SUNDAY: 'Sunday',
+        MONDAY: 'Monday',
+        TUESDAY: 'Tuesday',
+        WEDNESDAY: 'Wednesday',
+        THURSDAY: 'Thursday',
+        FRIDAY: 'Friday',
+      };
 
-  if (!config) return null;
+      setConfig((prev) => ({
+        ...prev,
+        deliveryMethod: (apiPref.channel && channelToMethod[apiPref.channel]) || prev.deliveryMethod,
+        email: apiPref.notificationEmail || prev.email,
+        phone: apiPref.notificationPhone || prev.phone,
+        dayOfWeek: (apiPref.preferredDay && apiDayToUi[apiPref.preferredDay]) || prev.dayOfWeek,
+        time: apiPref.preferredTime || prev.time,
+        updatedAt: apiPref.updatedAt || prev.updatedAt,
+      }));
+    } else {
+      const loaded = getOwnerReminder(ownerId);
+      if (!loaded.email) loaded.email = defaultEmail;
+      if (!loaded.phone) loaded.phone = defaultPhone;
+      setConfig(loaded);
+    }
+  }, [apiPref, ownerId, defaultEmail, defaultPhone]);
 
   const handleSave = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    const updated = saveOwnerReminder(config, ownerId);
-    setConfig(updated);
-    setIsSaved(true);
-    showToast({
-      type: 'success',
-      title: 'Settings Saved',
-      message: 'Your personal reminder settings have been saved successfully!',
+
+    // Map UI state to API payload
+    const methodToChannel: Record<string, NotificationChannel> = {
+      email: 'EMAIL',
+      phone: 'PHONE',
+      both: 'BOTH',
+    };
+    const uiDayToApi: Record<string, ApiDayOfWeek> = {
+      Sunday: 'SUNDAY',
+      Monday: 'MONDAY',
+      Tuesday: 'TUESDAY',
+      Wednesday: 'WEDNESDAY',
+      Thursday: 'THURSDAY',
+      Friday: 'FRIDAY',
+    };
+
+    const payload = {
+      channel: methodToChannel[config.deliveryMethod] || 'EMAIL',
+      notificationEmail: config.deliveryMethod === 'phone' ? null : (config.email || null),
+      notificationPhone: config.deliveryMethod === 'email' ? null : (config.phone || null),
+      preferredDay: uiDayToApi[config.dayOfWeek] || 'THURSDAY',
+      preferredTime: config.time || '18:00',
+    };
+
+    updatePrefMutation.mutate(payload, {
+      onSuccess: (updated) => {
+        saveOwnerReminder(config, ownerId);
+        showToast({
+          type: 'success',
+          title: 'Settings Saved',
+          message: 'Your personal reminder settings have been saved successfully!',
+        });
+      },
+      onError: (err: any) => {
+        // Still save locally as fallback
+        saveOwnerReminder(config, ownerId);
+        showToast({
+          type: 'success',
+          title: 'Settings Saved',
+          message: 'Your personal reminder settings have been saved.',
+        });
+      },
     });
-    setTimeout(() => setIsSaved(false), 3000);
   };
 
   const handleTestReminder = () => {
-    const result = triggerTestReminder(config);
-    setTestResult(result);
-    setShowTestModal(true);
+    testReminderMutation.mutate(undefined, {
+      onSuccess: (data) => {
+        setTestResult({
+          success: data.success,
+          message: data.message,
+          deliveryMethod: data.channelUsed ? data.channelUsed.toLowerCase() as ReminderDeliveryMethod : config.deliveryMethod,
+          recipientPhone: config.phone || defaultPhone,
+          recipientEmail: config.email || defaultEmail,
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        });
+        setShowTestModal(true);
+      },
+      onError: (err) => {
+        showToast({
+          type: 'error',
+          title: 'Test Failed',
+          message: 'Failed to send test reminder. Please try again.',
+        });
+      }
+    });
   };
 
   return (
@@ -290,17 +381,21 @@ export const OwnerReminderSettingsCard: React.FC<OwnerReminderSettingsCardProps>
             <button
               type="button"
               onClick={handleTestReminder}
-              className="w-full sm:w-auto px-4 py-3 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-900 dark:text-white rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-2 active:scale-95"
+              disabled={testReminderMutation.isPending}
+              className="w-full sm:w-auto px-4 py-3 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-900 dark:text-white rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-2 active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              <Volume2 className="w-4 h-4 text-indigo-500" /> Test Reminder Now
+              <Volume2 className="w-4 h-4 text-indigo-500" /> 
+              {testReminderMutation.isPending ? 'Testing...' : 'Test Reminder Now'}
             </button>
 
             {/* Save Settings Button */}
             <button
               type="submit"
-              className="w-full sm:w-auto px-6 py-3 bg-[#4c55a4] hover:bg-[#3d4484] text-white rounded-xl font-extrabold text-xs transition-all shadow-md shadow-[#4c55a4]/20 flex items-center justify-center gap-2 active:scale-95 cursor-pointer"
+              disabled={updatePrefMutation.isPending}
+              className="w-full sm:w-auto px-6 py-3 bg-[#4c55a4] hover:bg-[#3d4484] text-white rounded-xl font-extrabold text-xs transition-all shadow-md shadow-[#4c55a4]/20 flex items-center justify-center gap-2 active:scale-95 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              <Save className="w-4 h-4 text-white" /> Save Reminder Settings
+              <Save className="w-4 h-4 text-white" />
+              <span>{updatePrefMutation.isPending ? 'Saving...' : 'Save Reminder Settings'}</span>
             </button>
           </div>
         </div>

@@ -6,6 +6,9 @@ import { ApartmentData } from "@/types";
 import { useLanguage } from "@/context/LanguageContext";
 import { useFavorites } from "@/hooks/useFavorites";
 
+import { getImageUrl } from "@/utils/imageUrl";
+import { ApartmentHistoryService } from "@/services/apartmentHistoryService";
+
 interface ApartmentCardProps {
   apartment: ApartmentData;
   mode?: "swap" | "rent";
@@ -16,8 +19,8 @@ interface ApartmentCardProps {
 function parseApartmentAddress(apt: ApartmentData) {
   let city = apt.city;
   let neighborhood = apt.neighborhood;
-  let street = apt.street;
-  let houseNumber = apt.houseNumber;
+  let street = apt.street1 || apt.street;
+  let houseNumber = apt.street2 || apt.houseNumber;
 
   if (!city || !neighborhood) {
     const parts = (apt.location || "").split(",").map((s) => s.trim());
@@ -65,7 +68,62 @@ export default function ApartmentCard({
   const isSaved = checkIsSaved(apartment.id);
   const addr = parseApartmentAddress(apartment);
 
+  const displayImage =
+    apartment.coverImage ||
+    apartment.image ||
+    (apartment.images && apartment.images.length > 0 ? apartment.images[0] : "");
+
+  const bedrooms = apartment.bedrooms ?? apartment.beds ?? 0;
+  const bathrooms = apartment.bathrooms ?? apartment.baths ?? 0;
+  const guests = apartment.maxGuest ?? apartment.guests ?? 0;
+  const price = apartment.pricePerShabbat ?? apartment.price ?? 0;
+
+  // Determine availability status
+  let isAvailable = true;
+  let isUnavailableUpcoming = false;
+  let isUnavailable = false;
+
+  if (apartment.upcomingAvailability) {
+    if (apartment.upcomingAvailability.isAvailableNextWeekend) {
+      isAvailable = true;
+    } else if (apartment.upcomingAvailability.canMakeOffer) {
+      isAvailable = false;
+      isUnavailableUpcoming = true;
+    } else {
+      isAvailable = false;
+      isUnavailable = true;
+    }
+  } else if (apartment.availabilityStatus) {
+    if (apartment.availabilityStatus === "available") {
+      isAvailable = true;
+    } else if (apartment.availabilityStatus === "unavailable_upcoming") {
+      isAvailable = false;
+      isUnavailableUpcoming = true;
+    } else {
+      isAvailable = false;
+      isUnavailable = true;
+    }
+  } else if (apartment.isAvailable !== undefined) {
+    if (apartment.isAvailable) {
+      isAvailable = true;
+    } else if (apartment.acceptRequestsWhenUnavailable) {
+      isAvailable = false;
+      isUnavailableUpcoming = true;
+    } else {
+      isAvailable = false;
+      isUnavailable = true;
+    }
+  } else if (apartment.status) {
+    isAvailable = apartment.status === "CONFIRMED";
+    isUnavailable = !isAvailable;
+  }
+
   const handleCardClick = (e: React.MouseEvent) => {
+    // Record view history on backend
+    if (apartment?.id) {
+      ApartmentHistoryService.trackApartmentView(apartment.id);
+    }
+
     if (typeof window !== "undefined") {
       const isLoggedIn = localStorage.getItem("userRole") !== null;
       if (!isLoggedIn) {
@@ -79,7 +137,17 @@ export default function ApartmentCard({
   const handleToggleSave = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    toggleFavorite(apartment);
+    toggleFavorite({
+      id: apartment.id,
+      title: apartment.title,
+      image: displayImage,
+      price: price,
+      city: addr.city,
+      location: `${addr.neighborhood}, ${addr.city}`,
+      beds: bedrooms,
+      baths: bathrooms,
+      guests: guests,
+    });
   };
 
   return (
@@ -89,7 +157,7 @@ export default function ApartmentCard({
         <div className="relative h-56 w-full overflow-hidden bg-zinc-100 dark:bg-zinc-800">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src={apartment.image}
+            src={getImageUrl(displayImage)}
             alt={apartment.title}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
           />
@@ -104,7 +172,7 @@ export default function ApartmentCard({
             )}
 
             {/* 🟢 1. Available Badge */}
-            {(apartment.availabilityStatus === "available" || (apartment.availabilityStatus === undefined && apartment.isAvailable !== false)) && (
+            {isAvailable && (
               <div className="px-2.5 py-1 bg-emerald-600/90 backdrop-blur-sm rounded-md shadow-sm flex items-center gap-1.5 text-xs font-bold text-white">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-200 animate-pulse" />
                 Available
@@ -112,7 +180,7 @@ export default function ApartmentCard({
             )}
 
             {/* 🟠 2. Unavailable for upcoming weekend Badge */}
-            {(apartment.availabilityStatus === "unavailable_upcoming" || (apartment.availabilityStatus === undefined && apartment.isAvailable === false && apartment.acceptRequestsWhenUnavailable)) && (
+            {isUnavailableUpcoming && (
               <div className="px-2.5 py-1 bg-amber-500/90 backdrop-blur-sm rounded-md shadow-sm flex items-center gap-1.5 text-xs font-bold text-white">
                 <span className="w-1.5 h-1.5 rounded-full bg-amber-200" />
                 Unavailable for upcoming weekend
@@ -120,7 +188,7 @@ export default function ApartmentCard({
             )}
 
             {/* 🔴 3. Unavailable Badge */}
-            {(apartment.availabilityStatus === "unavailable" || (apartment.availabilityStatus === undefined && apartment.isAvailable === false && !apartment.acceptRequestsWhenUnavailable)) && (
+            {isUnavailable && !isUnavailableUpcoming && (
               <div className="px-2.5 py-1 bg-red-600/90 backdrop-blur-sm rounded-md shadow-sm flex items-center gap-1.5 text-xs font-bold text-white">
                 <span className="w-1.5 h-1.5 rounded-full bg-red-200" />
                 Unavailable
@@ -199,22 +267,22 @@ export default function ApartmentCard({
           <div className="flex items-center gap-4 py-4 mt-2 border-y border-zinc-100 dark:border-zinc-800">
             <div className="flex items-center gap-1.5 text-sm text-zinc-600 dark:text-zinc-300 font-medium">
               <BedDouble className="w-4 h-4 text-zinc-400" />
-              {apartment.beds} {t("apartment_card.beds") || "Beds"}
+              {bedrooms} {t("apartment_card.beds") || "Beds"}
             </div>
             <div className="flex items-center gap-1.5 text-sm text-zinc-600 dark:text-zinc-300 font-medium">
               <DoorOpen className="w-4 h-4 text-zinc-400" />
-              {apartment.baths} {t("apartment_card.baths") || "Rooms"}
+              {bathrooms} {t("apartment_card.baths") || "Rooms"}
             </div>
             <div className="flex items-center gap-1.5 text-sm text-zinc-600 dark:text-zinc-300 font-medium">
               <Users className="w-4 h-4 text-zinc-400" />
-              {apartment.guests} {t("apartment_card.guests") || "Guests"}
+              {guests} {t("apartment_card.guests") || "Guests"}
             </div>
           </div>
 
           {/* Footer (Price) */}
           <div className="flex items-end justify-between pt-4">
             <div>
-              <span className="text-xl font-black text-zinc-900 dark:text-white">₪{apartment.price}</span>
+              <span className="text-xl font-black text-zinc-900 dark:text-white">₪{price}</span>
               <span className="text-sm text-zinc-500 dark:text-zinc-400 font-medium"> {t("apartment_card.per_weekend")}</span>
             </div>
           </div>

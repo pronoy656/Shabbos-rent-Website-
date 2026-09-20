@@ -13,22 +13,20 @@ import {
 import { registerAmbassador } from "@/services/ambassadorAuthService";
 import DevSimulatorBar from "@/components/ambassador/DevSimulatorBar";
 import { PhoneInput } from "@/components/common/PhoneInput";
-
-const REFERRAL_SOURCES = [
-  "Facebook / Social Media",
-  "YouTube",
-  "Instagram",
-  "Twitter / X",
-  "Newspaper / Print Ad",
-  "Radio / Voice Hotline",
-  "Friend / Word of Mouth",
-  "Synagogue / Community Bulletin",
-  "Google Search / Other",
-];
+import { useActiveMarketingPlatforms } from "@/hooks/useMarketingPlatform";
+import { useRegister } from "@/hooks/useAuth";
+import type { RegisterPayload } from "@/types/auth.types";
+import { toast } from "sonner";
 
 function SignupFormContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+
+  // Marketing platforms from API
+  const { data: activePlatformsData, isLoading: isPlatformsLoading } = useActiveMarketingPlatforms();
+  const availableSources = activePlatformsData?.data ?? [];
+
+  const registerMutation = useRegister();
 
   // Tab State: 'selection' | 'renter' | 'owner' | 'ambassador'
   const [activeTab, setActiveTab] = useState<"selection" | "renter" | "owner" | "ambassador">("selection");
@@ -41,6 +39,7 @@ function SignupFormContent() {
   const [renterPassword, setRenterPassword] = useState("");
   const [renterConfirmPassword, setRenterConfirmPassword] = useState("");
   const [renterReferralSource, setRenterReferralSource] = useState("");
+  const [renterMarketingPlatformId, setRenterMarketingPlatformId] = useState<string | undefined>(undefined);
 
   // Owner Signup State
   const [ownerName, setOwnerName] = useState("");
@@ -50,6 +49,7 @@ function SignupFormContent() {
   const [ownerPassword, setOwnerPassword] = useState("");
   const [ownerConfirmPassword, setOwnerConfirmPassword] = useState("");
   const [ownerReferralSource, setOwnerReferralSource] = useState("");
+  const [ownerMarketingPlatformId, setOwnerMarketingPlatformId] = useState<string | undefined>(undefined);
 
   // Common UI State
   const [showPassword, setShowPassword] = useState(false);
@@ -85,29 +85,27 @@ function SignupFormContent() {
 
   const redirectUrl = searchParams.get("redirect");
 
-  const handleSignupSubmit = (accountType: "renter" | "owner") => {
+  const handleSignupSubmit = async (accountType: "renter" | "owner") => {
     setSignupError(null);
 
-    if (accountType === "renter") {
-      const isIdentifierFilled = renterNoEmail ? !!renterPhone : !!renterEmail;
-      if (!renterName || !isIdentifierFilled || !renterPassword) {
-        setSignupError("Please fill in all required fields.");
-        return;
-      }
-      if (renterPassword !== renterConfirmPassword) {
-        setSignupError("Passwords do not match.");
-        return;
-      }
-    } else {
-      const isIdentifierFilled = ownerNoEmail ? !!ownerPhone : (!!ownerEmail && !!ownerPhone);
-      if (!ownerName || !isIdentifierFilled || !ownerPassword) {
-        setSignupError("Please fill in all required fields.");
-        return;
-      }
-      if (ownerPassword !== ownerConfirmPassword) {
-        setSignupError("Passwords do not match.");
-        return;
-      }
+    const isRenter = accountType === "renter";
+    const name = isRenter ? renterName : ownerName;
+    const noEmail = isRenter ? renterNoEmail : ownerNoEmail;
+    const email = isRenter ? renterEmail : ownerEmail;
+    const phone = isRenter ? renterPhone : ownerPhone;
+    const password = isRenter ? renterPassword : ownerPassword;
+    const confirmPassword = isRenter ? renterConfirmPassword : ownerConfirmPassword;
+    const referralSource = isRenter ? renterReferralSource : ownerReferralSource;
+    const marketingPlatformId = isRenter ? renterMarketingPlatformId : ownerMarketingPlatformId;
+
+    const isIdentifierFilled = noEmail ? !!phone?.trim() : !!email?.trim();
+    if (!name.trim() || !isIdentifierFilled || !password) {
+      setSignupError("Please fill in all required fields.");
+      return;
+    }
+    if (password !== confirmPassword) {
+      setSignupError("Passwords do not match.");
+      return;
     }
 
     if (!termsAccepted) {
@@ -115,49 +113,70 @@ function SignupFormContent() {
       return;
     }
 
-    const currentSource = accountType === "renter" ? renterReferralSource : ownerReferralSource;
-    if (!currentSource) {
+    if (availableSources.length > 0 && !referralSource) {
       setSignupError("Please select how you heard about Shabos Rent.");
       return;
     }
 
     setIsLoading(true);
-    localStorage.setItem("userRole", accountType);
-    if (accountType === "renter") {
-      localStorage.setItem("userEmail", renterNoEmail ? "" : renterEmail);
-      localStorage.setItem("userPhone", renterNoEmail ? renterPhone : "");
-      localStorage.setItem("noEmail", renterNoEmail ? "true" : "false");
-    } else {
-      localStorage.setItem("userEmail", ownerNoEmail ? "" : ownerEmail);
-      localStorage.setItem("userPhone", ownerPhone);
-      localStorage.setItem("noEmail", ownerNoEmail ? "true" : "false");
-    }
-    localStorage.setItem("termsAccepted", "true");
-    localStorage.setItem("termsAcceptedAt", new Date().toISOString());
-    localStorage.setItem("emailOptIn", emailOptIn ? "true" : "false");
-    localStorage.setItem("emailOptInAt", new Date().toISOString());
-    localStorage.setItem("referralSource", currentSource);
 
-    // Set default sub-preferences
-    localStorage.setItem("emailBookings", "true");
-    localStorage.setItem("emailPromos", emailOptIn ? "true" : "false");
-    localStorage.setItem("emailNewsletter", emailOptIn ? "true" : "false");
+    try {
+      // Build clean payload: omit phone if email registration, omit email if phone registration
+      const payload: RegisterPayload = {
+        username: name.trim(),
+        password,
+        confirmPassword,
+        marketingPlatformId: marketingPlatformId || undefined,
+      };
 
-    if (accountType === "owner") {
-      localStorage.setItem("hasUserListing", "true");
-    } else {
-      localStorage.setItem("hasUserListing", "false");
-    }
-
-    setTimeout(() => {
-      if (redirectUrl) {
-        router.push(redirectUrl);
-      } else if (accountType === "owner") {
-        router.push("/user-dashboard/add");
+      if (noEmail) {
+        if (phone?.trim()) {
+          payload.phone = phone.trim();
+        }
       } else {
-        router.push("/user-dashboard");
+        if (email?.trim()) {
+          payload.email = email.trim();
+        }
       }
-    }, 1200);
+
+      const res = await registerMutation.mutateAsync(payload);
+
+      toast.success(res?.message || "Account registered successfully!");
+
+      localStorage.setItem("userRole", accountType);
+      localStorage.setItem("userEmail", noEmail ? "" : email);
+      localStorage.setItem("userPhone", phone);
+      localStorage.setItem("noEmail", noEmail ? "true" : "false");
+      localStorage.setItem("termsAccepted", "true");
+      localStorage.setItem("termsAcceptedAt", new Date().toISOString());
+      localStorage.setItem("emailOptIn", emailOptIn ? "true" : "false");
+      localStorage.setItem("emailOptInAt", new Date().toISOString());
+      localStorage.setItem("referralSource", referralSource);
+
+      // Set default preferences
+      localStorage.setItem("emailBookings", "true");
+      localStorage.setItem("emailPromos", emailOptIn ? "true" : "false");
+      localStorage.setItem("emailNewsletter", emailOptIn ? "true" : "false");
+      localStorage.setItem("hasUserListing", "false");
+
+      setTimeout(() => {
+        if (redirectUrl) {
+          router.push(redirectUrl);
+        } else {
+          router.push("/user-dashboard");
+        }
+      }, 600);
+    } catch (err: unknown) {
+      setIsLoading(false);
+      const errorMsg =
+        err && typeof err === "object" && "response" in err
+          ? (err as { response?: { data?: { message?: string } } }).response?.data?.message
+          : err instanceof Error
+          ? err.message
+          : "Registration failed. Please check your details and try again.";
+      setSignupError(errorMsg || "Registration failed. Please try again.");
+      toast.error(errorMsg || "Registration failed. Please try again.");
+    }
   };
 
   const handleAmbassadorSubmit = (e: React.FormEvent) => {
@@ -167,11 +186,13 @@ function SignupFormContent() {
     const isEmailValid = ambNoEmail || !!ambFormData.email;
     if (!ambFormData.name || !isEmailValid || !ambFormData.phone || !ambFormData.password) {
       setAmbError("Please fill in all required fields.");
+      toast.error("Please fill in all required fields.");
       return;
     }
 
     if (ambFormData.password !== ambFormData.confirmPassword) {
       setAmbError("Passwords do not match.");
+      toast.error("Passwords do not match.");
       return;
     }
 
@@ -183,9 +204,11 @@ function SignupFormContent() {
     const res = registerAmbassador(payload);
     if (!res.success) {
       setAmbError(res.error || "Registration failed.");
+      toast.error(res.error || "Registration failed.");
       return;
     }
 
+    toast.success("Ambassador application submitted successfully!");
     setAmbSubmitted(true);
   };
 
@@ -431,31 +454,46 @@ function SignupFormContent() {
                 {/* Referral Source Shadcn Dropdown Field */}
                 <div className="space-y-1.5">
                   <label className="text-sm font-semibold text-zinc-900 dark:text-zinc-200 flex items-center gap-1.5">
-                    <HelpCircle className="w-4 h-4 text-zinc-400" /> How did you hear about Shabos Rent? <span className="text-red-500">*</span>
+                    <HelpCircle className="w-4 h-4 text-zinc-400" /> How did you hear about Shabos Rent? {availableSources.length > 0 && <span className="text-red-500">*</span>}
                   </label>
                   <DropdownMenu>
-                    <DropdownMenuTrigger className="w-full flex items-center justify-between rounded-xl border border-zinc-200 bg-white dark:bg-zinc-950 py-3 px-4 text-sm font-medium text-zinc-900 dark:text-white outline-none focus-visible:ring-2 focus-visible:ring-[#4c55a4] transition-all shadow-sm cursor-pointer">
+                    <DropdownMenuTrigger 
+                      disabled={isPlatformsLoading || availableSources.length === 0}
+                      className={`w-full flex items-center justify-between rounded-xl border border-zinc-200 bg-white dark:bg-zinc-950 py-3 px-4 text-sm font-medium text-zinc-900 dark:text-white outline-none focus-visible:ring-2 focus-visible:ring-[#4c55a4] transition-all shadow-sm ${
+                        isPlatformsLoading || availableSources.length === 0 ? "opacity-75 cursor-not-allowed bg-zinc-50 dark:bg-zinc-900" : "cursor-pointer"
+                      }`}
+                    >
                       <span className={renterReferralSource ? "text-zinc-900 dark:text-white font-medium" : "text-zinc-400"}>
-                        {renterReferralSource || "Select Source..."}
+                        {isPlatformsLoading
+                          ? "Loading options..."
+                          : renterReferralSource || (availableSources.length === 0 ? "No options available" : "Select Source...")}
                       </span>
                       <ChevronDown className="w-4 h-4 text-zinc-400 opacity-80" />
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="start" className="w-[--anchor-width] max-h-60 overflow-y-auto rounded-xl bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 p-1.5 shadow-2xl z-50">
-                      {REFERRAL_SOURCES.map((source) => (
-                        <DropdownMenuItem
-                          key={source}
-                          onClick={() => {
-                            setRenterReferralSource(source);
-                            setSignupError(null);
-                          }}
-                          className="flex items-center justify-between cursor-pointer rounded-lg py-2.5 px-3 text-xs font-semibold text-zinc-800 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-900"
-                        >
-                          <span>{source}</span>
-                          {renterReferralSource === source && <Check className="w-4 h-4 text-[#4c55a4]" />}
-                        </DropdownMenuItem>
-                      ))}
-                    </DropdownMenuContent>
+                    {availableSources.length > 0 && (
+                      <DropdownMenuContent align="start" className="w-[--anchor-width] max-h-60 overflow-y-auto rounded-xl bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 p-1.5 shadow-2xl z-50">
+                        {availableSources.map((source) => (
+                          <DropdownMenuItem
+                            key={source.id}
+                            onClick={() => {
+                              setRenterReferralSource(source.title);
+                              setRenterMarketingPlatformId(source.id);
+                              setSignupError(null);
+                            }}
+                            className="flex items-center justify-between cursor-pointer rounded-lg py-2.5 px-3 text-xs font-semibold text-zinc-800 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-900"
+                          >
+                            <span>{source.title}</span>
+                            {renterReferralSource === source.title && <Check className="w-4 h-4 text-[#4c55a4]" />}
+                          </DropdownMenuItem>
+                        ))}
+                      </DropdownMenuContent>
+                    )}
                   </DropdownMenu>
+                  {!isPlatformsLoading && availableSources.length === 0 && (
+                    <p className="text-[11px] text-zinc-400 dark:text-zinc-500">
+                      There is no social or referral platform available at the moment.
+                    </p>
+                  )}
                 </div>
 
                 {signupError && (
@@ -686,31 +724,46 @@ function SignupFormContent() {
                 {/* Referral Source Shadcn Dropdown Field */}
                 <div className="space-y-1.5">
                   <label className="text-sm font-semibold text-zinc-900 dark:text-zinc-200 flex items-center gap-1.5">
-                    <HelpCircle className="w-4 h-4 text-zinc-400" /> How did you hear about Shabos Rent? <span className="text-red-500">*</span>
+                    <HelpCircle className="w-4 h-4 text-zinc-400" /> How did you hear about Shabos Rent? {availableSources.length > 0 && <span className="text-red-500">*</span>}
                   </label>
                   <DropdownMenu>
-                    <DropdownMenuTrigger className="w-full flex items-center justify-between rounded-xl border border-zinc-200 bg-white dark:bg-zinc-950 py-3 px-4 text-sm font-medium text-zinc-900 dark:text-white outline-none focus-visible:ring-2 focus-visible:ring-[#4c55a4] transition-all shadow-sm cursor-pointer">
+                    <DropdownMenuTrigger 
+                      disabled={isPlatformsLoading || availableSources.length === 0}
+                      className={`w-full flex items-center justify-between rounded-xl border border-zinc-200 bg-white dark:bg-zinc-950 py-3 px-4 text-sm font-medium text-zinc-900 dark:text-white outline-none focus-visible:ring-2 focus-visible:ring-[#4c55a4] transition-all shadow-sm ${
+                        isPlatformsLoading || availableSources.length === 0 ? "opacity-75 cursor-not-allowed bg-zinc-50 dark:bg-zinc-900" : "cursor-pointer"
+                      }`}
+                    >
                       <span className={ownerReferralSource ? "text-zinc-900 dark:text-white font-medium" : "text-zinc-400"}>
-                        {ownerReferralSource || "Select Source..."}
+                        {isPlatformsLoading
+                          ? "Loading options..."
+                          : ownerReferralSource || (availableSources.length === 0 ? "No options available" : "Select Source...")}
                       </span>
                       <ChevronDown className="w-4 h-4 text-zinc-400 opacity-80" />
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="start" className="w-[--anchor-width] max-h-60 overflow-y-auto rounded-xl bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 p-1.5 shadow-2xl z-50">
-                      {REFERRAL_SOURCES.map((source) => (
-                        <DropdownMenuItem
-                          key={source}
-                          onClick={() => {
-                            setOwnerReferralSource(source);
-                            setSignupError(null);
-                          }}
-                          className="flex items-center justify-between cursor-pointer rounded-lg py-2.5 px-3 text-xs font-semibold text-zinc-800 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-900"
-                        >
-                          <span>{source}</span>
-                          {ownerReferralSource === source && <Check className="w-4 h-4 text-[#4c55a4]" />}
-                        </DropdownMenuItem>
-                      ))}
-                    </DropdownMenuContent>
+                    {availableSources.length > 0 && (
+                      <DropdownMenuContent align="start" className="w-[--anchor-width] max-h-60 overflow-y-auto rounded-xl bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 p-1.5 shadow-2xl z-50">
+                        {availableSources.map((source) => (
+                          <DropdownMenuItem
+                            key={source.id}
+                            onClick={() => {
+                              setOwnerReferralSource(source.title);
+                              setOwnerMarketingPlatformId(source.id);
+                              setSignupError(null);
+                            }}
+                            className="flex items-center justify-between cursor-pointer rounded-lg py-2.5 px-3 text-xs font-semibold text-zinc-800 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-900"
+                          >
+                            <span>{source.title}</span>
+                            {ownerReferralSource === source.title && <Check className="w-4 h-4 text-[#4c55a4]" />}
+                          </DropdownMenuItem>
+                        ))}
+                      </DropdownMenuContent>
+                    )}
                   </DropdownMenu>
+                  {!isPlatformsLoading && availableSources.length === 0 && (
+                    <p className="text-[11px] text-zinc-400 dark:text-zinc-500">
+                      There is no social or referral platform available at the moment.
+                    </p>
+                  )}
                 </div>
 
                 {signupError && (

@@ -1,27 +1,179 @@
 import { api } from "@/lib/api";
-import type { LoginPayload, RegisterPayload, AuthResponse, User } from "@/types/auth.types";
+import { queryClient } from "@/lib/queryClient";
+import type {
+  LoginPayload,
+  RegisterPayload,
+  LoginResponse,
+  RegisterResponse,
+  ForgotPasswordPayload,
+  ForgotPasswordResponse,
+  VerifyOtpPayload,
+  VerifyOtpResponse,
+  ChangePasswordPayload,
+  ChangePasswordResponse,
+  AuthUser,
+} from "@/types/auth.types";
 
 // ─────────────────────────────────────────────
 // Auth Service
-// All endpoints will be filled in when API credentials are provided
+// Based on api-integration/auth.txt
 // ─────────────────────────────────────────────
 
-/** Login with email + password */
-export const login = (payload: LoginPayload): Promise<AuthResponse> =>
-  api.post("/auth/login", payload).then((res) => res.data);
+/** Helper to save auth tokens in both localStorage and cookies */
+export const saveAuthSession = (data: {
+  accessToken: string;
+  refreshToken?: string;
+  user?: AuthUser;
+}) => {
+  if (typeof window === "undefined") return;
 
-/** Register new user */
-export const register = (payload: RegisterPayload): Promise<AuthResponse> =>
+  // Clear query cache to prevent stale data from previous user
+  try {
+    queryClient.clear();
+  } catch {}
+
+  const { accessToken, refreshToken, user } = data;
+  const role =
+    user?.role === "SUPER_ADMIN" || user?.role === "ADMIN" ? "admin" : "user";
+
+  // Local Storage
+  localStorage.setItem("auth_token", accessToken);
+  localStorage.setItem("accessToken", accessToken);
+  if (refreshToken) localStorage.setItem("refreshToken", refreshToken);
+  localStorage.setItem("userRole", role);
+  if (user) localStorage.setItem("authUser", JSON.stringify(user));
+
+  // Cookies for Next.js Middleware and SSR
+  const maxAge = 7 * 24 * 60 * 60; // 7 days
+  document.cookie = `auth_token=${encodeURIComponent(accessToken)}; path=/; max-age=${maxAge}; SameSite=Lax`;
+  document.cookie = `accessToken=${encodeURIComponent(accessToken)}; path=/; max-age=${maxAge}; SameSite=Lax`;
+  if (refreshToken) {
+    document.cookie = `refreshToken=${encodeURIComponent(refreshToken)}; path=/; max-age=${maxAge}; SameSite=Lax`;
+  }
+  document.cookie = `userRole=${encodeURIComponent(role)}; path=/; max-age=${maxAge}; SameSite=Lax`;
+  if (user) {
+    document.cookie = `authUser=${encodeURIComponent(JSON.stringify(user))}; path=/; max-age=${maxAge}; SameSite=Lax`;
+  }
+
+  try {
+    window.dispatchEvent(new Event("storage"));
+    window.dispatchEvent(new Event("savedApartmentsChanged"));
+  } catch {}
+};
+
+/** Synchronously clear all auth tokens, roles, and cookies immediately */
+export const clearAuthSession = () => {
+  if (typeof window === "undefined") return;
+
+  // Clear TanStack Query Cache
+  try {
+    queryClient.clear();
+  } catch {}
+
+  // List of user-specific keys to remove
+  const userKeysToRemove = [
+    "auth_token",
+    "accessToken",
+    "refreshToken",
+    "userRole",
+    "authUser",
+    "userEmail",
+    "userPhone",
+    "noEmail",
+    "hasUserListing",
+    "termsAccepted",
+    "termsAcceptedAt",
+    "emailOptIn",
+    "emailOptInAt",
+    "referralSource",
+    "emailBookings",
+    "emailPromos",
+    "emailNewsletter",
+    "selectedShabbatot",
+    "specialShabbatot",
+    "isApartmentVisible",
+    "createdListingDate",
+    "phoneCommState",
+    "notify_me_requests",
+    "apartment_offers",
+    "reported_rentals",
+    "user_booking_history",
+  ];
+  
+  userKeysToRemove.forEach((key) => localStorage.removeItem(key));
+
+  // Clear cookies
+  document.cookie = "auth_token=; path=/; max-age=0; SameSite=Lax";
+  document.cookie = "accessToken=; path=/; max-age=0; SameSite=Lax";
+  document.cookie = "refreshToken=; path=/; max-age=0; SameSite=Lax";
+  document.cookie = "userRole=; path=/; max-age=0; SameSite=Lax";
+  document.cookie = "authUser=; path=/; max-age=0; SameSite=Lax";
+
+  try {
+    window.dispatchEvent(new Event("storage"));
+    window.dispatchEvent(new Event("savedApartmentsChanged"));
+  } catch {}
+};
+
+/** Login with identifier (email/phone) + password — used by Admin, Owner, and Renter */
+export const login = async (payload: LoginPayload): Promise<LoginResponse> => {
+  const res = await api.post<LoginResponse>("/auth/login", payload);
+  const data = res.data;
+  if (data?.data?.accessToken) {
+    saveAuthSession({
+      accessToken: data.data.accessToken,
+      refreshToken: data.data.refreshToken,
+      user: data.data.user,
+    });
+  }
+  return data;
+};
+
+/** Register new user (Renter / Owner) */
+export const register = (payload: RegisterPayload): Promise<RegisterResponse> =>
   api.post("/auth/register", payload).then((res) => res.data);
 
-/** Logout current user */
-export const logout = (): Promise<void> =>
-  api.post("/auth/logout").then((res) => res.data);
+/** Send OTP for password recovery */
+export const forgotPassword = (
+  payload: ForgotPasswordPayload
+): Promise<ForgotPasswordResponse> =>
+  api.post("/auth/forgot-password", payload).then((res) => res.data);
+
+/** Verify OTP sent to user email */
+export const verifyOtp = (
+  payload: VerifyOtpPayload
+): Promise<VerifyOtpResponse> =>
+  api.post("/auth/verify-otp", payload).then((res) => res.data);
+
+/** Change / Reset Password */
+export const changePassword = (
+  payload: ChangePasswordPayload
+): Promise<ChangePasswordResponse> =>
+  api.post("/auth/change-password", payload).then((res) => res.data);
+
+/** Logout current user — immediately wipes tokens & cookies and calls backend */
+export const logout = async (): Promise<void> => {
+  clearAuthSession();
+  try {
+    await api.post("/auth/logout");
+  } catch {
+    // Ignore network / unreachable backend error on logout
+  }
+};
 
 /** Get currently authenticated user */
-export const getMe = (): Promise<User> =>
-  api.get("/auth/me").then((res) => res.data);
-
-/** Admin login */
-export const adminLogin = (payload: LoginPayload): Promise<AuthResponse> =>
-  api.post("/auth/admin/login", payload).then((res) => res.data);
+export const getMe = async (): Promise<AuthUser> => {
+  const res = await api.get("/auth/me");
+  const user: AuthUser = res.data?.data || res.data;
+  if (user && typeof window !== "undefined") {
+    try {
+      localStorage.setItem("authUser", JSON.stringify(user));
+      if (user.role) {
+        const role =
+          user.role === "SUPER_ADMIN" || user.role === "ADMIN" ? "admin" : "user";
+        localStorage.setItem("userRole", role);
+      }
+    } catch {}
+  }
+  return user;
+};

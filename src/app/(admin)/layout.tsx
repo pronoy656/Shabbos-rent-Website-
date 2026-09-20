@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard,
   Building2,
@@ -32,7 +32,8 @@ import {
   PieChart,
   Briefcase,
   Clock,
-  MapPin
+  MapPin,
+  Share2
 } from "lucide-react";
 
 import {
@@ -46,6 +47,10 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useLanguage } from "@/context/LanguageContext";
+import { logout, clearAuthSession } from "@/services/auth.service";
+import { useMe } from "@/hooks/useAuth";
+import UserAvatar from "@/components/common/UserAvatar";
+import { toast } from "sonner";
 
 export default function AdminLayout({
   children,
@@ -53,46 +58,83 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const router = useRouter();
   const { t } = useLanguage();
+  const { data: meUser } = useMe();
+  const [localUser, setLocalUser] = useState<{
+    username?: string;
+    email?: string;
+    role?: string;
+    profileImage?: string | null;
+  } | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem("authUser");
+      if (stored) {
+        setLocalUser(JSON.parse(stored));
+      }
+    } catch {}
+  }, [meUser]);
+
+  useEffect(() => {
+    const token =
+      localStorage.getItem("auth_token") || localStorage.getItem("accessToken");
+    const role = localStorage.getItem("userRole");
+    if (!token || role !== "admin") {
+      setIsAuthenticated(false);
+      window.location.replace(
+        `/login?redirect=${encodeURIComponent(pathname || "/dashboard")}`
+      );
+    } else {
+      setIsAuthenticated(true);
+    }
+  }, [pathname]);
+
+  const handleLogout = async () => {
+    setIsMobileMenuOpen(false);
+    clearAuthSession();
+    toast.success("Logged out successfully");
+    try {
+      await logout();
+    } catch {}
+    router.replace("/login");
+  };
+
   const navigation = [
     { name: t("admin.nav.dashboard"), href: "/dashboard", icon: LayoutDashboard, color: "text-blue-600" },
     { name: t("admin.nav.apartments"), href: "/dashboard/apartments", icon: Building2, color: "text-purple-600" },
     { name: "Apartment Calls", href: "/dashboard/apartment-calls", icon: PhoneCall, color: "text-purple-500" },
     { name: t("admin.nav.owners"), href: "/dashboard/owners", icon: Users, color: "text-emerald-600" },
-    { name: t("admin.nav.renters"), href: "/dashboard/renters", icon: UserCheck, color: "text-orange-600" },
+    { name: t("admin.nav.users") || "Users", href: "/dashboard/users", icon: UserCheck, color: "text-indigo-600" },
     { name: t("admin.nav.rentals"), href: "/dashboard/rentals", icon: CheckSquare, color: "text-blue-500" },
     { name: t("admin.nav.swaps"), href: "/dashboard/swaps", icon: ArrowRightLeft, color: "text-indigo-500" },
     { name: t("admin.nav.weekends"), href: "/dashboard/dates", icon: Calendar, color: "text-orange-500" },
-    { name: t("admin.nav.news"), href: "/dashboard/news", icon: Megaphone, color: "text-blue-600" },
+    { name: t("admin.nav.news") || "News & Announcements", href: "/dashboard/news", icon: Megaphone, color: "text-blue-600" },
     { name: t("admin.nav.advertisements"), href: "/dashboard/advertisements", icon: ImageIcon, color: "text-purple-500" },
+    { name: "Marketing Platforms", href: "/dashboard/marketing-platforms", icon: Share2, color: "text-indigo-600" },
+    { name: "Contact Messages", href: "/dashboard/messages", icon: MessageSquare, color: "text-blue-500" },
     { name: t("admin.nav.payments"), href: "/dashboard/payments", icon: CreditCard, color: "text-green-600" },
     { name: "Ambassadors", href: "/dashboard/ambassadors", icon: Users, color: "text-indigo-600" },
     { name: "Review Moderation", href: "/dashboard/reviews", icon: Star, color: "text-amber-500" },
     { name: t("nav.settings") || "Settings", href: "/dashboard/settings", icon: Settings, color: "text-zinc-600" },
   ];
 
-  /*
-  const pdfNavigation = [
-    { name: "Dashboard (PDF)", href: "/dashboard/pdf-dashboard", icon: LayoutDashboard, color: "text-blue-600" },
-    { name: "Apartments (PDF)", href: "/dashboard/pdf-apartments", icon: Building2, color: "text-purple-600" },
-    { name: "Voice Inbox", href: "/dashboard/voice-inbox", icon: Mic, color: "text-blue-500" },
-    { name: "Upload Hotline", href: "/dashboard/upload-hotline", icon: Phone, color: "text-green-500" },
-    { name: "Apartment Calls", href: "/dashboard/apartment-calls", icon: PhoneCall, color: "text-purple-500" },
-    { name: "Owner Hotline", href: "/dashboard/owner-hotline", icon: Headphones, color: "text-orange-500" },
-    { name: "Open Debts", href: "/dashboard/open-debts", icon: FileText, color: "text-red-500" },
-    { name: "Finance & Budget", href: "/dashboard/finance", icon: PieChart, color: "text-emerald-500" },
-    { name: "Campaigns", href: "/dashboard/campaigns", icon: Megaphone, color: "text-pink-500" },
-    { name: "Partners Hub", href: "/dashboard/partners", icon: Briefcase, color: "text-indigo-500" },
-    { name: "Neighborhoods", href: "/dashboard/neighborhoods", icon: MapPin, color: "text-teal-500" },
-    { name: "Worker Management", href: "/dashboard/workers", icon: Users, color: "text-cyan-500" },
-    { name: "Worker Hours", href: "/dashboard/worker-hours", icon: Clock, color: "text-blue-400" },
-  ];
-  */
-
   function classNames(...classes: string[]) {
     return classes.filter(Boolean).join(" ");
+  }
+
+  if (isAuthenticated === null || !isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-zinc-50 dark:bg-black flex items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
+          <span className="text-xs text-zinc-500 font-medium">Checking authorization...</span>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -145,7 +187,10 @@ export default function AdminLayout({
           
         </nav>
         <div className="p-4 border-t border-zinc-200 dark:border-zinc-800">
-          <button className="flex w-full items-center gap-3 rounded-lg px-3 py-3 text-[15px] font-bold text-red-600 bg-red-50 dark:bg-red-950/30 hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors">
+          <button 
+            onClick={handleLogout}
+            className="flex w-full items-center gap-3 rounded-lg px-3 py-3 text-[15px] font-bold text-red-600 bg-red-50 dark:bg-red-950/30 hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors cursor-pointer"
+          >
             <LogOut className="h-5 w-5 shrink-0" />
             {t("admin.logout")}
           </button>
@@ -169,43 +214,76 @@ export default function AdminLayout({
               <BellRing className="h-5 w-5" />
               <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-red-500 ring-2 ring-white dark:ring-black" />
             </Link>
-            <DropdownMenu>
-              <DropdownMenuTrigger className="flex items-center gap-2.5 outline-none rounded-full border border-zinc-200 bg-white p-1.5 pr-4 shadow-sm hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:bg-zinc-800 transition-all focus-visible:ring-2 focus-visible:ring-blue-500 group">
-                <Avatar className="h-8 w-8 border border-zinc-100 dark:border-zinc-700 shadow-sm group-hover:scale-105 transition-transform">
-                  <AvatarImage src="https://github.com/shadcn.png" alt="@admin" />
-                  <AvatarFallback className="bg-blue-600 text-white font-bold text-xs">AD</AvatarFallback>
-                </Avatar>
-                <div className="flex flex-col items-start hidden md:block text-left">
-                  <span className="text-[13px] font-bold leading-none text-zinc-900 dark:text-white block pb-0.5">{t("admin.admin_user")}</span>
-                  <span className="text-[11px] font-medium leading-none text-zinc-500 dark:text-zinc-400 block">{t("admin.superadmin")}</span>
-                </div>
-                <ChevronDown className="h-4 w-4 text-zinc-400 hidden md:block ml-1" />
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-64 mt-2 font-sans rounded-xl p-2 shadow-lg border-zinc-200 dark:border-zinc-800">
-                <DropdownMenuGroup>
-                  <DropdownMenuLabel className="p-2">
-                    <div className="flex flex-col space-y-1.5">
-                      <p className="text-sm font-bold leading-none text-zinc-900 dark:text-white">{t("admin.admin_user")}</p>
-                      <p className="text-xs font-medium leading-none text-zinc-500 dark:text-zinc-400">
-                        admin@shabbosrent.com
-                      </p>
+            {(() => {
+              const currentUser = meUser || localUser;
+              const adminDisplayName = currentUser?.username || t("admin.admin_user") || "Admin";
+              const adminEmail = currentUser?.email || "admin@shabbosrent.com";
+              const adminRoleLabel = currentUser?.role
+                ? currentUser.role.replace(/_/g, " ")
+                : t("admin.superadmin") || "SUPER ADMIN";
+
+              return (
+                <DropdownMenu>
+                  <DropdownMenuTrigger className="flex items-center gap-2.5 outline-none rounded-full border border-zinc-200 bg-white p-1.5 pr-4 shadow-sm hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:bg-zinc-800 transition-all focus-visible:ring-2 focus-visible:ring-blue-500 group cursor-pointer">
+                    <UserAvatar
+                      src={currentUser?.profileImage}
+                      name={adminDisplayName}
+                      email={adminEmail}
+                      size="sm"
+                      defaultInitials="AD"
+                      className="group-hover:scale-105 transition-transform"
+                    />
+                    <div className="flex flex-col items-start hidden md:block text-left">
+                      <span className="text-[13px] font-bold leading-none text-zinc-900 dark:text-white block pb-0.5">
+                        {adminDisplayName}
+                      </span>
+                      <span className="text-[11px] font-medium leading-none text-zinc-500 dark:text-zinc-400 block capitalize">
+                        {adminRoleLabel.toLowerCase()}
+                      </span>
                     </div>
-                  </DropdownMenuLabel>
-                </DropdownMenuGroup>
-                <DropdownMenuSeparator className="my-1.5" />
-                <DropdownMenuItem asChild className="p-2 rounded-lg cursor-pointer">
-                  <Link href="/dashboard/settings" className="flex items-center text-sm font-medium text-zinc-700 dark:text-zinc-300 hover:text-blue-600 dark:hover:text-blue-400">
-                    <Settings className="mr-2 h-4 w-4 text-zinc-500" />
-                    <span>{t("admin.settings_password")}</span>
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator className="my-1.5" />
-                <DropdownMenuItem className="p-2 rounded-lg text-red-600 focus:text-red-700 dark:text-red-400 font-medium focus:bg-red-50 dark:focus:bg-red-950/30 cursor-pointer transition-colors">
-                  <LogOut className="mr-2 h-4 w-4" />
-                  <span>{t("admin.logout")}</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+                    <ChevronDown className="h-4 w-4 text-zinc-400 hidden md:block ml-1" />
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-64 mt-2 font-sans rounded-xl p-2 shadow-lg border-zinc-200 dark:border-zinc-800">
+                    <DropdownMenuGroup>
+                      <DropdownMenuLabel className="p-2">
+                        <div className="flex items-center gap-3">
+                          <UserAvatar
+                            src={currentUser?.profileImage}
+                            name={adminDisplayName}
+                            email={adminEmail}
+                            size="md"
+                            defaultInitials="AD"
+                          />
+                          <div className="flex flex-col space-y-0.5 overflow-hidden">
+                            <p className="text-sm font-bold leading-tight text-zinc-900 dark:text-white truncate">
+                              {adminDisplayName}
+                            </p>
+                            <p className="text-xs font-medium leading-tight text-zinc-500 dark:text-zinc-400 truncate">
+                              {adminEmail}
+                            </p>
+                          </div>
+                        </div>
+                      </DropdownMenuLabel>
+                    </DropdownMenuGroup>
+                    <DropdownMenuSeparator className="my-1.5" />
+                    <DropdownMenuItem asChild className="p-2 rounded-lg cursor-pointer">
+                      <Link href="/dashboard/settings" className="flex items-center text-sm font-medium text-zinc-700 dark:text-zinc-300 hover:text-blue-600 dark:hover:text-blue-400">
+                        <Settings className="mr-2 h-4 w-4 text-zinc-500" />
+                        <span>{t("admin.settings_password")}</span>
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator className="my-1.5" />
+                    <DropdownMenuItem 
+                      onClick={handleLogout}
+                      className="p-2 rounded-lg text-red-600 focus:text-red-700 dark:text-red-400 font-medium focus:bg-red-50 dark:focus:bg-red-950/30 cursor-pointer transition-colors"
+                    >
+                      <LogOut className="mr-2 h-4 w-4" />
+                      <span>{t("admin.logout")}</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              );
+            })()}
           </div>
         </header>
 
@@ -254,6 +332,15 @@ export default function AdminLayout({
                 );
               })}
               
+              <div className="border-t border-zinc-100 dark:border-zinc-800/60 pt-2 mt-2">
+                <button
+                  onClick={handleLogout}
+                  className="w-full group flex items-center gap-4 px-3 py-3 rounded-lg text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 font-bold transition-all text-[15px] cursor-pointer"
+                >
+                  <LogOut className="h-5 w-5 shrink-0" />
+                  <span>{t("admin.logout")}</span>
+                </button>
+              </div>
             </nav>
           </div>
         </div>

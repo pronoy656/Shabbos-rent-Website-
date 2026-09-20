@@ -3,22 +3,48 @@
 import { useState } from "react";
 import { MapPin, Phone, Mail, Send } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
+import { useContactForm } from "@/hooks/useContact";
+import { toast } from "sonner";
 
 export default function ContactSection() {
   const { t } = useLanguage();
-  const [formData, setFormData] = useState({ name: "", email: "", subject: "", message: "" });
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    subject: "",
+    message: "",
+  });
   const [isSuccess, setIsSuccess] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const contactMutation = useContactForm();
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitting(true);
-    // Simulate API
-    setTimeout(() => {
-      setIsSubmitting(false);
+    if (!formData.name.trim() || !formData.email.trim() || !formData.message.trim()) {
+      toast.error("Please fill in all required fields.");
+      return;
+    }
+
+    try {
+      const res = await contactMutation.mutateAsync({
+        name: formData.name.trim(),
+        email: formData.email.trim(),
+        phone: formData.phone.trim() || undefined,
+        subject: formData.subject.trim() || "General Inquiry",
+        message: formData.message.trim(),
+      });
+
+      toast.success(res?.message || "Your message has been sent successfully!");
       setIsSuccess(true);
-      setFormData({ name: "", email: "", subject: "", message: "" });
-    }, 1500);
+      setFormData({ name: "", email: "", phone: "", subject: "", message: "" });
+    } catch (err: unknown) {
+      const errorMsg =
+        err && typeof err === "object" && "response" in err
+          ? (err as { response?: { data?: { message?: string } } }).response?.data?.message
+          : "Failed to send message. Please try again.";
+      toast.error(errorMsg);
+    }
   };
 
   return (
@@ -65,10 +91,9 @@ export default function ContactSection() {
                   </div>
                   <div>
                     <h4 className="font-bold text-white mb-1">{t("contact.phone")}</h4>
-                    <p className="text-[13px] text-white/70 leading-relaxed">
-                      +972 50-123-4567<br />
+                    <a href="tel:+97221234567" className="text-[13px] text-white/70 hover:text-white transition-colors">
                       +972 2-123-4567
-                    </p>
+                    </a>
                   </div>
                 </div>
                 
@@ -78,36 +103,25 @@ export default function ContactSection() {
                   </div>
                   <div>
                     <h4 className="font-bold text-white mb-1">{t("contact.email")}</h4>
-                    <p className="text-[13px] text-white/70 leading-relaxed">
-                      support@shabbosrent.com<br />
+                    <a href="mailto:info@shabbosrent.com" className="text-[13px] text-white/70 hover:text-white transition-colors">
                       info@shabbosrent.com
-                    </p>
+                    </a>
                   </div>
                 </div>
               </div>
             </div>
 
-            <div className="mt-16 pt-8 border-t border-white/10">
+            <div className="pt-8 border-t border-white/10 mt-8">
               <h4 className="text-[10px] font-bold text-white/90 mb-5 uppercase tracking-widest">{t("contact.connect")}</h4>
-              <div className="flex gap-4">
-                <a href="#" className="w-10 h-10 rounded-full border border-white/20 flex items-center justify-center cursor-pointer hover:bg-white/10 hover:border-white/40 transition-all hover:-translate-y-1 group">
-                  <svg className="w-4 h-4 fill-white/80 group-hover:fill-white transition-colors" viewBox="0 0 24 24">
-                    <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.469h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.469h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+              <div className="flex items-center gap-4">
+                <a href="#" className="w-10 h-10 rounded-xl bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-all">
+                  <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
+                    <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
                   </svg>
                 </a>
-                <a href="#" className="w-10 h-10 rounded-full border border-white/20 flex items-center justify-center cursor-pointer hover:bg-white/10 hover:border-white/40 transition-all hover:-translate-y-1 group">
-                  <svg className="w-4 h-4 fill-white/80 group-hover:fill-white transition-colors" viewBox="0 0 24 24">
-                    <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/>
-                  </svg>
-                </a>
-                <a href="#" className="w-10 h-10 rounded-full border border-white/20 flex items-center justify-center cursor-pointer hover:bg-white/10 hover:border-white/40 transition-all hover:-translate-y-1 group">
-                  <svg className="w-4 h-4 fill-white/80 group-hover:fill-white transition-colors" viewBox="0 0 24 24">
-                    <path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723 10.054 10.054 0 01-3.127 1.184 4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z"/>
-                  </svg>
-                </a>
-                <a href="#" className="w-10 h-10 rounded-full border border-white/20 flex items-center justify-center cursor-pointer hover:bg-white/10 hover:border-white/40 transition-all hover:-translate-y-1 group">
-                  <svg className="w-4 h-4 fill-white/80 group-hover:fill-white transition-colors" viewBox="0 0 24 24">
-                    <path d="M23.498 6.186a3.016 3.016 0 00-2.122-2.136C19.505 3.5 12 3.5 12 3.5s-7.505 0-9.377.55a3.016 3.016 0 00-2.122 2.136C0 8.07 0 12 0 12s0 3.93.501 5.814a3.016 3.016 0 002.122 2.136c1.872.55 9.377.55 9.377.55s7.505 0 9.377-.55a3.016 3.016 0 002.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+                <a href="#" className="w-10 h-10 rounded-xl bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-all">
+                  <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
+                    <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
                   </svg>
                 </a>
               </div>
@@ -115,7 +129,7 @@ export default function ContactSection() {
           </div>
 
           {/* Contact Form (Right Side) */}
-          <div className="lg:col-span-3 p-12 lg:pt-16 bg-white dark:bg-zinc-900 flex flex-col justify-between">
+          <div className="lg:col-span-3 p-12 bg-white dark:bg-zinc-900 flex flex-col justify-between">
             <div className="mb-8">
               <h3 className="text-3xl font-bold text-zinc-900 dark:text-white mb-2">{t("contact.send_message")}</h3>
               <p className="text-zinc-500 text-[15px]">{t("contact.form_desc")}</p>
@@ -136,67 +150,89 @@ export default function ContactSection() {
                 </p>
                 <button
                   onClick={() => setIsSuccess(false)}
-                  className="px-10 py-3 bg-[#4c55a4] hover:bg-[#3d4484] text-white rounded-xl font-bold transition-all shadow-md"
+                  className="px-10 py-3 bg-[#4c55a4] hover:bg-[#3d4484] text-white rounded-xl font-bold transition-all shadow-md cursor-pointer"
                 >
-                  OK
+                  Send Another Message
                 </button>
               </div>
             ) : (
-              <form onSubmit={handleSubmit} className="space-y-7 flex-1 flex flex-col justify-between">
-                <div className="grid md:grid-cols-2 gap-7">
+              <form onSubmit={handleSubmit} className="space-y-6 flex-1 flex flex-col justify-between">
+                <div className="grid md:grid-cols-2 gap-6">
                   <div className="group">
-                    <label className="block text-sm font-bold text-zinc-700 dark:text-zinc-300 mb-2 group-focus-within:text-[#4c55a4] transition-colors">{t("contact.full_name")}</label>
+                    <label className="block text-sm font-bold text-zinc-700 dark:text-zinc-300 mb-2 group-focus-within:text-[#4c55a4] transition-colors">
+                      {t("contact.full_name")} *
+                    </label>
                     <input
                       type="text"
                       required
                       value={formData.name}
                       onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                      className="w-full px-5 py-4 bg-zinc-50/50 dark:bg-zinc-950/50 border border-zinc-200 dark:border-zinc-800 rounded-2xl text-zinc-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-[#4c55a4]/10 focus:border-[#4c55a4] transition-all hover:bg-white dark:hover:bg-zinc-900 shadow-sm"
+                      className="w-full px-5 py-3.5 bg-zinc-50/50 dark:bg-zinc-950/50 border border-zinc-200 dark:border-zinc-800 rounded-2xl text-zinc-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-[#4c55a4]/10 focus:border-[#4c55a4] transition-all hover:bg-white dark:hover:bg-zinc-900 shadow-sm"
                       placeholder={t("contact.placeholder_name")}
                     />
                   </div>
                   <div className="group">
-                    <label className="block text-sm font-bold text-zinc-700 dark:text-zinc-300 mb-2 group-focus-within:text-[#4c55a4] transition-colors">{t("contact.email")}</label>
+                    <label className="block text-sm font-bold text-zinc-700 dark:text-zinc-300 mb-2 group-focus-within:text-[#4c55a4] transition-colors">
+                      {t("contact.email")} *
+                    </label>
                     <input
                       type="email"
                       required
                       value={formData.email}
                       onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                      className="w-full px-5 py-4 bg-zinc-50/50 dark:bg-zinc-950/50 border border-zinc-200 dark:border-zinc-800 rounded-2xl text-zinc-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-[#4c55a4]/10 focus:border-[#4c55a4] transition-all hover:bg-white dark:hover:bg-zinc-900 shadow-sm"
+                      className="w-full px-5 py-3.5 bg-zinc-50/50 dark:bg-zinc-950/50 border border-zinc-200 dark:border-zinc-800 rounded-2xl text-zinc-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-[#4c55a4]/10 focus:border-[#4c55a4] transition-all hover:bg-white dark:hover:bg-zinc-900 shadow-sm"
                       placeholder={t("contact.placeholder_email")}
                     />
                   </div>
                 </div>
 
-                <div className="group">
-                  <label className="block text-sm font-bold text-zinc-700 dark:text-zinc-300 mb-2 group-focus-within:text-[#4c55a4] transition-colors">{t("contact.subject")}</label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.subject}
-                    onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
-                    className="w-full px-5 py-4 bg-zinc-50/50 dark:bg-zinc-950/50 border border-zinc-200 dark:border-zinc-800 rounded-2xl text-zinc-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-[#4c55a4]/10 focus:border-[#4c55a4] transition-all hover:bg-white dark:hover:bg-zinc-900 shadow-sm"
-                    placeholder={t("contact.placeholder_subject")}
-                  />
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div className="group">
+                    <label className="block text-sm font-bold text-zinc-700 dark:text-zinc-300 mb-2 group-focus-within:text-[#4c55a4] transition-colors">
+                      Phone Number
+                    </label>
+                    <input
+                      type="tel"
+                      value={formData.phone}
+                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                      className="w-full px-5 py-3.5 bg-zinc-50/50 dark:bg-zinc-950/50 border border-zinc-200 dark:border-zinc-800 rounded-2xl text-zinc-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-[#4c55a4]/10 focus:border-[#4c55a4] transition-all hover:bg-white dark:hover:bg-zinc-900 shadow-sm"
+                      placeholder="052-123-4567"
+                    />
+                  </div>
+                  <div className="group">
+                    <label className="block text-sm font-bold text-zinc-700 dark:text-zinc-300 mb-2 group-focus-within:text-[#4c55a4] transition-colors">
+                      {t("contact.subject")} *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.subject}
+                      onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
+                      className="w-full px-5 py-3.5 bg-zinc-50/50 dark:bg-zinc-950/50 border border-zinc-200 dark:border-zinc-800 rounded-2xl text-zinc-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-[#4c55a4]/10 focus:border-[#4c55a4] transition-all hover:bg-white dark:hover:bg-zinc-900 shadow-sm"
+                      placeholder={t("contact.placeholder_subject")}
+                    />
+                  </div>
                 </div>
 
-                <div className="group flex-1 flex flex-col mb-4">
-                  <label className="block text-sm font-bold text-zinc-700 dark:text-zinc-300 mb-2 group-focus-within:text-[#4c55a4] transition-colors">{t("contact.message")}</label>
+                <div className="group flex-1 flex flex-col mb-2">
+                  <label className="block text-sm font-bold text-zinc-700 dark:text-zinc-300 mb-2 group-focus-within:text-[#4c55a4] transition-colors">
+                    {t("contact.message")} *
+                  </label>
                   <textarea
                     required
                     value={formData.message}
                     onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                    className="w-full h-full min-h-[140px] px-5 py-4 bg-zinc-50/50 dark:bg-zinc-950/50 border border-zinc-200 dark:border-zinc-800 rounded-2xl text-zinc-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-[#4c55a4]/10 focus:border-[#4c55a4] transition-all hover:bg-white dark:hover:bg-zinc-900 shadow-sm resize-none"
+                    className="w-full h-full min-h-[130px] px-5 py-3.5 bg-zinc-50/50 dark:bg-zinc-950/50 border border-zinc-200 dark:border-zinc-800 rounded-2xl text-zinc-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-[#4c55a4]/10 focus:border-[#4c55a4] transition-all hover:bg-white dark:hover:bg-zinc-900 shadow-sm resize-none"
                     placeholder={t("contact.placeholder_message")}
                   />
                 </div>
 
                 <button
                   type="submit"
-                  disabled={isSubmitting}
-                  className="w-full py-4 bg-[#4c55a4] hover:bg-[#3d4484] hover:shadow-lg hover:shadow-[#4c55a4]/20 text-white rounded-2xl font-bold text-lg transition-all flex items-center justify-center gap-2 disabled:opacity-70 mt-auto"
+                  disabled={contactMutation.isPending}
+                  className="w-full py-4 bg-[#4c55a4] hover:bg-[#3d4484] hover:shadow-lg hover:shadow-[#4c55a4]/20 text-white rounded-2xl font-bold text-base transition-all flex items-center justify-center gap-2 disabled:opacity-70 mt-auto cursor-pointer"
                 >
-                  {isSubmitting ? (
+                  {contactMutation.isPending ? (
                     <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                   ) : (
                     <>

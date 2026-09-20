@@ -3,45 +3,129 @@
 import { useState, useRef, useEffect } from "react";
 import { 
   Info, MapPin, Phone, Building, Sparkles, Image as ImageIcon, 
-  UploadCloud, AlignLeft, Check, Plus, X, Search, DollarSign, ChevronDown, PartyPopper, Star, Clock, Wand2, Calendar
+  UploadCloud, AlignLeft, Check, Plus, X, Search, DollarSign, ChevronDown, PartyPopper, Star, Clock, Wand2, Calendar, CheckCircle2, AlertCircle
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { PhoneInput } from '@/components/common/PhoneInput';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import GooglePlacesAutocomplete, { PlaceSuggestion } from "@/components/common/GooglePlacesAutocomplete";
+import { toast } from "sonner";
+import { useCreateApartment, useUpdateApartment } from "@/hooks/useApartments";
+import { getImageUrl } from "@/utils/imageUrl";
+
+const PROPERTY_TYPES = [
+  "Apartment",
+  "Penthouse",
+  "Villa",
+  "Duplex",
+  "Triplex",
+  "Studio",
+  "Cottage",
+  "Garden Apartment",
+  "Roof Apartment",
+  "Guest Suite / Zimmer",
+  "Townhouse",
+  "Private House",
+  "Boutique Suite",
+  "Loft",
+  "Basement Unit",
+  "Hotel Suite",
+  "Cabin / Chalet",
+  "Vacation Home",
+];
+
+const RENT_FREQUENCY_OPTIONS = [
+  { value: "1", label: "1 time a year" },
+  { value: "2", label: "2 times a year" },
+  { value: "3", label: "3 times a year" },
+  { value: "4-5", label: "4 - 5 times a year" },
+  { value: "6-8", label: "6 - 8 times a year" },
+  { value: "9-12", label: "9 - 12 times a year (Monthly)" },
+  { value: "more-than-12", label: "More than 12 times a year (Year-round)" },
+];
 
 interface CreateListingModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave?: (date: string) => void;
+  onSave?: (apartmentId: string) => void;
   isEditMode?: boolean;
+  initialApartment?: any;
 }
 
-export default function CreateListingModal({ isOpen, onClose, onSave, isEditMode }: CreateListingModalProps) {
+export default function CreateListingModal({ 
+  isOpen, 
+  onClose, 
+  onSave, 
+  isEditMode,
+  initialApartment 
+}: CreateListingModalProps) {
   const router = useRouter();
+  
+  // API Mutations
+  const createMutation = useCreateApartment();
+  const updateMutation = useUpdateApartment();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Basic Information & Address state
+  const [listingTitle, setListingTitle] = useState(isEditMode ? "Bright luxury apartment in city center" : "");
+  const [city, setCity] = useState(isEditMode ? "Jerusalem" : "");
+  const [neighborhood, setNeighborhood] = useState(isEditMode ? "City Center" : "");
+  const [streetAddress, setStreetAddress] = useState(isEditMode ? "King George St 15" : "");
+  const [isAddressVerified, setIsAddressVerified] = useState<boolean>(!!isEditMode);
+  const [coordinates, setCoordinates] = useState<{ lat: number; lng: number } | null>(
+    isEditMode ? { lat: 31.7810, lng: 35.2200 } : null
+  );
+  
+  // Specifications state
+  const [propertyType, setPropertyType] = useState("Apartment");
+  const [isPropertyTypeOpen, setIsPropertyTypeOpen] = useState(false);
+  const propertyTypeRef = useRef<HTMLDivElement>(null);
+  const [bedrooms, setBedrooms] = useState(isEditMode ? "4" : "");
+  const [bathrooms, setBathrooms] = useState(isEditMode ? "2" : "");
+  const [maxGuests, setMaxGuests] = useState(isEditMode ? "8" : "");
+  const [price, setPrice] = useState(isEditMode ? "1500" : "");
+  const [yomTovPrice, setYomTovPrice] = useState(isEditMode ? "1800" : "");
+  const [specialShabbatPrice, setSpecialShabbatPrice] = useState(isEditMode ? "2000" : "");
+
   const [phones, setPhones] = useState<string[]>([""]);
   const [email, setEmail] = useState("");
   const [amenityInput, setAmenityInput] = useState("");
   const [amenities, setAmenities] = useState<string[]>([]);
+  const [phoneEnabled, setPhoneEnabled] = useState(true);
   const [whatsappEnabled, setWhatsappEnabled] = useState(false);
   const [emailEnabled, setEmailEnabled] = useState(false);
   const [isAvailable, setIsAvailable] = useState(true);
   const [acceptRequestsWhenUnavailable, setAcceptRequestsWhenUnavailable] = useState(false);
+  
+  const [coverImageFile, setCoverImageFile] = useState<File | null>(null);
   const [coverImagePreview, setCoverImagePreview] = useState<string | null>(null);
+  const [galleryFiles, setGalleryFiles] = useState<File[]>([]);
   const [galleryPreviews, setGalleryPreviews] = useState<string[]>([]);
+  
   const [modalStep, setModalStep] = useState<"form" | "success" | "payment" | "approval">("form");
   const [isFirstYearFreeActive, setIsFirstYearFreeActive] = useState(false);
   const [description, setDescription] = useState("");
   const [isEnhancing, setIsEnhancing] = useState(false);
   const [rentFrequency, setRentFrequency] = useState("");
+  const [isRentFrequencyOpen, setIsRentFrequencyOpen] = useState(false);
+  const rentFrequencyRef = useRef<HTMLDivElement>(null);
   const [hasAnsweredRentFrequency, setHasAnsweredRentFrequency] = useState(false);
   
   const coverImageRef = useRef<HTMLInputElement>(null);
   const galleryRef = useRef<HTMLInputElement>(null);
+
+  // Click outside listener for custom dropdowns
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (propertyTypeRef.current && !propertyTypeRef.current.contains(e.target as Node)) {
+        setIsPropertyTypeOpen(false);
+      }
+      if (rentFrequencyRef.current && !rentFrequencyRef.current.contains(e.target as Node)) {
+        setIsRentFrequencyOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -51,25 +135,70 @@ export default function CreateListingModal({ isOpen, onClose, onSave, isEditMode
   }, [isOpen]);
 
   useEffect(() => {
-    if (isOpen && isEditMode) {
-      setAmenities(["Fast High-Speed WiFi", "Kosher Kitchen", "Panoramic View"]);
-      setWhatsappEnabled(true);
-      setEmailEnabled(true);
-      setCoverImagePreview("https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&q=80&w=800");
-      setGalleryPreviews([
-        "https://images.unsplash.com/photo-1502672260266-1c1de2d96674?w=800&q=80",
-        "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800&q=80"
-      ]);
-    } else if (isOpen && !isEditMode) {
+    if (isOpen && (isEditMode || initialApartment)) {
+      setListingTitle(initialApartment?.title || (isEditMode ? "Bright luxury apartment in city center" : ""));
+      setCity(initialApartment?.city || (isEditMode ? "Jerusalem" : ""));
+      setNeighborhood(initialApartment?.neighborhood || (isEditMode ? "City Center" : ""));
+      setStreetAddress(initialApartment?.street1 || (isEditMode ? "King George St 15" : ""));
+      setIsAddressVerified(true);
+      setCoordinates(
+        initialApartment?.lat && initialApartment?.lng
+          ? { lat: Number(initialApartment.lat), lng: Number(initialApartment.lng) }
+          : { lat: 31.7810, lng: 35.2200 }
+      );
+      setPropertyType(initialApartment?.propertyType || "Apartment");
+      setBedrooms(String(initialApartment?.bedrooms || "4"));
+      setBathrooms(String(initialApartment?.bathrooms || "2"));
+      setMaxGuests(String(initialApartment?.maxGuest || "8"));
+      setPrice(String(initialApartment?.pricePerShabbat || "1500"));
+      setYomTovPrice(String(initialApartment?.yomTovPrice || "1800"));
+      setSpecialShabbatPrice(String(initialApartment?.specialShabbatPrice || "2000"));
+      setAmenities(initialApartment?.amenities || ["Fast High-Speed WiFi", "Kosher Kitchen", "Panoramic View"]);
+      setPhoneEnabled(initialApartment?.phone !== false);
+      setWhatsappEnabled(initialApartment?.whatsapp === true);
+      setEmailEnabled(initialApartment?.email === true);
+      setIsAvailable(initialApartment?.unavailable !== true);
+      setAcceptRequestsWhenUnavailable(initialApartment?.receiveRequestWhenUnavailable === true);
+      setDescription(initialApartment?.description || "");
+      if (initialApartment?.coverImage) {
+        setCoverImagePreview(initialApartment.coverImage);
+      } else if (isEditMode) {
+        setCoverImagePreview("https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&q=80&w=800");
+      }
+      if (initialApartment?.images && Array.isArray(initialApartment.images)) {
+        setGalleryPreviews(initialApartment.images);
+      } else if (isEditMode) {
+        setGalleryPreviews([
+          "https://images.unsplash.com/photo-1502672260266-1c1de2d96674?w=800&q=80",
+          "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800&q=80"
+        ]);
+      }
+    } else if (isOpen && !isEditMode && !initialApartment) {
+      setListingTitle("");
+      setCity("");
+      setNeighborhood("");
+      setStreetAddress("");
+      setIsAddressVerified(false);
+      setCoordinates(null);
+      setPropertyType("Apartment");
+      setBedrooms("");
+      setBathrooms("");
+      setMaxGuests("");
+      setPrice("");
+      setYomTovPrice("");
+      setSpecialShabbatPrice("");
       setAmenities([]);
+      setPhoneEnabled(true);
       setWhatsappEnabled(false);
       setEmailEnabled(false);
       setIsAvailable(true);
       setAcceptRequestsWhenUnavailable(false);
+      setCoverImageFile(null);
       setCoverImagePreview(null);
+      setGalleryFiles([]);
       setGalleryPreviews([]);
     }
-  }, [isOpen, isEditMode]);
+  }, [isOpen, isEditMode, initialApartment]);
 
   const handleAddAmenity = (e: React.KeyboardEvent | React.MouseEvent) => {
     if ((e.type === "keydown" && (e as React.KeyboardEvent).key === "Enter") || e.type === "click") {
@@ -84,6 +213,7 @@ export default function CreateListingModal({ isOpen, onClose, onSave, isEditMode
   const handleCoverImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      setCoverImageFile(file);
       setCoverImagePreview(URL.createObjectURL(file));
     }
   };
@@ -91,6 +221,7 @@ export default function CreateListingModal({ isOpen, onClose, onSave, isEditMode
   const handleGalleryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     if (files.length > 0) {
+      setGalleryFiles((prev) => [...prev, ...files].slice(0, 4));
       const newPreviews = files.map((f) => URL.createObjectURL(f));
       setGalleryPreviews((prev) => [...prev, ...newPreviews].slice(0, 4));
     }
@@ -100,11 +231,106 @@ export default function CreateListingModal({ isOpen, onClose, onSave, isEditMode
     setAmenities(amenities.filter((a) => a !== item));
   };
 
-  const handleSaveAndContinue = () => {
+  const handleSaveAndContinue = async () => {
+    if (!listingTitle.trim()) {
+      toast.error("Please enter a listing title.");
+      return;
+    }
+    if (!city.trim()) {
+      toast.error("Please enter or select a city.");
+      return;
+    }
+    if (!streetAddress.trim() || !isAddressVerified || !coordinates) {
+      toast.error("Please choose your address from the dropdown suggestions to continue.");
+      return;
+    }
+    if (!propertyType) {
+      toast.error("Please select a property type.");
+      return;
+    }
+    if (!bedrooms.trim()) {
+      toast.error("Please enter the number of bedrooms.");
+      return;
+    }
+    if (!bathrooms.trim()) {
+      toast.error("Please enter the number of bathrooms.");
+      return;
+    }
+    if (!maxGuests.trim()) {
+      toast.error("Please enter max guests.");
+      return;
+    }
+    if (!price.trim()) {
+      toast.error("Please enter price per Shabbat.");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("title", listingTitle.trim());
+    if (description.trim()) formData.append("description", description.trim());
+    formData.append("city", city.trim());
+    formData.append("neighborhood", neighborhood.trim() || city.trim());
+    formData.append("street1", streetAddress.trim());
+    if (coordinates?.lat) formData.append("lat", String(coordinates.lat));
+    if (coordinates?.lng) formData.append("lng", String(coordinates.lng));
+    formData.append("propertyType", propertyType.toUpperCase().replace(/\s+/g, "_"));
+    formData.append("bedrooms", String(parseInt(bedrooms, 10) || 1));
+    formData.append("bathrooms", String(parseInt(bathrooms, 10) || 1));
+    formData.append("maxGuest", String(parseInt(maxGuests, 10) || 1));
+    formData.append("pricePerShabbat", String(parseFloat(price) || 0));
+
+    if (amenities.length > 0) {
+      amenities.forEach((amenity) => {
+        formData.append("amenities[]", amenity);
+      });
+    }
+
+    const mainPhone = phones.find((p) => p.trim()) || "";
+    if (mainPhone) formData.append("phoneNumber", mainPhone);
+    if (whatsappEnabled && mainPhone) formData.append("whatsApp", mainPhone);
+
+    formData.append("phone", String(phoneEnabled));
+    formData.append("whatsapp", String(whatsappEnabled));
+    formData.append("email", String(emailEnabled));
+    formData.append("unavailable", String(!isAvailable));
+    formData.append("receiveRequestWhenUnavailable", String(!isAvailable && acceptRequestsWhenUnavailable));
+    formData.append("isActive", "true");
+
+    if (coverImageFile) {
+      formData.append("coverImage", coverImageFile);
+    }
+    if (galleryFiles.length > 0) {
+      galleryFiles.forEach((file) => {
+        formData.append("images", file);
+      });
+    }
+
     if (!hasAnsweredRentFrequency && rentFrequency) {
       localStorage.setItem("hasAnsweredRentFrequency", "true");
     }
-    setModalStep("success");
+
+    setIsSubmitting(true);
+    try {
+      if (isEditMode && initialApartment?.id) {
+        const res = await updateMutation.mutateAsync({
+          id: initialApartment.id,
+          formData,
+        });
+        toast.success("Apartment listing updated successfully! 🎉");
+        if (onSave) onSave(res?.id || initialApartment.id);
+        setModalStep("success");
+      } else {
+        const res = await createMutation.mutateAsync(formData);
+        toast.success("Apartment listing created successfully! 🎉");
+        if (onSave) onSave(res?.id || "");
+        setModalStep("success");
+      }
+    } catch (err: any) {
+      const errMsg = err?.response?.data?.message || err?.message || "Failed to save apartment listing.";
+      toast.error(errMsg);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleEnhanceDescription = () => {
@@ -243,9 +469,9 @@ export default function CreateListingModal({ isOpen, onClose, onSave, isEditMode
             <button 
               onClick={() => {
                 handleFinalClose();
-                router.push("/user-dashboard");
+                router.push("/user-dashboard/manage");
               }}
-              className="w-full sm:w-auto px-12 py-4 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-900 dark:text-white text-[16px] font-bold rounded-full transition-colors shadow-sm"
+              className="w-full sm:w-auto px-12 py-4 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-900 dark:text-white text-[16px] font-bold rounded-full transition-colors shadow-sm cursor-pointer"
             >
               OK, Go to Dashboard
             </button>
@@ -268,11 +494,11 @@ export default function CreateListingModal({ isOpen, onClose, onSave, isEditMode
         </div>
 
         {/* Form Body - scrollable */}
-        <div className="flex-1 overflow-y-auto p-6 md:p-10 bg-zinc-50 dark:bg-zinc-950/30">
+        <div className="flex-1 overflow-y-auto p-6 md:p-10 pb-36 bg-zinc-50 dark:bg-zinc-950/30">
           <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-4xl mx-auto">
               
               {/* Basic Information */}
-              <div className="bg-white dark:bg-zinc-900 rounded-3xl border border-zinc-200 dark:border-zinc-800 overflow-hidden shadow-sm shadow-zinc-200/50 dark:shadow-none">
+              <div className="bg-white dark:bg-zinc-900 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-sm shadow-zinc-200/50 dark:shadow-none relative z-30">
                 <div className="px-8 py-5 border-b border-zinc-100 dark:border-zinc-800/80 flex items-center gap-3">
                   <div className="w-10 h-10 rounded-full bg-[#4c55a4]/10 flex items-center justify-center">
                     <Info className="w-5 h-5 text-[#4c55a4]" />
@@ -281,39 +507,45 @@ export default function CreateListingModal({ isOpen, onClose, onSave, isEditMode
                 </div>
                 <div className="p-8 space-y-6">
                   <div>
-                    <label className="block text-sm font-bold text-zinc-800 dark:text-zinc-200 mb-2">Listing Title <span className="text-red-500">*</span></label>
-                    <input defaultValue={isEditMode ? "Bright luxury apartment in city center" : ""} type="text" placeholder="e.g.: Bright luxury apartment in city center" className="w-full px-4 py-3.5 bg-zinc-50/80 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-2xl text-[15px] text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:bg-white dark:focus:bg-zinc-900 focus:ring-4 focus:ring-[#4c55a4]/10 focus:border-[#4c55a4] outline-none transition-all duration-200" />
+                    <label className="block text-sm font-bold text-zinc-800 dark:text-zinc-200 mb-2">
+                      Listing Title <span className="text-red-500">*</span>
+                    </label>
+                    <input 
+                      type="text" 
+                      value={listingTitle}
+                      onChange={(e) => setListingTitle(e.target.value)}
+                      placeholder="e.g.: Bright luxury apartment in city center" 
+                      className="w-full px-4 py-3.5 bg-zinc-50/80 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-2xl text-[15px] text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:bg-white dark:focus:bg-zinc-900 focus:ring-4 focus:ring-[#4c55a4]/10 focus:border-[#4c55a4] outline-none transition-all duration-200" 
+                    />
                   </div>
                   
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <label className="block text-sm font-bold text-zinc-800 dark:text-zinc-200 mb-2">City <span className="text-red-500">*</span></label>
-                      <div className="relative">
-                        <Search className="absolute left-4 top-4 h-5 w-5 text-zinc-400" />
-                        <input defaultValue={isEditMode ? "Jerusalem" : ""} type="text" placeholder="Type city name..." className="w-full pl-12 pr-4 py-3.5 bg-zinc-50/80 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-2xl text-[15px] text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:bg-white dark:focus:bg-zinc-900 focus:ring-4 focus:ring-[#4c55a4]/10 focus:border-[#4c55a4] outline-none transition-all duration-200" />
-                      </div>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-bold text-zinc-800 dark:text-zinc-200 mb-2">Neighborhood <span className="text-red-500">*</span></label>
-                      <div className="relative">
-                        <MapPin className="absolute left-4 top-4 h-5 w-5 text-zinc-400" />
-                        <input defaultValue={isEditMode ? "City Center" : ""} type="text" placeholder="Select a city first..." disabled={!isEditMode} className="w-full pl-12 pr-4 py-3.5 bg-zinc-100/50 dark:bg-zinc-900/40 border border-zinc-200 dark:border-zinc-800 rounded-2xl text-[15px] text-zinc-900 dark:text-white outline-none" />
-                      </div>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-bold text-zinc-800 dark:text-zinc-200 mb-2">Street & Number <span className="text-red-500">*</span></label>
-                    <div className="relative">
-                      <MapPin className="absolute left-4 top-4 h-5 w-5 text-zinc-400" />
-                      <input defaultValue={isEditMode ? "King George St 15" : ""} type="text" placeholder="Street and house number" className="w-full pl-12 pr-4 py-3.5 bg-zinc-50/80 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-2xl text-[15px] text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:bg-white dark:focus:bg-zinc-900 focus:ring-4 focus:ring-[#4c55a4]/10 focus:border-[#4c55a4] outline-none transition-all duration-200" />
-                    </div>
-                  </div>
+                  {/* Google Places Autocomplete: City + Street & Number + Coordinates Lock */}
+                  <GooglePlacesAutocomplete
+                    streetAddress={streetAddress}
+                    city={city}
+                    neighborhood={neighborhood}
+                    isAddressVerified={isAddressVerified}
+                    coordinates={coordinates}
+                    onAddressSelect={(place: PlaceSuggestion) => {
+                      setStreetAddress(place.mainText);
+                      setCity(place.city);
+                      setNeighborhood(place.neighborhood);
+                      setIsAddressVerified(true);
+                      setCoordinates({ lat: place.lat, lng: place.lng });
+                    }}
+                    onAddressChange={(val: string) => {
+                      setStreetAddress(val);
+                      setIsAddressVerified(false);
+                      setCoordinates(null);
+                    }}
+                    onCityChange={(c: string) => setCity(c)}
+                    onNeighborhoodChange={(n: string) => setNeighborhood(n)}
+                  />
                 </div>
               </div>
 
               {/* Property Specifications */}
-              <div className="bg-white dark:bg-zinc-900 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-sm shadow-zinc-200/50 dark:shadow-none">
+              <div className="bg-white dark:bg-zinc-900 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-sm shadow-zinc-200/50 dark:shadow-none relative z-20">
                 <div className="px-8 py-5 border-b border-zinc-100 dark:border-zinc-800/80 flex items-center gap-3">
                   <div className="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center">
                     <Building className="w-5 h-5 text-blue-500" />
@@ -322,29 +554,136 @@ export default function CreateListingModal({ isOpen, onClose, onSave, isEditMode
                 </div>
                 <div className="p-8">
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                    {/* Structured Property Type Dropdown */}
+                    <div ref={propertyTypeRef} className="relative">
+                      <label className="block text-sm font-bold text-zinc-800 dark:text-zinc-200 mb-2">
+                        Property Type <span className="text-red-500">*</span>
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => setIsPropertyTypeOpen(!isPropertyTypeOpen)}
+                        className="w-full px-4 py-3.5 bg-zinc-50/80 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-2xl text-[15px] font-medium text-zinc-900 dark:text-white flex items-center justify-between outline-none focus:bg-white dark:focus:bg-zinc-900 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all duration-200 cursor-pointer text-left"
+                      >
+                        <span className="flex items-center gap-2 truncate">
+                          <Building className="w-4 h-4 text-blue-500 shrink-0" />
+                          {propertyType || "Select Property Type"}
+                        </span>
+                        <ChevronDown className={`w-4 h-4 text-zinc-400 shrink-0 transition-transform duration-200 ${isPropertyTypeOpen ? 'rotate-180' : ''}`} />
+                      </button>
+
+                      {isPropertyTypeOpen && (
+                        <div className="absolute top-full left-0 right-0 sm:w-[280px] mt-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-2xl z-[150] overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                          <div className="px-3.5 py-2 text-xs font-bold uppercase tracking-wider text-zinc-400 border-b border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/50">
+                            Select Property Type
+                          </div>
+                          <div className="p-1.5 max-h-64 overflow-y-auto divide-y divide-zinc-100 dark:divide-zinc-800/50">
+                            {PROPERTY_TYPES.map((pt) => (
+                              <button
+                                type="button"
+                                key={pt}
+                                onClick={() => {
+                                  setPropertyType(pt);
+                                  setIsPropertyTypeOpen(false);
+                                }}
+                                className={`w-full text-left px-3.5 py-2.5 rounded-xl cursor-pointer transition-colors flex items-center justify-between text-sm ${
+                                  propertyType === pt
+                                    ? "bg-[#4c55a4]/10 dark:bg-indigo-900/30 text-[#4c55a4] dark:text-indigo-400 font-bold"
+                                    : "hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-800 dark:text-zinc-200 font-medium"
+                                }`}
+                              >
+                                <span>{pt}</span>
+                                {propertyType === pt && <Check className="w-4 h-4 text-[#4c55a4] shrink-0" />}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
                     <div>
-                      <label className="block text-sm font-bold text-zinc-800 dark:text-zinc-200 mb-2">Property Type</label>
-                      <input defaultValue={isEditMode ? "Apartment" : ""} type="text" placeholder="e.g. Villa, Duplex" className="w-full px-4 py-3.5 bg-zinc-50/80 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-2xl text-[15px] text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:bg-white dark:focus:bg-zinc-900 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all duration-200" />
+                      <label className="block text-sm font-bold text-zinc-800 dark:text-zinc-200 mb-2">
+                        Bedrooms <span className="text-red-500">*</span>
+                      </label>
+                      <input 
+                        type="number" 
+                        min="1"
+                        value={bedrooms}
+                        onChange={(e) => setBedrooms(e.target.value)}
+                        placeholder="e.g. 4" 
+                        className="w-full px-4 py-3.5 bg-zinc-50/80 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-2xl text-[15px] text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:bg-white dark:focus:bg-zinc-900 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all duration-200" 
+                      />
                     </div>
                     <div>
-                      <label className="block text-sm font-bold text-zinc-800 dark:text-zinc-200 mb-2">Bedrooms <span className="text-red-500">*</span></label>
-                      <input defaultValue={isEditMode ? "4" : ""} type="text" placeholder="e.g. 4" className="w-full px-4 py-3.5 bg-zinc-50/80 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-2xl text-[15px] text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:bg-white dark:focus:bg-zinc-900 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all duration-200" />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-bold text-zinc-800 dark:text-zinc-200 mb-2">Bathrooms</label>
-                      <input defaultValue={isEditMode ? "2" : ""} type="text" placeholder="e.g. 2" className="w-full px-4 py-3.5 bg-zinc-50/80 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-2xl text-[15px] text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:bg-white dark:focus:bg-zinc-900 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all duration-200" />
+                      <label className="block text-sm font-bold text-zinc-800 dark:text-zinc-200 mb-2">
+                        Bathrooms <span className="text-red-500">*</span>
+                      </label>
+                      <input 
+                        type="number" 
+                        min="1"
+                        value={bathrooms}
+                        onChange={(e) => setBathrooms(e.target.value)}
+                        placeholder="e.g. 2" 
+                        className="w-full px-4 py-3.5 bg-zinc-50/80 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-2xl text-[15px] text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:bg-white dark:focus:bg-zinc-900 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all duration-200" 
+                      />
                     </div>
                   </div>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                     <div>
-                      <label className="block text-sm font-bold text-zinc-800 dark:text-zinc-200 mb-2">Max Guests <span className="text-red-500">*</span></label>
-                      <input defaultValue={isEditMode ? "8" : ""} type="text" placeholder="e.g. 8" className="w-full px-4 py-3.5 bg-zinc-50/80 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-2xl text-[15px] text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:bg-white dark:focus:bg-zinc-900 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all duration-200" />
+                      <label className="block text-sm font-bold text-zinc-800 dark:text-zinc-200 mb-2">
+                        Max Guests <span className="text-red-500">*</span>
+                      </label>
+                      <input 
+                        type="number" 
+                        min="1"
+                        value={maxGuests}
+                        onChange={(e) => setMaxGuests(e.target.value)}
+                        placeholder="e.g. 8" 
+                        className="w-full px-4 py-3.5 bg-zinc-50/80 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-2xl text-[15px] text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:bg-white dark:focus:bg-zinc-900 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all duration-200" 
+                      />
                     </div>
-                    <div className="md:col-span-2">
-                      <label className="block text-sm font-bold text-zinc-800 dark:text-zinc-200 mb-2">Price per Shabbat (₪) <span className="text-red-500">*</span></label>
+                    <div>
+                      <label className="block text-sm font-bold text-zinc-800 dark:text-zinc-200 mb-2 truncate" title="Price per Shabbat (₪)">
+                        Price per Shabbat (₪) <span className="text-red-500">*</span>
+                      </label>
                       <div className="relative">
                         <DollarSign className="absolute left-4 top-4 h-5 w-5 text-zinc-400" />
-                        <input defaultValue={isEditMode ? "1500" : ""} type="text" placeholder="e.g. 1500" className="w-full pl-12 pr-4 py-3.5 bg-zinc-50/80 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-2xl text-[15px] text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:bg-white dark:focus:bg-zinc-900 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all duration-200" />
+                        <input 
+                          type="number" 
+                          value={price}
+                          onChange={(e) => setPrice(e.target.value)}
+                          placeholder="e.g. 1500" 
+                          className="w-full pl-12 pr-4 py-3.5 bg-zinc-50/80 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-2xl text-[15px] text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:bg-white dark:focus:bg-zinc-900 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all duration-200" 
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-bold text-zinc-800 dark:text-zinc-200 mb-2 truncate" title="Yom Tov / Chagim Price (₪)">
+                        Yom Tov / Chagim (₪)
+                      </label>
+                      <div className="relative">
+                        <DollarSign className="absolute left-4 top-4 h-5 w-5 text-zinc-400" />
+                        <input 
+                          type="number" 
+                          value={yomTovPrice}
+                          onChange={(e) => setYomTovPrice(e.target.value)}
+                          placeholder="e.g. 1800" 
+                          className="w-full pl-12 pr-4 py-3.5 bg-zinc-50/80 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-2xl text-[15px] text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:bg-white dark:focus:bg-zinc-900 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all duration-200" 
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-bold text-zinc-800 dark:text-zinc-200 mb-2 truncate" title="Special Shabbos Default Price (₪)">
+                        Special Shabbos (₪)
+                      </label>
+                      <div className="relative">
+                        <DollarSign className="absolute left-4 top-4 h-5 w-5 text-zinc-400" />
+                        <input 
+                          type="number" 
+                          value={specialShabbatPrice}
+                          onChange={(e) => setSpecialShabbatPrice(e.target.value)}
+                          placeholder="e.g. 2000" 
+                          className="w-full pl-12 pr-4 py-3.5 bg-zinc-50/80 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-2xl text-[15px] text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:bg-white dark:focus:bg-zinc-900 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all duration-200" 
+                        />
                       </div>
                     </div>
                   </div>
@@ -451,7 +790,7 @@ export default function CreateListingModal({ isOpen, onClose, onSave, isEditMode
                   <input type="file" ref={coverImageRef} accept="image/*" className="hidden" onChange={handleCoverImageChange} />
                   {coverImagePreview ? (
                     <div className="absolute inset-0 w-full h-full">
-                      <img src={coverImagePreview} alt="Cover Preview" className="w-full h-full object-cover" />
+                      <img src={getImageUrl(coverImagePreview)} alt="Cover Preview" className="w-full h-full object-cover" />
                       <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white">
                         <UploadCloud className="w-8 h-8 mb-2" />
                         <span className="font-bold">Change Image</span>
@@ -493,7 +832,7 @@ export default function CreateListingModal({ isOpen, onClose, onSave, isEditMode
                       >
                         {preview ? (
                           <>
-                            <img src={preview} alt={`Gallery ${index}`} className="absolute inset-0 w-full h-full object-cover" />
+                            <img src={getImageUrl(preview)} alt={`Gallery ${index}`} className="absolute inset-0 w-full h-full object-cover" />
                             <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white">
                               <span className="text-xs font-bold">Change</span>
                             </div>
@@ -577,15 +916,19 @@ export default function CreateListingModal({ isOpen, onClose, onSave, isEditMode
                   <h2 className="text-xl font-bold text-zinc-900 dark:text-white">How do you want renters to contact you?</h2>
                 </div>
                 <div className="p-8 space-y-6">
-                  {/* Phone (Always on) */}
+                  {/* Phone */}
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="font-bold text-zinc-900 dark:text-white">Phone</p>
                       <p className="text-sm text-zinc-500">Renters can call your provided phone number</p>
                     </div>
-                    <div className="relative inline-flex h-6 w-11 items-center rounded-full bg-[#4c55a4] transition-colors opacity-50 cursor-not-allowed">
-                      <span className="inline-block h-4 w-4 transform rounded-full bg-white transition-transform translate-x-6" />
-                    </div>
+                    <button 
+                      type="button" 
+                      onClick={() => setPhoneEnabled(!phoneEnabled)}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#4c55a4] ${phoneEnabled ? 'bg-[#4c55a4]' : 'bg-zinc-200 dark:bg-zinc-700'}`}
+                    >
+                      <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${phoneEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
+                    </button>
                   </div>
                   
                   {/* WhatsApp */}
@@ -719,8 +1062,8 @@ export default function CreateListingModal({ isOpen, onClose, onSave, isEditMode
 
               {/* One-time Question */}
               {!hasAnsweredRentFrequency && (
-                <div className="bg-white dark:bg-zinc-900 rounded-3xl border border-zinc-200 dark:border-zinc-800 overflow-hidden shadow-sm shadow-zinc-200/50 dark:shadow-none mt-6">
-                  <div className="px-8 py-5 border-b border-zinc-100 dark:border-zinc-800/80 flex items-center gap-3">
+                <div className="bg-white dark:bg-zinc-900 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-sm shadow-zinc-200/50 dark:shadow-none mt-6 relative z-30">
+                  <div className="px-8 py-5 border-b border-zinc-100 dark:border-zinc-800/80 rounded-t-3xl flex items-center gap-3">
                     <div className="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center">
                       <Calendar className="w-5 h-5 text-blue-500" />
                     </div>
@@ -730,31 +1073,47 @@ export default function CreateListingModal({ isOpen, onClose, onSave, isEditMode
                     <label className="block text-sm font-bold text-zinc-900 dark:text-white">
                       How many times will you rent out your apartment a year?
                     </label>
-                    <div className="relative">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger className="w-full px-5 py-4 bg-zinc-50/80 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-2xl text-[15px] text-zinc-900 dark:text-white outline-none transition-all duration-200 focus:bg-white dark:focus:bg-zinc-900 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 flex justify-between items-center text-left">
-                          {rentFrequency === "1-2" ? "1 - 2 times" :
-                           rentFrequency === "3-5" ? "3 - 5 times" :
-                           rentFrequency === "6-10" ? "6 - 10 times" :
-                           rentFrequency === "more-than-10" ? "More than 10 times" :
-                           <span className="text-zinc-500">Select an option</span>}
-                          <ChevronDown className="w-5 h-5 text-zinc-400 shrink-0" />
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent className="w-full min-w-[300px] p-2 rounded-2xl border-zinc-200 dark:border-zinc-800 shadow-xl bg-white dark:bg-[#121212]">
-                          <DropdownMenuItem onClick={() => setRentFrequency("1-2")} className="p-3 cursor-pointer rounded-xl font-medium text-[15px] hover:bg-zinc-100 dark:hover:bg-zinc-800">
-                            1 - 2 times
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => setRentFrequency("3-5")} className="p-3 cursor-pointer rounded-xl font-medium text-[15px] hover:bg-zinc-100 dark:hover:bg-zinc-800">
-                            3 - 5 times
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => setRentFrequency("6-10")} className="p-3 cursor-pointer rounded-xl font-medium text-[15px] hover:bg-zinc-100 dark:hover:bg-zinc-800">
-                            6 - 10 times
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => setRentFrequency("more-than-10")} className="p-3 cursor-pointer rounded-xl font-medium text-[15px] hover:bg-zinc-100 dark:hover:bg-zinc-800">
-                            More than 10 times
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                    <div ref={rentFrequencyRef} className="relative">
+                      <button
+                        type="button"
+                        onClick={() => setIsRentFrequencyOpen(!isRentFrequencyOpen)}
+                        className="w-full px-5 py-4 bg-zinc-50/80 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-2xl text-[15px] text-zinc-900 dark:text-white outline-none transition-all duration-200 focus:bg-white dark:focus:bg-zinc-900 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 flex justify-between items-center text-left cursor-pointer"
+                      >
+                        <span className="font-medium">
+                          {RENT_FREQUENCY_OPTIONS.find((opt) => opt.value === rentFrequency)?.label || (
+                            <span className="text-zinc-400">Select rental frequency</span>
+                          )}
+                        </span>
+                        <ChevronDown className={`w-5 h-5 text-zinc-400 shrink-0 transition-transform duration-200 ${isRentFrequencyOpen ? 'rotate-180' : ''}`} />
+                      </button>
+
+                      {isRentFrequencyOpen && (
+                        <div className="absolute top-full mt-2 left-0 right-0 sm:w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-2xl z-[150] overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                          <div className="px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-zinc-400 border-b border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/50">
+                            Select Rental Frequency
+                          </div>
+                          <div className="p-2 max-h-64 overflow-y-auto divide-y divide-zinc-100 dark:divide-zinc-800/50">
+                            {RENT_FREQUENCY_OPTIONS.map((opt) => (
+                              <button
+                                type="button"
+                                key={opt.value}
+                                onClick={() => {
+                                  setRentFrequency(opt.value);
+                                  setIsRentFrequencyOpen(false);
+                                }}
+                                className={`w-full text-left px-4 py-3 rounded-xl cursor-pointer transition-colors flex items-center justify-between text-sm ${
+                                  rentFrequency === opt.value
+                                    ? "bg-[#4c55a4]/10 dark:bg-indigo-900/30 text-[#4c55a4] dark:text-indigo-400 font-bold"
+                                    : "hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-800 dark:text-zinc-200 font-medium"
+                                }`}
+                              >
+                                <span>{opt.label}</span>
+                                {rentFrequency === opt.value && <Check className="w-4 h-4 text-[#4c55a4] shrink-0" />}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -770,10 +1129,21 @@ export default function CreateListingModal({ isOpen, onClose, onSave, isEditMode
             </button>
             
             <button 
+              type="button"
+              disabled={isSubmitting}
               onClick={handleSaveAndContinue}
-              className="px-8 py-3.5 bg-[#4c55a4] hover:bg-[#3d4484] text-white text-[15px] font-bold rounded-2xl shadow-lg shadow-[#4c55a4]/20 transition-all transform hover:-translate-y-0.5 active:translate-y-0"
+              className="px-8 py-3.5 bg-[#4c55a4] hover:bg-[#3d4484] disabled:opacity-60 disabled:cursor-not-allowed text-white text-[15px] font-bold rounded-2xl shadow-lg shadow-[#4c55a4]/20 transition-all transform hover:-translate-y-0.5 active:translate-y-0 flex items-center gap-2"
             >
-              Submit Listing
+              {isSubmitting ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                  <span>Saving Listing...</span>
+                </>
+              ) : isEditMode ? (
+                "Update Listing"
+              ) : (
+                "Submit Listing"
+              )}
             </button>
           </div>
         </div>

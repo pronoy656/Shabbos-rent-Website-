@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { User, Menu } from "lucide-react";
 import { useState, useEffect } from "react";
 import AddApartmentModal from "./AddApartmentModal";
@@ -12,9 +12,12 @@ import FavoritesDropdown from "./navbar/FavoritesDropdown";
 import NotificationsDropdown from "./navbar/NotificationsDropdown";
 import UserDropdown from "./navbar/UserDropdown";
 import MobileMenuDrawer from "./navbar/MobileMenuDrawer";
+import { logout, clearAuthSession } from "@/services/auth.service";
+import { toast } from "sonner";
 
 export default function MainNavbar() {
   const pathname = usePathname();
+  const router = useRouter();
   const { t } = useLanguage();
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -28,15 +31,26 @@ export default function MainNavbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   useEffect(() => {
-    setUserRole(localStorage.getItem("userRole"));
-    setIsOwner(localStorage.getItem("hasUserListing") === "true");
-  }, []);
+    const syncRole = () => {
+      setUserRole(localStorage.getItem("userRole"));
+      setIsOwner(localStorage.getItem("hasUserListing") === "true");
+    };
+    syncRole();
+    window.addEventListener("storage", syncRole);
+    return () => window.removeEventListener("storage", syncRole);
+  }, [isAddModalOpen]);
 
-  const handleLogout = () => {
-    localStorage.removeItem("userRole");
-    setUserRole(null);
+  const handleLogout = async () => {
     setIsDropdownOpen(false);
-    window.location.href = "/login";
+    setIsMobileMenuOpen(false);
+    clearAuthSession();
+    setUserRole(null);
+    setIsOwner(false);
+    toast.success("Logged out successfully");
+    try {
+      await logout();
+    } catch {}
+    router.replace("/login");
   };
 
   const navLinks = [

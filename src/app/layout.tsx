@@ -38,6 +38,7 @@ export const metadata: Metadata = {
 };
 
 import ToastContainer from "@/components/ui/ToastContainer";
+import { Toaster } from "sonner";
 
 export default function RootLayout({
   children,
@@ -55,6 +56,7 @@ export default function RootLayout({
           <LanguageProvider>
             {children}
             <ToastContainer />
+            <Toaster position="top-right" richColors closeButton />
           </LanguageProvider>
         </QueryProvider>
       </body>

@@ -1,56 +1,105 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useMemo } from "react";
 import ApartmentCard from "@/components/search/ApartmentCard";
 import { ApartmentData } from "@/types";
+import { IApartmentCard, ICityApartmentGroup } from "@/types/apartment.types";
 import { useLanguage } from "@/context/LanguageContext";
+import { useApartmentsByCities } from "@/hooks/useApartments";
+import Link from "next/link";
+import { ArrowRight } from "lucide-react";
 
-// Mock Data
-const telAvivApartments: ApartmentData[] = [
-  { id: "ta-1", title: "Luxury Penthouse near Beach", location: "Tel Aviv, Israel", image: "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&q=80", price: 4000, rating: 4.9, reviews: 120, beds: 3, baths: 2, guests: 6, isSwapAvailable: true, verified: true, availabilityStatus: "available" },
-  { id: "ta-2", title: "Modern Studio in City Center", location: "Tel Aviv, Israel", image: "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800&q=80", price: 2500, rating: 4.8, reviews: 85, beds: 1, baths: 1, guests: 2, isSwapAvailable: false, verified: true, availabilityStatus: "unavailable_upcoming" },
-  { id: "ta-3", title: "Spacious Family Apartment", location: "Tel Aviv, Israel", image: "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800&q=80", price: 3200, rating: 4.7, reviews: 65, beds: 4, baths: 2, guests: 8, isSwapAvailable: true, verified: false, availabilityStatus: "available" },
-  { id: "ta-4", title: "Boutique Apartment with Sea View", location: "Tel Aviv, Israel", image: "https://images.unsplash.com/photo-1493809842364-78817add7ffb?w=800&q=80", price: 3800, rating: 5.0, reviews: 200, beds: 2, baths: 1, guests: 4, isSwapAvailable: true, verified: true, availabilityStatus: "unavailable" },
-];
-
-const jerusalemApartments: ApartmentData[] = [
-  { id: "jr-1", title: "Historic Stone House in Old City", location: "Jerusalem, Israel", image: "https://images.unsplash.com/photo-1572120360610-d971b9d7767c?w=800&q=80", price: 4500, rating: 4.9, reviews: 150, beds: 4, baths: 3, guests: 10, isSwapAvailable: false, verified: true, availabilityStatus: "available" },
-  { id: "jr-2", title: "Cozy Apartment near Mahane Yehuda", location: "Jerusalem, Israel", image: "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800&q=80", price: 2800, rating: 4.6, reviews: 90, beds: 2, baths: 1, guests: 5, isSwapAvailable: true, verified: false, availabilityStatus: "unavailable_upcoming" },
-  { id: "jr-3", title: "Elegant Residence with Panoramic View", location: "Jerusalem, Israel", image: "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=800&q=80", price: 5000, rating: 4.8, reviews: 110, beds: 5, baths: 4, guests: 12, isSwapAvailable: true, verified: true, availabilityStatus: "available" },
-  { id: "jr-4", title: "Modern Duplex in Rehavia", location: "Jerusalem, Israel", image: "https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?w=800&q=80", price: 3600, rating: 4.7, reviews: 75, beds: 3, baths: 2, guests: 6, isSwapAvailable: false, verified: true, availabilityStatus: "unavailable" },
-];
-
-const tzfatApartments: ApartmentData[] = [
-  { id: "tz-1", title: "Artistic Villa with Mountain Views", location: "Tzfat, Israel", image: "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=800&q=80", price: 3000, rating: 4.9, reviews: 105, beds: 4, baths: 2, guests: 8, isSwapAvailable: true, verified: true, availabilityStatus: "available" },
-  { id: "tz-2", title: "Charming Old City Guest House", location: "Tzfat, Israel", image: "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800&q=80", price: 2200, rating: 4.8, reviews: 60, beds: 2, baths: 1, guests: 4, isSwapAvailable: true, verified: false, availabilityStatus: "unavailable_upcoming" },
-  { id: "tz-3", title: "Modern Cabin near the Forest", location: "Tzfat, Israel", image: "https://images.unsplash.com/photo-1572120360610-d971b9d7767c?w=800&q=80", price: 2800, rating: 4.7, reviews: 45, beds: 3, baths: 2, guests: 6, isSwapAvailable: false, verified: true, availabilityStatus: "unavailable" },
-  { id: "tz-4", title: "Spacious Retreat with Galilee Views", location: "Tzfat, Israel", image: "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&q=80", price: 3500, rating: 5.0, reviews: 130, beds: 5, baths: 3, guests: 10, isSwapAvailable: true, verified: true, availabilityStatus: "available" },
-];
+function mapCardToApartmentData(apt: IApartmentCard): ApartmentData {
+  return {
+    id: apt.id,
+    propertyId: apt.propertyId || undefined,
+    userId: apt.userId,
+    title: apt.title,
+    description: apt.description || undefined,
+    city: apt.city,
+    neighborhood: apt.neighborhood,
+    street1: apt.street1 || undefined,
+    street2: apt.street2 || undefined,
+    lat: apt.lat ?? undefined,
+    lng: apt.lng ?? undefined,
+    propertyType: apt.propertyType,
+    bedrooms: apt.bedrooms,
+    beds: apt.bedrooms,
+    bathrooms: apt.bathrooms,
+    baths: apt.bathrooms,
+    maxGuest: apt.maxGuest,
+    guests: apt.maxGuest,
+    pricePerShabbat: apt.pricePerShabbat,
+    price: apt.pricePerShabbat,
+    amenities: apt.amenities || [],
+    coverImage: apt.coverImage || (apt.images && apt.images.length > 0 ? apt.images[0] : undefined),
+    image: apt.coverImage || (apt.images && apt.images.length > 0 ? apt.images[0] : undefined),
+    images: apt.images,
+    phoneNumber: apt.phoneNumber || undefined,
+    whatsApp: apt.whatsApp || undefined,
+    status: apt.status,
+    averageRating: apt.averageRating,
+    rating: apt.averageRating,
+    totalReviews: apt.totalReviews,
+    upcomingAvailability: apt.upcomingAvailability,
+    user: apt.user,
+    location: `${apt.neighborhood || ""}, ${apt.city || ""}`.replace(/^,\s*|,\s*$/g, ""),
+  };
+}
 
 export default function PremiumCities() {
-  const { t } = useLanguage();
-  const [dummyVisible, setDummyVisible] = useState(false);
+  const { t, language } = useLanguage();
+  const isHebrew = language === "HE";
 
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const hasListing = localStorage.getItem("hasUserListing") === "true";
-      const isVisible = localStorage.getItem("isApartmentVisible") !== "false";
-      setDummyVisible(hasListing && isVisible);
+  // Fetch real grouped apartments by cities from backend API
+  const { data: cityGroups, isLoading } = useApartmentsByCities(3, 4);
+
+  // Filter groups that have available apartments
+  const activeGroups = useMemo(() => {
+    if (!cityGroups || !Array.isArray(cityGroups)) return [];
+    return cityGroups.filter(
+      (group) => group.apartments && group.apartments.length > 0
+    );
+  }, [cityGroups]);
+
+  const getCityTitle = (cityName: string) => {
+    const lower = cityName.toLowerCase().trim();
+    if (lower.includes("jerusalem") || lower.includes("ירושלים")) {
+      return t("premium_cities.available_jerusalem") || `Available for ${cityName}`;
     }
-  }, []);
+    if (lower.includes("tel aviv") || lower.includes("תל אביב")) {
+      return t("premium_cities.available_tel_aviv") || `Available for ${cityName}`;
+    }
+    if (lower.includes("tzfat") || lower.includes("safed") || lower.includes("צפת")) {
+      return t("premium_cities.available_tzfat") || `Available for ${cityName}`;
+    }
+    return isHebrew ? `דירות זמינות ב${cityName}` : `Available for ${cityName}`;
+  };
 
-  const activeJerusalemApartments = dummyVisible 
-    ? [
-        { id: "dummy", title: "Bright luxury apartment in city center", location: "City Center, Jerusalem", image: "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&q=80&w=800", price: 1500, rating: 5.0, reviews: 0, beds: 4, baths: 2, guests: 8, isSwapAvailable: true, verified: false },
-        ...jerusalemApartments
-      ]
-    : jerusalemApartments;
+  const getAccentColor = (cityName: string) => {
+    const lower = cityName.toLowerCase().trim();
+    if (lower.includes("jerusalem") || lower.includes("ירושלים")) return "bg-[#e8c547]";
+    if (lower.includes("tel aviv") || lower.includes("תל אביב")) return "bg-[#4c55a4]";
+    if (lower.includes("tzfat") || lower.includes("safed") || lower.includes("צפת")) return "bg-[#10b981]";
+    return "bg-[#4c55a4]";
+  };
+
+  const getTagColor = (cityName: string) => {
+    const lower = cityName.toLowerCase().trim();
+    if (lower.includes("jerusalem") || lower.includes("ירושלים")) return "text-[#e8c547]";
+    if (lower.includes("tel aviv") || lower.includes("תל אביב")) return "text-[#4c55a4]";
+    if (lower.includes("tzfat") || lower.includes("safed") || lower.includes("צפת")) return "text-[#10b981]";
+    return "text-[#4c55a4]";
+  };
+
+  if (!isLoading && activeGroups.length === 0) {
+    return null;
+  }
 
   return (
     <section className="py-16 bg-[#fafafa] dark:bg-zinc-950 font-sans">
       <div className="container mx-auto px-4">
-        
-        {/* Header section (optional global title) */}
+        {/* Header section */}
         <div className="mb-12 text-center max-w-2xl mx-auto">
           <h2 className="text-4xl font-black text-zinc-900 dark:text-white tracking-tight mb-4">
             {t("premium_cities.title")}
@@ -60,84 +109,90 @@ export default function PremiumCities() {
           </p>
         </div>
 
-        {/* Tel Aviv Section */}
-        <div className="mb-20">
-          <div className="mb-8 flex items-end justify-between">
-            <div>
-              <div className="flex items-center gap-2 mb-2">
-                <span className="w-8 h-1 bg-[#4c55a4] rounded-full"></span>
-                <span className="text-sm font-bold tracking-widest uppercase text-[#4c55a4]">{t("premium_cities.premium_city")}</span>
+        {/* Loading Skeletons */}
+        {isLoading ? (
+          <div className="space-y-12">
+            {[1, 2].map((i) => (
+              <div key={i} className="space-y-6">
+                <div className="flex justify-between items-end">
+                  <div className="space-y-2">
+                    <div className="h-4 w-28 bg-zinc-200 dark:bg-zinc-800 rounded animate-pulse" />
+                    <div className="h-8 w-60 bg-zinc-200 dark:bg-zinc-800 rounded animate-pulse" />
+                  </div>
+                  <div className="h-9 w-28 bg-zinc-200 dark:bg-zinc-800 rounded-xl animate-pulse" />
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                  {[1, 2, 3, 4].map((j) => (
+                    <div
+                      key={j}
+                      className="h-80 bg-zinc-200 dark:bg-zinc-800 rounded-2xl animate-pulse"
+                    />
+                  ))}
+                </div>
               </div>
-              <h3 className="text-3xl md:text-4xl font-black text-zinc-900 dark:text-white tracking-tight">{t("premium_cities.available_tel_aviv")}</h3>
-            </div>
-            <a href="/search?city=tel-aviv" className="hidden md:inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white dark:bg-zinc-900 border border-indigo-200 dark:border-indigo-800 text-sm font-bold text-[#4c55a4] dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 transition-colors shadow-sm">
-              {t("premium_cities.view_all")} 24<span className="ml-[2px]">+</span>
-            </a>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {telAvivApartments.map((apt) => (
-              <ApartmentCard key={apt.id} apartment={apt} />
             ))}
           </div>
+        ) : (
+          /* Dynamic City Sections */
+          <div className="space-y-16">
+            {activeGroups.map((group) => {
+              const queryCity = group.city.toLowerCase().replace(/\s+/g, "-");
+              const searchUrl = `/search?city=${encodeURIComponent(queryCity)}`;
+              const accentBg = getAccentColor(group.city);
+              const tagColor = getTagColor(group.city);
+              const title = getCityTitle(group.city);
 
-          <a href="/search?city=tel-aviv" className="md:hidden mt-6 flex justify-center items-center gap-2 px-5 py-3 rounded-xl bg-white dark:bg-zinc-900 border border-indigo-200 dark:border-indigo-800 text-sm font-bold text-[#4c55a4] dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 transition-colors shadow-sm">
-            {t("premium_cities.view_all")} 24<span className="ml-[2px]">+</span> {t("premium_cities.in_tel_aviv")}
-          </a>
-        </div>
+              return (
+                <div key={group.city} className="space-y-6">
+                  {/* City Section Header */}
+                  <div className="flex items-end justify-between">
+                    <div>
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className={`w-8 h-1 ${accentBg} rounded-full`}></span>
+                        <span className={`text-sm font-bold tracking-widest uppercase ${tagColor}`}>
+                          {t("premium_cities.premium_city")}
+                        </span>
+                      </div>
+                      <h3 className="text-3xl md:text-4xl font-black text-zinc-900 dark:text-white tracking-tight">
+                        {title}
+                      </h3>
+                    </div>
 
-        {/* Jerusalem Section */}
-        <div className="mb-10">
-          <div className="mb-8 flex items-end justify-between">
-            <div>
-              <div className="flex items-center gap-2 mb-2">
-                <span className="w-8 h-1 bg-[#e8c547] rounded-full"></span>
-                <span className="text-sm font-bold tracking-widest uppercase text-[#e8c547]">{t("premium_cities.premium_city")}</span>
-              </div>
-              <h3 className="text-3xl md:text-4xl font-black text-zinc-900 dark:text-white tracking-tight">{t("premium_cities.available_jerusalem")}</h3>
-            </div>
-            <a href="/search?city=jerusalem" className="hidden md:inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white dark:bg-zinc-900 border border-indigo-200 dark:border-indigo-800 text-sm font-bold text-[#4c55a4] dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 transition-colors shadow-sm">
-              {t("premium_cities.view_all")} 32<span className="ml-[2px]">+</span>
-            </a>
+                    <Link
+                      href={searchUrl}
+                      className="hidden md:inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white dark:bg-zinc-900 border border-indigo-200 dark:border-indigo-800 text-sm font-bold text-[#4c55a4] dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 transition-colors shadow-sm"
+                    >
+                      <span>{t("premium_cities.view_all")} {group.totalApartments}</span>
+                      <span className="ml-[2px]">+</span>
+                      <ArrowRight className="w-4 h-4 rtl:rotate-180" />
+                    </Link>
+                  </div>
+
+                  {/* Apartments Grid */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    {group.apartments.map((apt) => (
+                      <ApartmentCard
+                        key={apt.id}
+                        apartment={mapCardToApartmentData(apt)}
+                      />
+                    ))}
+                  </div>
+
+                  {/* Mobile View All Button */}
+                  <Link
+                    href={searchUrl}
+                    className="md:hidden mt-6 flex justify-center items-center gap-2 px-5 py-3 rounded-xl bg-white dark:bg-zinc-900 border border-indigo-200 dark:border-indigo-800 text-sm font-bold text-[#4c55a4] dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 transition-colors shadow-sm"
+                  >
+                    <span>
+                      {t("premium_cities.view_all")} {group.totalApartments}+ {isHebrew ? `ב${group.city}` : `in ${group.city}`}
+                    </span>
+                    <ArrowRight className="w-4 h-4 rtl:rotate-180" />
+                  </Link>
+                </div>
+              );
+            })}
           </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {activeJerusalemApartments.slice(0, 4).map((apt) => (
-              <ApartmentCard key={apt.id} apartment={apt} />
-            ))}
-          </div>
-
-          <a href="/search?city=jerusalem" className="md:hidden mt-6 flex justify-center items-center gap-2 px-5 py-3 rounded-xl bg-white dark:bg-zinc-900 border border-indigo-200 dark:border-indigo-800 text-sm font-bold text-[#4c55a4] dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 transition-colors shadow-sm">
-            {t("premium_cities.view_all")} 32<span className="ml-[2px]">+</span> {t("premium_cities.in_jerusalem")}
-          </a>
-        </div>
-
-        {/* Tzfat Section */}
-        <div className="mb-10">
-          <div className="mb-8 flex items-end justify-between">
-            <div>
-              <div className="flex items-center gap-2 mb-2">
-                <span className="w-8 h-1 bg-[#10b981] rounded-full"></span>
-                <span className="text-sm font-bold tracking-widest uppercase text-[#10b981]">{t("premium_cities.premium_city")}</span>
-              </div>
-              <h3 className="text-3xl md:text-4xl font-black text-zinc-900 dark:text-white tracking-tight">{t("premium_cities.available_tzfat")}</h3>
-            </div>
-            <a href="/search?city=tzfat" className="hidden md:inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white dark:bg-zinc-900 border border-indigo-200 dark:border-indigo-800 text-sm font-bold text-[#4c55a4] dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 transition-colors shadow-sm">
-              {t("premium_cities.view_all")} 18<span className="ml-[2px]">+</span>
-            </a>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {tzfatApartments.map((apt) => (
-              <ApartmentCard key={apt.id} apartment={apt} />
-            ))}
-          </div>
-
-          <a href="/search?city=tzfat" className="md:hidden mt-6 flex justify-center items-center gap-2 px-5 py-3 rounded-xl bg-white dark:bg-zinc-900 border border-indigo-200 dark:border-indigo-800 text-sm font-bold text-[#4c55a4] dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 transition-colors shadow-sm">
-            {t("premium_cities.view_all")} 18<span className="ml-[2px]">+</span> {t("premium_cities.in_tzfat")}
-          </a>
-        </div>
-
+        )}
       </div>
     </section>
   );

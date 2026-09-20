@@ -1,8 +1,7 @@
 "use client";
 import Link from "next/link";
-import { useState, use, Suspense } from "react";
+import { useState, use, Suspense, useMemo, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { useEffect } from "react";
 import MainNavbar from "@/components/layout/MainNavbar";
 import ApartmentCard from "@/components/search/ApartmentCard";
 import { ApartmentData } from "@/types";
@@ -16,6 +15,25 @@ import { mockBaseApartments } from "@/data/mockData";
 import { getCoordinatesForAddress, calculateWalkingMinutes, calculateDistanceKm } from "@/utils/distanceUtils";
 import { useFavorites } from "@/hooks/useFavorites";
 import { getTelLink, getWhatsAppLink } from "@/utils/phoneUtils";
+import { useApartment } from "@/hooks/useApartments";
+import { useSubmitOffer } from "@/hooks/useOfferRequests";
+import { useCreateInterestedRequest } from "@/hooks/useInterestedRequests";
+import { useCreateNotifyRequest } from "@/hooks/useNotifyRequests";
+import { useSendSwapRequest } from "@/hooks/useSwap";
+import { useMyApartment } from "@/hooks/useApartments";
+import { toast } from "sonner";
+import { getImageUrl } from "@/utils/imageUrl";
+import { ApartmentHistoryService } from "@/services/apartmentHistoryService";
+
+interface AvailableDateItem {
+  id: string | number;
+  date: string;
+  day: string;
+  reason: string;
+  isSpecial?: boolean;
+  specialPrice?: string | null;
+}
+
 // Constants
 const SHABBATOT = [
   { id: "devarim", name: "Devarim", date: "17/7" },
@@ -73,8 +91,39 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
   const searchParams = useSearchParams();
   const isSwapMode = searchParams.get("mode") === "swap";
 
+  const { data: apiApartment, isLoading: isAptLoading } = useApartment(id);
+  const { data: myAptData } = useMyApartment();
+  const myApartment = myAptData;
+  const { mutate: sendSwapRequest, isPending: isSendingSwapRequest } = useSendSwapRequest();
+
+  // Dynamic gallery images from backend
+  const apiImages: string[] = [];
+  if (apiApartment?.coverImage) {
+    apiImages.push(getImageUrl(apiApartment.coverImage));
+  }
+  if (apiApartment?.images && Array.isArray(apiApartment.images)) {
+    apiApartment.images.forEach((img) => {
+      if (img) apiImages.push(getImageUrl(img));
+    });
+  }
+
+  const currentGalleryImages = apiImages.length > 0 ? apiImages : galleryImages;
+
   const [isAuthChecked, setIsAuthChecked] = useState(false);
   const [activeImage, setActiveImage] = useState(galleryImages[0]);
+
+  useEffect(() => {
+    if (apiImages.length > 0) {
+      setActiveImage(apiImages[0]);
+    }
+  }, [apiApartment?.coverImage, JSON.stringify(apiApartment?.images)]);
+
+  // Track view history on backend
+  useEffect(() => {
+    if (id) {
+      ApartmentHistoryService.trackApartmentView(id);
+    }
+  }, [id]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDatesModalOpen, setIsDatesModalOpen] = useState(false);
   const [showAllAmenities, setShowAllAmenities] = useState(false);
@@ -93,6 +142,70 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
 
   const [isUnavailableModalOpen, setIsUnavailableModalOpen] = useState(false);
   const [isNotified, setIsNotified] = useState(false);
+  
+  const [offerPriceInput, setOfferPriceInput] = useState("");
+  const [offerMessageInput, setOfferMessageInput] = useState("");
+
+  const { mutate: createInterested, isPending: isSendingInterested } = useCreateInterestedRequest();
+  const { mutate: createNotify, isPending: isSendingNotify } = useCreateNotifyRequest();
+  const { mutate: submitOfferMutation, isPending: isSendingOffer } = useSubmitOffer();
+
+  const handleProposeSwapFromDetails = () => {
+    if (!myApartment?.id) {
+      toast.error("You must list an apartment first to propose a swap.");
+      return;
+    }
+    if (!selectedDate) {
+      toast.error("Please select a weekend from the calendar first to propose a swap.");
+      return;
+    }
+    sendSwapRequest(
+      {
+        fromAppId: myApartment.id,
+        toAppId: id,
+        weekend: selectedDate,
+      },
+      {
+        onSuccess: () => {
+          setIsSwapSuccessModalOpen(true);
+        },
+        onError: (err: any) => {
+          toast.error(err?.response?.data?.message || "Failed to send swap request.");
+        },
+      }
+    );
+  };
+
+  const handleInterestedClick = () => {
+    if (!id) return;
+    createInterested(
+      { apartmentId: id },
+      {
+        onSuccess: () => {
+          toast.success("Interested request sent successfully!");
+        },
+        onError: (err: any) => {
+          toast.error(err?.response?.data?.message || "Failed to send request.");
+        },
+      }
+    );
+  };
+
+  const handleNotifyMe = () => {
+    if (!id) return;
+    createNotify(
+      { apartmentId: id },
+      {
+        onSuccess: () => {
+          setIsNotified(true);
+          toast.success("You will be notified when available!");
+        },
+        onError: (err: any) => {
+          toast.error(err?.response?.data?.message || "Failed to setup notification.");
+        },
+      }
+    );
+  };
 
   // Reviews Feature (R1 & R2)
   const [isWriteReviewModalOpen, setIsWriteReviewModalOpen] = useState(false);
@@ -172,25 +285,11 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
   const [isWeekendDropdownOpen, setIsWeekendDropdownOpen] = useState(false);
   const [selectedWeekendForOffer, setSelectedWeekendForOffer] = useState("");
   
-  const handleNotifyMe = () => {
-    if (typeof window !== "undefined") {
-      const existing = localStorage.getItem("notify_me_requests");
-      const requests = existing ? JSON.parse(existing) : [];
-      const userEmail = localStorage.getItem("userEmail") || "user@example.com";
-      requests.push({
-        id: `notify-${Date.now()}`,
-        apartmentId: id,
-        apartmentTitle: targetApartment?.title || "Beautiful Apartment in Jerusalem",
-        userEmail,
-        date: new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
-      });
-      localStorage.setItem("notify_me_requests", JSON.stringify(requests));
-    }
-    setIsNotified(true);
-    setIsNotifySuccessModalOpen(true);
-  };
+  const [isSwapSuccessModalOpen, setIsSwapSuccessModalOpen] = useState(false);
+  
 
-  const [selectedAgreedWeek, setSelectedAgreedWeek] = useState(mockAvailableDates[0].date);
+
+  const [selectedAgreedWeek, setSelectedAgreedWeek] = useState("");
   const [confirmedShabbosDate, setConfirmedShabbosDate] = useState("");
   const [activeConfirmationCode, setActiveConfirmationCode] = useState("");
   const [isConfCopied, setIsConfCopied] = useState(false);
@@ -202,7 +301,7 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
 
   const executeRenterConfirm = (targetWeek: string) => {
     const userEmail = typeof window !== "undefined" ? localStorage.getItem("userEmail") || "renter@example.com" : "renter@example.com";
-    const currentWeek = targetWeek || "Oct 13 - 15";
+    const currentWeek = targetWeek || (availableDates[0]?.date ?? "Upcoming Shabbat");
     const codeKey = `confirm_${userEmail}_apt${id}_${currentWeek.replace(/[^a-zA-Z0-9]/g, "")}`;
     
     let code = typeof window !== "undefined" ? localStorage.getItem(codeKey) : null;
@@ -220,16 +319,16 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
         const newBooking = {
           id: `b-conf-${Date.now()}`,
           apartmentId: id,
-          title: "Beautiful Apartment in Jerusalem",
-          address: "Ramban St 14, Rehavia, Jerusalem, Israel",
+          title: displayTitle,
+          address: `${displayStreet}, ${displayNeighborhood}, ${displayCity}`,
           dates: currentWeek,
           confirmationCode: code,
-          hostName: "Moshe & Chaim Estates",
-          hostPhone: "+972 54-123-4567",
-          hostEmail: "owner@shabbosrent.com",
+          hostName: apiApartment?.user?.username || "Host",
+          hostPhone: ownerPhone,
+          hostEmail: apiApartment?.user?.email || "owner@shabbosrent.com",
           status: "Confirmed",
-          amount: "₪4,500",
-          image: galleryImages[0]
+          amount: displayPrice,
+          image: currentGalleryImages[0]
         };
         localStorage.setItem("user_booking_history", JSON.stringify([newBooking, ...existingBookings]));
       }
@@ -293,6 +392,186 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
 
   const hasUserListing = typeof window !== 'undefined' && localStorage.getItem("hasUserListing") === "true";
 
+  const defaultAmenitiesList = [
+    { icon: Wifi, label: "Fast High-Speed WiFi" },
+    { icon: Tent, label: "Private Balcony View" },
+    { icon: Monitor, label: "Dedicated Workspace" },
+    { icon: ChefHat, label: "Fully Equipped Kosher Kitchen" },
+    { icon: Coffee, label: "Coffee Maker" },
+    { icon: Tv, label: "Smart TV with Netflix" },
+    { icon: Snowflake, label: "Air Conditioning" },
+    { icon: Car, label: "Free Parking on Premises" },
+    { icon: WashingMachine, label: "Washer & Dryer" },
+  ];
+
+  const getAmenityIcon = (name: string) => {
+    const lower = name.toLowerCase();
+    if (lower.includes("wifi") || lower.includes("internet")) return Wifi;
+    if (lower.includes("balcony") || lower.includes("sukkah") || lower.includes("terrace")) return Tent;
+    if (lower.includes("kitchen") || lower.includes("kosher") || lower.includes("cook")) return ChefHat;
+    if (lower.includes("coffee") || lower.includes("urn") || lower.includes("tea")) return Coffee;
+    if (lower.includes("tv") || lower.includes("netflix") || lower.includes("screen")) return Tv;
+    if (lower.includes("air") || lower.includes("ac") || lower.includes("condition")) return Snowflake;
+    if (lower.includes("park") || lower.includes("car") || lower.includes("garage")) return Car;
+    if (lower.includes("wash") || lower.includes("laundry") || lower.includes("dryer")) return WashingMachine;
+    if (lower.includes("linen") || lower.includes("towel") || lower.includes("bed")) return BedDouble;
+    if (lower.includes("bath") || lower.includes("tub")) return Bath;
+    if (lower.includes("clock") || lower.includes("shabbos")) return Sparkles;
+    if (lower.includes("desk") || lower.includes("work")) return Monitor;
+    return Sparkles;
+  };
+
+  const amenitiesList = (apiApartment?.amenities && apiApartment.amenities.length > 0)
+    ? apiApartment.amenities.map((name) => ({ icon: getAmenityIcon(name), label: name }))
+    : defaultAmenitiesList;
+  
+  const displayedAmenities = showAllAmenities ? amenitiesList : amenitiesList.slice(0, 6);
+
+  // Dynamic Logic: Determine availability based on API data and metadata
+  const baseId = id ? id.split("-")[0] : "1";
+  const targetApartment = mockBaseApartments.find((a) => a.id === id || a.id === baseId) || similarApartments.find((a) => a.id === id);
+
+  const isAvailableForNextWeekend =
+    !apiApartment?.unavailable &&
+    apiApartment?.upcomingAvailability?.isAvailableNextWeekend === true;
+
+  const isApartmentAvailable = useMemo(() => {
+    if (apiApartment) {
+      const anyApt = apiApartment as any;
+      if (anyApt.unavailable !== undefined) {
+        return !anyApt.unavailable;
+      }
+      if (apiApartment.upcomingAvailability?.isAvailableNextWeekend !== undefined && apiApartment.upcomingAvailability?.isAvailableNextWeekend !== null) {
+        return Boolean(apiApartment.upcomingAvailability.isAvailableNextWeekend);
+      }
+      if (anyApt.availabilityStatus) {
+        return anyApt.availabilityStatus === "available";
+      }
+      if (anyApt.isAvailable !== undefined) {
+        return Boolean(anyApt.isAvailable);
+      }
+      if (apiApartment.status === "CONFIRMED" || (apiApartment as any).isListingActive) {
+        return true;
+      }
+      return true;
+    }
+    return targetApartment ? targetApartment.isAvailable !== false : (id !== "2" && id !== "4" && id !== "6" && id !== "rent-demo-1" && id !== "rent-demo-3" && id !== "swap-demo-1" && id !== "swap-demo-3");
+  }, [apiApartment, targetApartment, id]);
+
+  const isSwapAvailableForApt = apiApartment ? (apiApartment as any).isSwapAvailable !== false : (targetApartment?.isSwapAvailable ?? true);
+
+  const isAcceptingRequests = useMemo(() => {
+    if (apiApartment) {
+      const anyApt = apiApartment as any;
+      if (anyApt.receiveRequestWhenUnavailable !== undefined) {
+        return Boolean(anyApt.receiveRequestWhenUnavailable);
+      }
+      if (apiApartment.upcomingAvailability?.canMakeOffer !== undefined && apiApartment.upcomingAvailability?.canMakeOffer !== null) {
+        return Boolean(apiApartment.upcomingAvailability.canMakeOffer);
+      }
+      if (anyApt.availabilityStatus) {
+        return anyApt.availabilityStatus === "unavailable_upcoming";
+      }
+      if (anyApt.acceptRequestsWhenUnavailable !== undefined) {
+        return Boolean(anyApt.acceptRequestsWhenUnavailable);
+      }
+      return true;
+    }
+    return targetApartment ? targetApartment.acceptRequestsWhenUnavailable : (id === "2" || id === "rent-demo-1" || id === "swap-demo-1");
+  }, [apiApartment, targetApartment, id]);
+
+  // Derived available dates from API availabilities
+  const availableDates = useMemo<AvailableDateItem[]>(() => {
+    if (apiApartment?.availabilities && Array.isArray(apiApartment.availabilities) && apiApartment.availabilities.length > 0) {
+      return apiApartment.availabilities.map((item: any, idx: number) => {
+        let dateStr = "Upcoming Shabbat";
+        if (item.weekend?.date) {
+          try {
+            dateStr = new Date(item.weekend.date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+          } catch {
+            dateStr = String(item.weekend.date);
+          }
+        }
+        return {
+          id: item.id || idx + 1,
+          date: dateStr,
+          day: "Fri - Sat",
+          reason: item.weekend?.title ? `Shabbos ${item.weekend.title}` : (item.isSpecial ? "Special Shabbat Rate" : "Available Shabbat"),
+          isSpecial: Boolean(item.isSpecial),
+          specialPrice: item.specialPrice ? `₪${item.specialPrice}` : null,
+        };
+      });
+    }
+    // Fallback: If apartment is available, generate upcoming Shabbatot
+    if (isApartmentAvailable) {
+      return SHABBATOT.slice(6, 12).map((shabbat, idx) => ({
+        id: idx + 1,
+        date: `Shabbat ${shabbat.date}`,
+        day: "Fri - Sat",
+        reason: `Shabbos Parshat ${shabbat.name}`,
+        isSpecial: false,
+        specialPrice: null,
+      }));
+    }
+    return mockAvailableDates;
+  }, [apiApartment?.availabilities, isApartmentAvailable]);
+
+  // Display Fields (API with fallback)
+  const displayTitle = apiApartment?.title || targetApartment?.title || "Beautiful Apartment in Jerusalem";
+  const displayCity = apiApartment?.city || targetApartment?.city || "Jerusalem";
+  const displayNeighborhood = apiApartment?.neighborhood || targetApartment?.neighborhood || "Rehavia";
+  const displayStreet = apiApartment?.street1 || targetApartment?.street || "Ramban Street";
+  const displayPrice = apiApartment?.pricePerShabbat ? `₪${apiApartment.pricePerShabbat}` : (targetApartment?.price ? `₪${targetApartment.price}` : "₪4500");
+  const displayBeds = apiApartment?.bedrooms ?? (targetApartment?.beds ?? 4);
+  const displayBaths = apiApartment?.bathrooms ?? (targetApartment?.baths ?? 3);
+  const displayGuests = apiApartment?.maxGuest ?? (targetApartment?.guests ?? 8);
+  const displayCode = apiApartment?.propertyId || (id ? `APT-${id}` : "APT-001");
+  const displayDescription = apiApartment?.description || (targetApartment as any)?.description || "Experience the perfect Shabbos in this beautifully appointed apartment. Centrally located with easy access to shuls and kosher dining. The apartment features a fully equipped kosher kitchen with double sinks, a spacious dining area that comfortably seats your whole family, and comfortable beds with premium linens.";
+  const ownerPhone = apiApartment?.user?.phone || (apiApartment as any)?.phoneNumber || "972541234567";
+  const ownerWhatsApp = apiApartment?.whatsApp || apiApartment?.user?.phone || (apiApartment as any)?.phoneNumber || "972541234567";
+  const isPhoneEnabled = (apiApartment as any)?.phone !== false;
+  const isWhatsAppEnabled = (apiApartment as any)?.whatsapp === true || (apiApartment as any)?.whatsApp === true;
+  const isEmailEnabled = (apiApartment as any)?.email === true;
+
+  // Submit Offer
+  const handleContactSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!id) return;
+    submitOfferMutation(
+      {
+        apartmentId: id,
+        offerPrice: Number(offerPriceInput),
+        message: offerMessageInput,
+        shabbosId: selectedDate || undefined,
+      },
+      {
+        onSuccess: () => {
+          setIsModalOpen(false);
+          toast.success("Offer sent successfully!");
+          setOfferPriceInput("");
+          setOfferMessageInput("");
+        },
+        onError: (err: any) => {
+          toast.error(err?.response?.data?.message || "Failed to send offer.");
+        },
+      }
+    );
+  };
+
+  const toggleSaveApartment = () => {
+    toggleFavorite({
+      id: apiApartment?.id || id,
+      title: displayTitle,
+      image: apiImages[0] || targetApartment?.image || activeImage,
+      price: apiApartment?.pricePerShabbat ?? (targetApartment?.price ? Number(targetApartment.price) : 2500),
+      city: displayCity,
+      location: `${displayNeighborhood}, ${displayCity}`,
+      beds: Number(displayBeds),
+      baths: Number(displayBaths),
+      guests: Number(displayGuests),
+    });
+  };
+
   if (!isAuthChecked) {
     return (
       <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 flex flex-col items-center justify-center p-4">
@@ -313,42 +592,6 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
     );
   }
 
-  const amenitiesList = [
-    { icon: Wifi, label: "Fast High-Speed WiFi" },
-    { icon: Tent, label: "Private Balcony View" },
-    { icon: Monitor, label: "Dedicated Workspace" },
-    { icon: ChefHat, label: "Fully Equipped Kosher Kitchen" },
-    { icon: Coffee, label: "Coffee Maker" },
-    { icon: Tv, label: "Smart TV with Netflix" },
-    { icon: Snowflake, label: "Air Conditioning" },
-    { icon: Car, label: "Free Parking on Premises" },
-    { icon: WashingMachine, label: "Washer & Dryer" },
-  ];
-  
-  const displayedAmenities = showAllAmenities ? amenitiesList : amenitiesList.slice(0, 6);
-
-  // Dynamic Logic: Determine availability based on ID and apartment metadata
-  const baseId = id ? id.split("-")[0] : "1";
-  const targetApartment = mockBaseApartments.find((a) => a.id === id || a.id === baseId) || similarApartments.find((a) => a.id === id);
-  const isApartmentAvailable = targetApartment ? targetApartment.isAvailable !== false : (id !== "2" && id !== "4" && id !== "6" && id !== "rent-demo-1" && id !== "rent-demo-3" && id !== "swap-demo-1" && id !== "swap-demo-3");
-  const isAcceptingRequests = targetApartment ? targetApartment.acceptRequestsWhenUnavailable : (id === "2" || id === "rent-demo-1" || id === "swap-demo-1");
-  const availableDates = mockAvailableDates;
-
-  // Mock Form Submit
-  const handleContactSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsModalOpen(false);
-    alert("Message sent successfully!"); // Simulate success
-  };
-
-  const toggleSaveApartment = () => {
-    toggleFavorite({
-      id,
-      title: targetApartment?.title || "Apartment",
-      image: targetApartment?.image || activeImage,
-    });
-  };
-
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 font-sans pb-20 relative">
       <MainNavbar />
@@ -360,29 +603,29 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
              <div>
                <div className="flex items-center gap-2 mb-2">
                  <span className="px-2.5 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 font-bold text-xs rounded-md border border-blue-200 dark:border-blue-800/50">
-                   {t("apartment_details.apartment_id")}{id}
+                   {displayCode}
                  </span>
                  <span className="px-2.5 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 font-bold text-xs rounded-md border border-green-200 dark:border-green-800/50 flex items-center gap-1">
                    <ShieldCheck className="w-3.5 h-3.5" /> {t("apartment_details.verified_listing")}
                  </span>
                </div>
                <h1 className="text-3xl md:text-4xl font-extrabold text-zinc-900 dark:text-white mb-2">
-                 {targetApartment?.title || "Beautiful Apartment in Jerusalem"}
+                 {displayTitle}
                </h1>
                {/* Location Details with explicit labels */}
                <div className="mt-3 p-3.5 bg-zinc-50 dark:bg-zinc-800/50 rounded-2xl border border-zinc-200 dark:border-zinc-800 text-xs space-y-1 inline-block min-w-[280px]">
                  <div className="flex items-center gap-1.5 text-zinc-900 dark:text-white font-bold text-sm">
                    <MapPin className="w-4 h-4 text-[#4c55a4] shrink-0" />
                    <span className="text-zinc-500 dark:text-zinc-400 font-semibold">City:</span>
-                   <span className="font-extrabold text-[#4c55a4] dark:text-indigo-400">{targetApartment?.city || "Jerusalem"}</span>
+                   <span className="font-extrabold text-[#4c55a4] dark:text-indigo-400">{displayCity}</span>
                  </div>
                  <div className="pl-5 flex items-center gap-1.5 text-zinc-700 dark:text-zinc-300 font-medium">
                    <span className="text-zinc-400 dark:text-zinc-500 font-semibold">Neighborhood:</span>
-                   <span className="font-bold text-zinc-900 dark:text-zinc-100">{targetApartment?.neighborhood || "Rehavia"}</span>
+                   <span className="font-bold text-zinc-900 dark:text-zinc-100">{displayNeighborhood}</span>
                  </div>
                  <div className="pl-5 flex items-center gap-1.5 text-zinc-600 dark:text-zinc-400 font-medium">
                    <span className="text-zinc-400 dark:text-zinc-500 font-semibold">Street Name:</span>
-                   <span className="font-semibold text-zinc-800 dark:text-zinc-200">{targetApartment?.street || "Ramban Street"}</span>
+                   <span className="font-semibold text-zinc-800 dark:text-zinc-200">{displayStreet}</span>
                  </div>
                  {(targetApartment?.houseNumber || baseId === "1") && (
                    <div className="pl-5 flex items-center gap-1.5 text-zinc-600 dark:text-zinc-400 font-medium">
@@ -428,7 +671,7 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
               </div>
               {/* Thumbnail Row */}
               <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
-                {galleryImages.map((img, index) => (
+                {currentGalleryImages.map((img, index) => (
                   <button 
                     key={index}
                     onClick={() => setActiveImage(img)}
@@ -444,7 +687,7 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
             <div className="bg-white dark:bg-zinc-900 rounded-3xl p-6 md:p-8 border border-zinc-200 dark:border-zinc-800 shadow-sm">
                 <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
                   <h2 className="text-2xl font-bold text-zinc-900 dark:text-white">{t("apartment_details.about_home")}</h2>
-                  {!isSwapMode && <span className="text-3xl font-black text-zinc-900 dark:text-white">₪4500</span>}
+                  {!isSwapMode && <span className="text-3xl font-black text-zinc-900 dark:text-white">{displayPrice}</span>}
                 </div>
                 
                 {/* Basic Info */}
@@ -452,85 +695,55 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
                   <div className="flex flex-wrap items-center gap-6">
                     <div className="flex items-center gap-2 text-zinc-700 dark:text-zinc-300 font-medium">
                       <BedDouble className="w-5 h-5 text-[#4c55a4] dark:text-[#6b75c8]" />
-                      4 {t("apartment_details.beds")}
+                      {displayBeds} {t("apartment_details.beds")}
                     </div>
                     <div className="flex items-center gap-2 text-zinc-700 dark:text-zinc-300 font-medium">
                       <DoorOpen className="w-5 h-5 text-[#4c55a4] dark:text-[#6b75c8]" />
-                      3 {t("apartment_details.baths")}
+                      {displayBaths} {t("apartment_details.baths")}
                     </div>
                     <div className="flex items-center gap-2 text-zinc-700 dark:text-zinc-300 font-medium">
                       <Users className="w-5 h-5 text-[#4c55a4] dark:text-[#6b75c8]" />
-                      {t("apartment_details.up_to")} 8 {t("apartment_details.guests")}
+                      {t("apartment_details.up_to")} {displayGuests} {t("apartment_details.guests")}
                     </div>
                   </div>
                   <div className="flex-shrink-0 flex flex-col sm:flex-row items-center gap-3">
-                    {isApartmentAvailable ? (
-                      <>
+                    {isAvailableForNextWeekend ? (
+                      <div className="w-full sm:w-auto mt-4 space-y-3">
                         <button 
-                          disabled
-                          className={`w-full sm:w-auto px-6 py-2.5 rounded-xl font-bold text-sm border cursor-default bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/20`}
+                          onClick={() => setIsDatesModalOpen(true)}
+                          className="w-full px-4 py-3 bg-zinc-900 dark:bg-white hover:bg-zinc-800 dark:hover:bg-zinc-200 text-white dark:text-zinc-900 rounded-xl font-bold transition-all shadow-md text-sm flex items-center justify-center whitespace-nowrap"
                         >
-                           {t("apartment_details.available_upcoming")}
+                          View all available dates
                         </button>
-
-                        {isSwapMode && (
-                          <button 
-                            onClick={() => setIsSwapModalOpen(true)}
-                            className="w-full sm:w-auto px-6 py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl font-bold transition-all shadow-md shadow-amber-500/20 text-sm flex items-center justify-center gap-2"
-                          >
-                             <ArrowRightLeft className="w-4 h-4" /> {t("apartment_details.swap_now")}
-                          </button>
-                        )}
-                      </>
-                    ) : isAcceptingRequests ? (
-                      <div className="flex flex-col gap-2 w-full sm:w-auto">
-                        <button 
-                          disabled
-                          className="w-full px-6 py-2.5 rounded-xl font-bold text-sm border cursor-default bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-500/20"
-                        >
+                      </div>
+                    ) : (
+                      <div className="flex flex-col gap-2 w-full sm:w-auto mt-4 space-y-3">
+                        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-2 text-center text-sm font-medium text-amber-900">
                           Unavailable for upcoming weekend
-                        </button>
-                        <div className="flex flex-col sm:flex-row gap-2">
+                        </div>
+                        
+                        <div className="flex gap-2">
                           <button 
                             onClick={() => setIsDatesModalOpen(true)}
-                            className="w-full sm:w-auto px-6 py-2.5 bg-zinc-900 dark:bg-white hover:bg-zinc-800 dark:hover:bg-zinc-200 text-white dark:text-zinc-900 rounded-xl font-bold transition-all shadow-md shadow-zinc-900/20 text-sm flex items-center justify-center whitespace-nowrap"
+                            className="flex-1 px-4 py-3 bg-zinc-900 dark:bg-white hover:bg-zinc-800 text-white dark:text-zinc-900 rounded-xl font-bold text-sm flex items-center justify-center whitespace-nowrap"
                           >
                             View all available dates
                           </button>
                           <button 
-                            onClick={() => setIsUnavailableModalOpen(true)}
-                            className="w-full sm:w-auto px-6 py-2.5 bg-[#4c55a4] hover:bg-[#3d4484] text-white rounded-xl font-bold transition-all shadow-md shadow-[#4c55a4]/20 text-sm flex items-center justify-center whitespace-nowrap"
+                            onClick={() => setIsModalOpen(true)}
+                            className="flex-1 px-4 py-3 bg-[#4c55a4] hover:bg-[#3d4484] text-white rounded-xl font-bold text-sm flex items-center justify-center whitespace-nowrap"
                           >
                             I'm interested
                           </button>
                         </div>
-                      </div>
-                    ) : (
-                      <div className="flex flex-col gap-2 w-full sm:w-auto">
-                        <button 
-                          disabled
-                          className="w-full px-6 py-2.5 rounded-xl font-bold text-sm border cursor-default bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 border-red-200 dark:border-red-500/20"
-                        >
-                          Unavailable
-                        </button>
-                        <div className="flex flex-col sm:flex-row gap-2">
-                          <div className="relative inline-flex h-11 w-full sm:w-auto overflow-hidden rounded-xl p-[2px] focus:outline-none group">
-                            <span className="absolute inset-[-1000%] animate-[spin_3s_linear_infinite] bg-[conic-gradient(from_90deg_at_50%_50%,#e4e4e7_0%,#4c55a4_33%,#8b5cf6_66%,#e4e4e7_100%)] dark:bg-[conic-gradient(from_90deg_at_50%_50%,#27272a_0%,#818cf8_33%,#a78bfa_66%,#27272a_100%)] opacity-70 group-hover:opacity-100 transition-opacity duration-300" />
-                            <button 
-                              onClick={() => {
-                                setIsNotifySuccessModalOpen(true);
-                                setTimeout(() => setIsNotifySuccessModalOpen(false), 3000);
-                              }}
-                              className="inline-flex h-full w-full cursor-pointer items-center justify-center gap-2 rounded-[10px] bg-white dark:bg-zinc-900 px-6 py-2.5 text-sm font-bold text-zinc-900 dark:text-white hover:bg-zinc-50 dark:hover:bg-zinc-800 backdrop-blur-3xl transition-all shadow-md shadow-zinc-900/10 whitespace-nowrap"
-                            >
-                              Notify me when available
-                            </button>
-                          </div>
+                        
+                        <div className="flex gap-2 mt-1">
                           <button 
-                            onClick={() => setIsModalOpen(true)}
-                            className="w-full sm:w-auto px-6 py-2.5 bg-[#4c55a4] hover:bg-[#3d4484] text-white rounded-xl font-bold transition-all shadow-md shadow-[#4c55a4]/20 text-sm flex items-center justify-center whitespace-nowrap"
+                            onClick={handleNotifyMe}
+                            disabled={isSendingNotify || isNotified}
+                            className="w-full px-4 py-2.5 border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-800 rounded-xl font-bold text-sm disabled:opacity-50 text-zinc-900 dark:text-white"
                           >
-                            Send request or offer
+                            {isNotified ? "Notified" : "Notify Me"}
                           </button>
                         </div>
                       </div>
@@ -547,15 +760,15 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
                     <div className="p-2.5 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-100 dark:border-zinc-800">
                       <span className="block text-zinc-400 dark:text-zinc-500 font-semibold mb-0.5">City</span>
-                      <span className="font-extrabold text-[#4c55a4] dark:text-indigo-400 text-sm">{targetApartment?.city || "Jerusalem"}</span>
+                      <span className="font-extrabold text-[#4c55a4] dark:text-indigo-400 text-sm">{displayCity}</span>
                     </div>
                     <div className="p-2.5 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-100 dark:border-zinc-800">
                       <span className="block text-zinc-400 dark:text-zinc-500 font-semibold mb-0.5">Neighborhood</span>
-                      <span className="font-bold text-zinc-900 dark:text-zinc-100 text-sm">{targetApartment?.neighborhood || "Rehavia"}</span>
+                      <span className="font-bold text-zinc-900 dark:text-zinc-100 text-sm">{displayNeighborhood}</span>
                     </div>
                     <div className="p-2.5 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-100 dark:border-zinc-800">
                       <span className="block text-zinc-400 dark:text-zinc-500 font-semibold mb-0.5">Street Name</span>
-                      <span className="font-semibold text-zinc-800 dark:text-zinc-200 text-sm">{targetApartment?.street || "Ramban Street"}</span>
+                      <span className="font-semibold text-zinc-800 dark:text-zinc-200 text-sm">{displayStreet}</span>
                     </div>
                     {(targetApartment?.houseNumber || baseId === "1") && (
                       <div className="p-2.5 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-100 dark:border-zinc-800">
@@ -566,8 +779,8 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
                   </div>
                 </div>
 
-                <p className="text-zinc-600 dark:text-zinc-400 leading-relaxed text-lg mb-8">
-                   Experience the perfect Shabbos in this beautifully appointed apartment. Centrally located with easy access to shuls and kosher dining. The apartment features a fully equipped kosher kitchen with double sinks, a spacious dining area that comfortably seats your whole family, and comfortable beds with premium linens.
+                <p className="text-zinc-600 dark:text-zinc-400 leading-relaxed text-lg mb-8 whitespace-pre-line">
+                   {displayDescription}
                 </p>
 
                 <h3 className="text-xl font-bold mb-4 text-zinc-900 dark:text-white">{t("apartment_details.what_offers")}</h3>
@@ -613,17 +826,29 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
                    </p>
                 </div>
                 {isApartmentAvailable ? (
-                  <button 
-                     onClick={() => setIsLandlordModalOpen(true)}
-                     className="px-8 py-3.5 bg-[#4c55a4] hover:bg-[#3d4484] text-white rounded-xl font-extrabold transition-all shadow-md shadow-[#4c55a4]/20 flex items-center justify-center gap-2 whitespace-nowrap active:scale-95"
-                  >
-                     <Phone className="w-4 h-4" />
-                     {t("apartment_details.contact_landlord")}
-                  </button>
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <button 
+                       onClick={() => setIsLandlordModalOpen(true)}
+                       className="px-8 py-3.5 bg-[#4c55a4] hover:bg-[#3d4484] text-white rounded-xl font-extrabold transition-all shadow-md shadow-[#4c55a4]/20 flex items-center justify-center gap-2 whitespace-nowrap active:scale-95"
+                    >
+                       <Phone className="w-4 h-4" />
+                       {t("apartment_details.contact_landlord")}
+                    </button>
+                    {(isSwapMode || isSwapAvailableForApt) && (
+                      <button 
+                        onClick={handleProposeSwapFromDetails}
+                        disabled={isSendingSwapRequest}
+                        className="px-8 py-3.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl font-extrabold transition-all shadow-md flex items-center justify-center gap-2 whitespace-nowrap active:scale-95 disabled:opacity-50"
+                      >
+                        <ArrowRightLeft className="w-4 h-4" />
+                        {isSendingSwapRequest ? "Sending..." : "Propose Swap"}
+                      </button>
+                    )}
+                  </div>
                 ) : isAcceptingRequests ? (
                   <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto mt-4 sm:mt-0">
                     <button 
-                       onClick={() => setIsUnavailableModalOpen(true)}
+                       onClick={() => setIsModalOpen(true)}
                        className="px-6 py-3.5 bg-[#4c55a4] hover:bg-[#3d4484] text-white rounded-xl font-extrabold transition-all shadow-md shadow-[#4c55a4]/20 flex items-center justify-center whitespace-nowrap active:scale-95"
                     >
                        I'm interested
@@ -711,7 +936,13 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
                       scrolling="no" 
                       marginHeight={0} 
                       marginWidth={0} 
-                      src="https://maps.google.com/maps?width=100%25&amp;height=100%25&amp;hl=en&amp;q=Rehavia,%20Jerusalem+(Rehavia,%20Jerusalem)&amp;t=&amp;z=15&amp;ie=UTF8&amp;iwloc=B&amp;output=embed"
+                      src={`https://maps.google.com/maps?width=100%25&height=100%25&hl=en&q=${
+                        apiApartment?.marker?.lat && apiApartment?.marker?.lng
+                          ? `${apiApartment.marker.lat},${apiApartment.marker.lng}`
+                          : (apiApartment?.lat && apiApartment?.lng)
+                            ? `${apiApartment.lat},${apiApartment.lng}`
+                            : encodeURIComponent(`${apiApartment?.street1 ? `${apiApartment.street1}, ` : ""}${apiApartment?.neighborhood || "Mamilla"}, ${apiApartment?.city || "Jerusalem"}`)
+                      }&t=&z=15&ie=UTF8&iwloc=B&output=embed`}
                       className="w-full h-full grayscale-[20%] contrast-[1.1] dark:invert-[90%] dark:hue-rotate-180"
                       title="Apartment Location"
                     />
@@ -788,7 +1019,7 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
             {/* Modal Body */}
             <div className="p-6">
               <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-6">
-                You are contacting <span className="font-bold text-zinc-900 dark:text-white">Beautiful Apartment in Jerusalem</span>. Fill out the details below.
+                You are contacting <span className="font-bold text-zinc-900 dark:text-white">{displayTitle}</span>. Fill out the details below.
               </p>
               
               <form onSubmit={handleContactSubmit} className="space-y-4">
@@ -832,7 +1063,7 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
                 {/* Original Price Display */}
                 <div className="bg-zinc-50 dark:bg-zinc-800/50 p-4 rounded-xl border border-zinc-200 dark:border-zinc-700 flex justify-between items-center">
                   <span className="text-sm font-bold text-zinc-700 dark:text-zinc-300">Apartment Original Price</span>
-                  <span className="font-extrabold text-[#4c55a4] dark:text-indigo-400 text-lg">₪{targetApartment?.price || 4500}</span>
+                  <span className="font-extrabold text-[#4c55a4] dark:text-indigo-400 text-lg">{displayPrice}</span>
                 </div>
 
                 {/* Offer Price Input Field */}
@@ -846,6 +1077,8 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
                       required
                       type="number" 
                       placeholder="Enter your offer"
+                      value={offerPriceInput}
+                      onChange={(e) => setOfferPriceInput(e.target.value)}
                       className="w-full pl-9 pr-4 py-3 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#4c55a4]/50 transition-all font-semibold" 
                     />
                   </div>
@@ -854,12 +1087,12 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
                 {/* Message Field */}
                 <div>
                   <label className="block text-sm font-bold text-zinc-700 dark:text-zinc-300 mb-1.5">{t("apartment_details.message")}</label>
-                  <textarea required rows={4} placeholder="Hello, I am interested in this property for..." className="w-full px-4 py-3 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#4c55a4]/50 transition-all resize-none"></textarea>
+                  <textarea required rows={4} placeholder="Hello, I am interested in this property for..." value={offerMessageInput} onChange={(e) => setOfferMessageInput(e.target.value)} className="w-full px-4 py-3 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#4c55a4]/50 transition-all resize-none"></textarea>
                 </div>
                 
                 <div className="pt-2">
-                  <button type="submit" className="w-full py-3.5 bg-[#4c55a4] hover:bg-[#3d4484] text-white rounded-xl font-bold transition-all shadow-md shadow-[#4c55a4]/20 flex items-center justify-center gap-2">
-                    {t("apartment_details.send_message")}
+                  <button type="submit" disabled={isSendingOffer} className="w-full py-3.5 bg-[#4c55a4] hover:bg-[#3d4484] text-white rounded-xl font-bold transition-all shadow-md shadow-[#4c55a4]/20 flex items-center justify-center gap-2 disabled:opacity-50">
+                    {isSendingOffer ? "Sending..." : t("apartment_details.send_message")}
                   </button>
                 </div>
               </form>
@@ -895,9 +1128,13 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
               <div className="space-y-3">
                 {availableDates.map(date => (
                   <div key={date.id} className="p-4 border border-zinc-200 dark:border-zinc-700 rounded-2xl hover:border-[#4c55a4] hover:bg-blue-50/50 dark:hover:bg-[#4c55a4]/10 transition-colors cursor-pointer group flex flex-col justify-between">
-                    <div className="flex justify-between items-start mb-2">
+                    <div className="flex justify-between items-start mb-1.5">
                       <span className="font-bold text-lg text-zinc-900 dark:text-white group-hover:text-[#4c55a4]">{date.date}</span>
-                      <span className="text-xs font-bold text-zinc-500 dark:text-zinc-400 bg-zinc-100 dark:bg-zinc-800 px-2.5 py-1 rounded-md">{date.day}</span>
+                      {date.specialPrice && (
+                        <span className="text-xs font-bold text-amber-700 dark:text-amber-300 bg-amber-100 dark:bg-amber-900/40 px-2.5 py-1 rounded-md">
+                          {date.specialPrice}
+                        </span>
+                      )}
                     </div>
                     <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400">{date.reason}</p>
                   </div>
@@ -938,11 +1175,11 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
               <div className="bg-zinc-50 dark:bg-zinc-800/50 p-3.5 rounded-2xl border border-zinc-200 dark:border-zinc-700 flex items-center justify-between">
                  <div>
                    <p className="text-xs text-zinc-500 font-bold uppercase tracking-wider mb-0.5">{t("apartment_details.apartment_code")}</p>
-                   <p className="text-lg font-black text-[#4c55a4] dark:text-[#8892eb] tracking-wide">APT-{id}</p>
+                   <p className="text-lg font-black text-[#4c55a4] dark:text-[#8892eb] tracking-wide">{displayCode}</p>
                  </div>
                  <button 
                    onClick={() => {
-                     navigator.clipboard.writeText(`APT-${id}`);
+                     navigator.clipboard.writeText(displayCode);
                      setIsCopied(true);
                      setTimeout(() => setIsCopied(false), 2000);
                    }} 
@@ -971,33 +1208,41 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
                  <p className="text-xs font-extrabold text-zinc-500 uppercase tracking-wider mb-2.5">DIRECT OWNER CONTACT</p>
                  
                  {/* Row 1: Call Owner & WhatsApp Owner in SAME ROW */}
-                 <div className="grid grid-cols-2 gap-3 mb-3">
-                    <a 
-                      href={getTelLink("972541234567")}
-                      onClick={() => setHasContactedOwner(true)}
-                      className="w-full py-3 bg-[#4c55a4] hover:bg-[#3d4484] text-white rounded-xl font-extrabold transition-all shadow-md shadow-[#4c55a4]/20 flex items-center justify-center gap-2 text-xs sm:text-sm active:scale-[0.98]"
-                    >
-                      <Phone className="w-4 h-4" /> Call Owner
-                    </a>
-                    <a 
-                      href={getWhatsAppLink("972541234567")}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      onClick={() => setHasContactedOwner(true)}
-                      className="w-full py-3 bg-[#25D366] hover:bg-[#20bd5a] text-white rounded-xl font-extrabold transition-all shadow-md shadow-[#25D366]/20 flex items-center justify-center gap-2 text-xs sm:text-sm active:scale-[0.98]"
-                    >
-                      <MessageCircle className="w-4 h-4" /> WhatsApp Owner
-                    </a>
-                 </div>
+                 {(isPhoneEnabled || isWhatsAppEnabled) && (
+                   <div className={`grid ${isPhoneEnabled && isWhatsAppEnabled ? 'grid-cols-2' : 'grid-cols-1'} gap-3 mb-3`}>
+                      {isPhoneEnabled && (
+                        <a 
+                          href={getTelLink(ownerPhone)}
+                          onClick={() => setHasContactedOwner(true)}
+                          className="w-full py-3 bg-[#4c55a4] hover:bg-[#3d4484] text-white rounded-xl font-extrabold transition-all shadow-md shadow-[#4c55a4]/20 flex items-center justify-center gap-2 text-xs sm:text-sm active:scale-[0.98]"
+                        >
+                          <Phone className="w-4 h-4" /> Call Owner
+                        </a>
+                      )}
+                      {isWhatsAppEnabled && (
+                        <a 
+                          href={getWhatsAppLink(ownerWhatsApp)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={() => setHasContactedOwner(true)}
+                          className="w-full py-3 bg-[#25D366] hover:bg-[#20bd5a] text-white rounded-xl font-extrabold transition-all shadow-md shadow-[#25D366]/20 flex items-center justify-center gap-2 text-xs sm:text-sm active:scale-[0.98]"
+                        >
+                          <MessageCircle className="w-4 h-4" /> WhatsApp Owner
+                        </a>
+                      )}
+                   </div>
+                 )}
 
                  {/* Row 2: Contact Owner by Email in Next Row */}
-                 <a 
-                   href={`mailto:owner@shabbosrent.com?subject=Inquiry%20regarding%20Apartment%20APT-${id}`}
-                   onClick={() => setHasContactedOwner(true)}
-                   className="w-full py-3 bg-white dark:bg-zinc-900 hover:bg-[#4c55a4]/5 dark:hover:bg-indigo-500/10 text-[#4c55a4] dark:text-indigo-300 border-2 border-[#4c55a4] dark:border-indigo-500 rounded-xl font-extrabold transition-all shadow-sm flex items-center justify-center gap-2 text-sm active:scale-[0.98]"
-                 >
-                   <Mail className="w-4 h-4 text-[#4c55a4] dark:text-indigo-300" /> Contact Owner by Email
-                 </a>
+                 {isEmailEnabled && (
+                   <a 
+                     href={`mailto:${apiApartment?.user?.email || 'owner@shabbosrent.com'}?subject=Inquiry%20regarding%20Apartment%20${displayCode}`}
+                     onClick={() => setHasContactedOwner(true)}
+                     className="w-full py-3 bg-white dark:bg-zinc-900 hover:bg-[#4c55a4]/5 dark:hover:bg-indigo-500/10 text-[#4c55a4] dark:text-indigo-300 border-2 border-[#4c55a4] dark:border-indigo-500 rounded-xl font-extrabold transition-all shadow-sm flex items-center justify-center gap-2 text-sm active:scale-[0.98]"
+                   >
+                     <Mail className="w-4 h-4 text-[#4c55a4] dark:text-indigo-300" /> Contact Owner by Email
+                   </a>
+                 )}
               </div>
 
               {/* B1 — Renter Confirmation Section */}
@@ -1039,8 +1284,8 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
               Which Shabbos date did you agree on with the landlord?
             </p>
 
-            <div className="space-y-3 mb-6">
-              {mockAvailableDates.map(d => (
+            <div className="space-y-3 mb-6 max-h-60 overflow-y-auto">
+              {availableDates.map(d => (
                 <div
                   key={d.id}
                   onClick={() => setSelectedAgreedWeek(d.date)}
@@ -1129,14 +1374,14 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
                 <MapPin className="w-3.5 h-3.5 text-[#4c55a4]" /> Full Apartment Address
               </p>
               <p className="text-sm font-bold text-zinc-900 dark:text-white">
-                Ramban St 14, Rehavia, Jerusalem, Israel
+                {displayStreet}, {displayNeighborhood}, {displayCity}
               </p>
             </div>
 
             {/* Waze Link Button */}
             <div className="space-y-2.5">
               <a
-                href="https://waze.com/ul?q=Ramban+St+14+Rehavia+Jerusalem&navigate=yes"
+                href={`https://waze.com/ul?q=${encodeURIComponent(`${displayStreet} ${displayNeighborhood} ${displayCity}`)}&navigate=yes`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-full py-3.5 bg-[#33ccff] hover:bg-[#28b8e6] text-zinc-950 font-extrabold rounded-xl shadow-md shadow-[#33ccff]/20 flex items-center justify-center gap-2 text-sm transition-all active:scale-[0.98]"
@@ -1297,14 +1542,14 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
 
                   <div className="space-y-3">
                      <a 
-                       href={getTelLink("972541234567")}
+                       href={getTelLink(ownerPhone)}
                        onClick={() => setHasContactedOwner(true)}
                        className="w-full py-3 bg-[#4c55a4] hover:bg-[#3d4484] text-white rounded-xl font-extrabold transition-all shadow-md shadow-[#4c55a4]/20 flex items-center justify-center gap-2 text-xs sm:text-sm active:scale-[0.98]"
                      >
                        <Phone className="w-4 h-4" /> Call Owner
                      </a>
                      <a 
-                       href={getWhatsAppLink("972541234567")}
+                       href={getWhatsAppLink(ownerWhatsApp)}
                        target="_blank"
                        rel="noopener noreferrer"
                        onClick={() => setHasContactedOwner(true)}
@@ -1313,7 +1558,7 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
                        <MessageCircle className="w-4 h-4" /> WhatsApp Owner
                      </a>
                      <a 
-                       href={`mailto:owner@shabbosrent.com?subject=Swap%20Inquiry%20(SWP-8472)%20for%20Apartment%20APT-${id}`}
+                       href={`mailto:${apiApartment?.user?.email || "owner@shabbosrent.com"}?subject=Swap%20Inquiry%20(SWP-8472)%20for%20Apartment%20${displayCode}`}
                        className="w-full py-4 bg-white dark:bg-zinc-900 hover:bg-[#4c55a4]/5 dark:hover:bg-indigo-500/10 text-[#4c55a4] dark:text-indigo-300 border-2 border-[#4c55a4] dark:border-indigo-500 rounded-xl font-bold transition-all shadow-sm flex items-center justify-center gap-2 text-lg"
                      >
                        <Mail className="w-5 h-5 text-[#4c55a4] dark:text-indigo-300" /> Contact by Email
@@ -1456,7 +1701,7 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
               <div>
                 <label className="block text-sm font-bold text-zinc-700 dark:text-zinc-300 mb-2">Regular Price</label>
                 <div className="w-full px-5 py-4 rounded-2xl border-2 border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 text-zinc-600 dark:text-zinc-400 font-bold shadow-sm">
-                  ₪{targetApartment?.price || "690"} <span className="text-zinc-400 dark:text-zinc-500 font-medium">/ weekend</span>
+                  {displayPrice} <span className="text-zinc-400 dark:text-zinc-500 font-medium">/ weekend</span>
                 </div>
               </div>
 
@@ -1534,6 +1779,31 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
       )}
 
 
+      {/* Swap Success Modal */}
+      {isSwapSuccessModalOpen && (
+        <div className="fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-zinc-900 rounded-3xl p-8 max-w-sm w-full border border-zinc-200 dark:border-zinc-800 shadow-2xl flex flex-col items-center text-center animate-in fade-in zoom-in-95 duration-200">
+            <div className="w-16 h-16 bg-amber-100 dark:bg-amber-900/30 rounded-full flex items-center justify-center mb-6 text-amber-600 dark:text-amber-400 shadow-inner">
+              <CheckCircle2 className="w-8 h-8" />
+            </div>
+            
+            <h3 className="text-2xl font-extrabold text-zinc-900 dark:text-white mb-3">
+              Swap Request Submitted
+            </h3>
+            
+            <p className="text-zinc-600 dark:text-zinc-400 mb-8 leading-relaxed">
+              Your exchange proposal has been sent! You will be notified when the host reviews your request.
+            </p>
+            
+            <button
+              onClick={() => setIsSwapSuccessModalOpen(false)}
+              className="w-full py-3.5 bg-[#4c55a4] hover:bg-[#3d4484] text-white font-extrabold rounded-xl text-sm transition-all shadow-lg shadow-[#4c55a4]/20 active:scale-95"
+            >
+              Continue
+            </button>
+          </div>
+        </div>
+      )}
 
     </div>
   );

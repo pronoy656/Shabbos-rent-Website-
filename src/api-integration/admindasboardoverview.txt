@@ -1,0 +1,219 @@
+
+
+method : GET
+{{baseUrl}}/admin/dashboard/stats
+
+response:
+{
+    "success": true,
+    "message": "Admin dashboard stats retrieved successfully",
+    "data": {
+        "totalApartments": 0,
+        "activeApartments": 0,
+        "pendingApartments": 0,
+        "blockedApartments": 0,
+        "completedRentals": 0,
+        "completedSwaps": 0,
+        "unpaidFees": {
+            "totalUnpaidAmount": 0,
+            "totalUnpaidCount": 0,
+            "listingFees": {
+                "count": 0,
+                "amount": 0
+            },
+            "reportRentedFees": {
+                "count": 0,
+                "amount": 0
+            },
+            "swapFees": {
+                "count": 0,
+                "amount": 0
+            }
+        }
+    }
+}
+
+
+method: get
+{{baseUrl}}/admin/dashboard/monthly-revenue?year=2026&month=9 
+
+in params : year , month
+
+response:
+{
+    "success": true,
+    "message": "Monthly revenue breakdown retrieved successfully",
+    "data": {
+        "year": 2026,
+        "month": 9,
+        "monthName": "September",
+        "totalMonthlyRevenue": 0,
+        "totalTransactions": 0,
+        "weeks": [
+            {
+                "week": "Week 1",
+                "weekNumber": 1,
+                "startDate": "2026-09-01",
+                "endDate": "2026-09-07",
+                "totalRevenue": 0,
+                "listingRevenue": 0,
+                "reportRentedRevenue": 0,
+                "swapRevenue": 0,
+                "transactionCount": 0
+            },
+            {
+                "week": "Week 2",
+                "weekNumber": 2,
+                "startDate": "2026-09-08",
+                "endDate": "2026-09-14",
+                "totalRevenue": 0,
+                "listingRevenue": 0,
+                "reportRentedRevenue": 0,
+                "swapRevenue": 0,
+                "transactionCount": 0
+            },
+            {
+                "week": "Week 3",
+                "weekNumber": 3,
+                "startDate": "2026-09-15",
+                "endDate": "2026-09-21",
+                "totalRevenue": 0,
+                "listingRevenue": 0,
+                "reportRentedRevenue": 0,
+                "swapRevenue": 0,
+                "transactionCount": 0
+            },
+            {
+                "week": "Week 4",
+                "weekNumber": 4,
+                "startDate": "2026-09-22",
+                "endDate": "2026-09-28",
+                "totalRevenue": 0,
+                "listingRevenue": 0,
+                "reportRentedRevenue": 0,
+                "swapRevenue": 0,
+                "transactionCount": 0
+            },
+            {
+                "week": "Week 5",
+                "weekNumber": 5,
+                "startDate": "2026-09-29",
+                "endDate": "2026-09-30",
+                "totalRevenue": 0,
+                "listingRevenue": 0,
+                "reportRentedRevenue": 0,
+                "swapRevenue": 0,
+                "transactionCount": 0
+            }
+        ]
+    }
+}
+
+
+
+method : get
+{{baseUrl}}/admin/dashboard/city-search-demand
+
+response:
+{
+    "success": true,
+    "message": "City search demand data retrieved successfully",
+    "data": [
+        {
+            "city": "Tel Aviv",
+            "searchVolume": 1, (so in graph just search volume is enough)
+            "apartmentCount": 0,
+            "interestedCount": 0,
+            "totalDemandScore": 2
+        }
+    ]
+}
+
+
+method: get
+{{baseUrl}}/admin/dashboard/recent-activity?limit=20
+
+
+response:
+{
+    "success": true,
+    "message": "Recent activities retrieved successfully",
+    "data": [
+        {
+            "id": "cdd55523-9011-4191-a4e0-4d78d36be585",
+            "type": "NEW_USER",
+            "title": "New User Registered",
+            "description": "User @anar5 signed up",
+            "status": "ACTIVE",
+            "user": {
+                "id": "cdd55523-9011-4191-a4e0-4d78d36be585",
+                "username": "anar5",
+                "email": "Anar2@example.com",
+                "phone": "054123745674",
+                "profileImage": null,
+                "createdAt": "2026-09-07T00:12:45.372Z"
+            },
+            "timestamp": "2026-09-07T00:12:45.372Z",
+            "metadata": {
+                "userId": "cdd55523-9011-4191-a4e0-4d78d36be585"
+            }
+        },
+        {
+            "id": "e5387db6-2549-42da-9bca-c2646a7e10b1",
+            "type": "NEW_USER",
+            "title": "New User Registered",
+            "description": "User @anar signed up",
+            "status": "ACTIVE",
+            "user": {
+                "id": "e5387db6-2549-42da-9bca-c2646a7e10b1",
+                "username": "anar",
+                "email": "Anar@example.com",
+                "phone": "05412374567",
+                "profileImage": null,
+                "createdAt": "2026-09-07T00:03:24.884Z"
+            },
+            "timestamp": "2026-09-07T00:03:24.884Z",
+            "metadata": {
+                "userId": "e5387db6-2549-42da-9bca-c2646a7e10b1"
+            }
+        },
+        {
+            "id": "53be8097-9666-444d-b520-a7e4f462c36e",
+            "type": "NEW_USER",
+            "title": "New User Registered",
+            "description": "User @moshe_cohen signed up",
+            "status": "ACTIVE",
+            "user": {
+                "id": "53be8097-9666-444d-b520-a7e4f462c36e",
+                "username": "moshe_cohen",
+                "email": "moshe32@example.com",
+                "phone": "0541234567",
+                "profileImage": null,
+                "createdAt": "2026-09-06T23:53:46.074Z"
+            },
+            "timestamp": "2026-09-06T23:53:46.074Z",
+            "metadata": {
+                "userId": "53be8097-9666-444d-b520-a7e4f462c36e"
+            }
+        },
+        {
+            "id": "983456b4-cd48-452b-b008-181effaeac9b",
+            "type": "NEW_USER",
+            "title": "New User Registered",
+            "description": "User @Admin signed up",
+            "status": "ACTIVE",
+            "user": {
+                "id": "983456b4-cd48-452b-b008-181effaeac9b",
+                "username": "Admin",
+                "email": "admin@gmail.com",
+                "phone": "01457385594",
+                "profileImage": null,
+                "createdAt": "2026-09-06T06:14:41.208Z"
+            },
+            "timestamp": "2026-09-06T06:14:41.208Z",
+            "metadata": {
+                "userId": "983456b4-cd48-452b-b008-181effaeac9b"
+            }
+        }
+    ]
+}

@@ -1,0 +1,1354 @@
+Auth: Bearer token via your existing axios interceptor.
+State: React Query (TanStack Query) for data fetching + mutation.
+Two audiences: This guide covers both owner-facing self-service routes and admin-facing reminder routes.
+
+1. Routes at a Glance
+Part A — Owner-Facing (role: USER)
+#
+Method
+Path
+Purpose
+1
+GET
+/api/v1/owners/me/notification-pref
+Fetch own notification preferences
+2
+PATCH
+/api/v1/owners/me/notification-pref
+Save / update own notification preferences
+
+Part B — Admin-Facing (role: SUPER_ADMIN)
+#
+Method
+Path
+Purpose
+3
+GET
+/api/v1/owners
+List all owners with their channel pref (supports filters + pagination)
+4
+GET
+/api/v1/owners/:id
+Get single owner detail with channel pref
+5
+POST
+/api/v1/owners/:id/availability-reminder
+Send availability reminder via owner's channel
+6
+POST
+/api/v1/owners/:id/payment-due-reminder
+Send payment due reminder via owner's channel
+
+IMPORTANT
+The admin always reads ownerNotificationPreference.channel (returned in routes 3 & 4) before deciding how to send a reminder. The channel can be "EMAIL", "PHONE", or "BOTH". The admin can also override the channel in the reminder request body.
+
+2. Route 1 — GET /api/v1/owners/me/notification-pref
+Purpose
+Retrieves the current logged-in owner's notification preference record. If no preference has been saved yet, the backend returns a safe default object.
+Request
+http
+GET /api/v1/owners/me/notification-pref
+Authorization: Bearer <token>
+Part
+Value
+Method
+GET
+URL
+{BASE_URL}/api/v1/owners/me/notification-pref
+Body
+None
+Headers
+Authorization: Bearer <token>
+
+Response — 200 OK
+json
+{
+ "success": true,
+ "statusCode": 200,
+ "message": "Owner notification preference retrieved successfully",
+ "data": {
+   "id": "clx12abc...",
+   "userId": "clx00xyz...",
+   "channel": "BOTH",
+   "notificationEmail": "owner@shabbosrent.com",
+   "notificationPhone": "+9720501234567",
+   "preferredDay": "THURSDAY",
+   "preferredTime": "18:00",
+   "createdAt": "2026-09-01T10:00:00.000Z",
+   "updatedAt": "2026-09-09T14:30:00.000Z"
+ }
+}
+Default response when no preference exists yet
+json
+{
+ "success": true,
+ "statusCode": 200,
+ "message": "Owner notification preference retrieved successfully",
+ "data": {
+   "userId": "clx00xyz...",
+   "channel": "EMAIL",
+   "notificationEmail": "owner@example.com",
+   "notificationPhone": null,
+   "preferredDay": null,
+   "preferredTime": null
+ }
+}
+Field Reference
+Field
+Type
+Description
+channel
+"EMAIL" | "PHONE" | "BOTH"
+Delivery method
+notificationEmail
+string | null
+Overrides user's account email for reminders
+notificationPhone
+string | null
+Overrides user's account phone for reminders
+preferredDay
+"SUNDAY" | "MONDAY" | "TUESDAY" | "WEDNESDAY" | "THURSDAY" | "FRIDAY" | "SATURDAY" | null
+Preferred reminder day — display-only in UI
+preferredTime
+string | null
+"HH:mm" 24-hour format e.g. "18:00" — display-only in UI
+
+
+3. Route 2 — PATCH /api/v1/owners/me/notification-pref
+Purpose
+Upserts (creates or updates) the owner's notification preference. Every field is optional — send only what changed.
+Request
+http
+PATCH /api/v1/owners/me/notification-pref
+Authorization: Bearer <token>
+Content-Type: application/json
+Request Body Schema
+ts
+{
+ channel?: "EMAIL" | "PHONE" | "BOTH";
+ notificationEmail?: string | null;  // valid email or null to clear
+ notificationPhone?: string | null;  // any string or null to clear
+ preferredDay?: "SUNDAY" | "MONDAY" | "TUESDAY" | "WEDNESDAY" | "THURSDAY" | "FRIDAY" | "SATURDAY" | null;
+ preferredTime?: string | null;      // must match HH:mm regex e.g. "18:00"
+}
+NOTE
+All fields are optional. The backend uses a Zod schema with .optional() / .nullable() on all fields. Sending only { channel: "PHONE" } is valid.
+Example Body — Save All Settings
+json
+{
+ "channel": "BOTH",
+ "notificationEmail": "owner@shabbosrent.com",
+ "notificationPhone": "+9720501234567",
+ "preferredDay": "THURSDAY",
+ "preferredTime": "18:00"
+}
+Example Body — Update delivery method only
+json
+{
+ "channel": "EMAIL"
+}
+Example Body — Clear phone number
+json
+{
+ "notificationPhone": null
+}
+Validation Rules
+Field
+Rule
+notificationEmail
+Must be valid email format if provided
+preferredTime
+Must match HH:mm (24-hour) — e.g. "06:00", "18:00", "23:59"
+channel
+Must be exactly "EMAIL", "PHONE", or "BOTH"
+
+Response — 200 OK
+json
+{
+ "success": true,
+ "statusCode": 200,
+ "message": "Owner notification preference updated successfully",
+ "data": {
+   "id": "clx12abc...",
+   "userId": "clx00xyz...",
+   "channel": "BOTH",
+   "notificationEmail": "owner@shabbosrent.com",
+   "notificationPhone": "+9720501234567",
+   "preferredDay": "THURSDAY",
+   "preferredTime": "18:00",
+   "createdAt": "2026-09-01T10:00:00.000Z",
+   "updatedAt": "2026-09-10T08:00:00.000Z"
+ }
+}
+Error Responses
+json
+// 422 Unprocessable Entity — validation failure
+{
+ "success": false,
+ "statusCode": 422,
+ "message": "Validation Error",
+ "errorMessages": [
+   { "path": "notificationEmail", "message": "Invalid email format" },
+   { "path": "preferredTime", "message": "Invalid time format (HH:mm)" }
+ ]
+}
+// 401 Unauthorized — missing or expired token
+{
+ "success": false,
+ "statusCode": 401,
+ "message": "You are not authorized!"
+}
+// 404 Not Found
+{
+ "success": false,
+ "statusCode": 404,
+ "message": "User not found"
+}
+
+4. TypeScript Types
+Add this to your types file (e.g. types/owner.ts):
+ts
+// types/owner.ts
+export type NotificationChannel = "EMAIL" | "PHONE" | "BOTH";
+export type DayOfWeek =
+ | "SUNDAY"
+ | "MONDAY"
+ | "TUESDAY"
+ | "WEDNESDAY"
+ | "THURSDAY"
+ | "FRIDAY"
+ | "SATURDAY";
+export interface OwnerNotificationPref {
+ id?: string;
+ userId: string;
+ channel: NotificationChannel;
+ notificationEmail: string | null;
+ notificationPhone: string | null;
+ preferredDay: DayOfWeek | null;
+ preferredTime: string | null; // "HH:mm"
+ createdAt?: string;
+ updatedAt?: string;
+}
+export interface UpdateNotificationPrefPayload {
+ channel?: NotificationChannel;
+ notificationEmail?: string | null;
+ notificationPhone?: string | null;
+ preferredDay?: DayOfWeek | null;
+ preferredTime?: string | null;
+}
+
+5. Axios Service
+Paste this into your owner service file (e.g. services/ownerService.ts). It uses your existing axios instance — replace axiosInstance with your actual import:
+ts
+// services/ownerService.ts
+import axiosInstance from "@/lib/axiosInstance"; // your existing axios instance
+import type {
+ OwnerNotificationPref,
+ UpdateNotificationPrefPayload,
+} from "@/types/owner";
+const BASE = "/owners";
+/** GET /owners/me/notification-pref */
+export const getMyNotificationPref = async (): Promise<OwnerNotificationPref> => {
+ const res = await axiosInstance.get(`${BASE}/me/notification-pref`);
+ return res.data.data;
+};
+/** PATCH /owners/me/notification-pref */
+export const updateMyNotificationPref = async (
+ payload: UpdateNotificationPrefPayload
+): Promise<OwnerNotificationPref> => {
+ const res = await axiosInstance.patch(`${BASE}/me/notification-pref`, payload);
+ return res.data.data;
+};
+
+6. React Query Hooks
+Add these hooks (e.g. hooks/useOwnerNotificationPref.ts):
+ts
+// hooks/useOwnerNotificationPref.ts
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+ getMyNotificationPref,
+ updateMyNotificationPref,
+} from "@/services/ownerService";
+import type { UpdateNotificationPrefPayload } from "@/types/owner";
+/** Query key — used for cache invalidation */
+export const NOTIFICATION_PREF_KEY = ["owner", "notification-pref"] as const;
+/** Fetches current owner's notification preferences */
+export const useMyNotificationPref = () =>
+ useQuery({
+   queryKey: NOTIFICATION_PREF_KEY,
+   queryFn: getMyNotificationPref,
+   staleTime: 1000 * 60 * 5, // cache for 5 minutes
+ });
+/** Saves / updates notification preferences */
+export const useUpdateNotificationPref = () => {
+ const queryClient = useQueryClient();
+ return useMutation({
+   mutationFn: (payload: UpdateNotificationPrefPayload) =>
+     updateMyNotificationPref(payload),
+   onSuccess: () => {
+     // Invalidate the GET cache so the UI re-fetches fresh data
+     queryClient.invalidateQueries({ queryKey: NOTIFICATION_PREF_KEY });
+   },
+ });
+};
+
+7. Wiring Into the Notification Pref UI Component
+This is a minimal wiring example — plug it into your existing component without changing the UI structure:
+tsx
+// Example: NotificationPrefForm.tsx (wiring only — don't change your existing UI)
+import { useMyNotificationPref, useUpdateNotificationPref } from "@/hooks/useOwnerNotificationPref";
+import type { UpdateNotificationPrefPayload, DayOfWeek, NotificationChannel } from "@/types/owner";
+export function NotificationPrefForm() {
+ const { data: pref, isLoading } = useMyNotificationPref();
+ const { mutate: savePref, isPending, isSuccess, isError } = useUpdateNotificationPref();
+ // --- Map your existing form state to the payload on save ---
+ const handleSave = () => {
+   // Build payload from your existing form state
+   const payload: UpdateNotificationPrefPayload = {
+     channel: yourFormState.deliveryMethod as NotificationChannel, // "EMAIL" | "PHONE" | "BOTH"
+     notificationEmail: yourFormState.reminderEmail || null,
+     notificationPhone: yourFormState.reminderPhone || null,
+     // preferredDay and preferredTime are DISPLAY-ONLY in your UI.
+     // Still save them so the backend stores what's shown in the UI.
+     preferredDay: yourFormState.selectedDay as DayOfWeek | null,
+     preferredTime: yourFormState.selectedTime || null, // ensure "HH:mm" format
+   };
+   savePref(payload);
+ };
+ // --- Populate your form fields on mount ---
+ // When `pref` loads, set your form state from it:
+ // e.g. setDeliveryMethod(pref?.channel ?? "EMAIL")
+ //      setReminderEmail(pref?.notificationEmail ?? "")
+ //      setReminderPhone(pref?.notificationPhone ?? "")
+ //      setSelectedDay(pref?.preferredDay ?? null)   -- display only
+ //      setSelectedTime(pref?.preferredTime ?? null) -- display only
+ if (isLoading) return <p>Loading preferences…</p>;
+ return (
+   <div>
+     {/* YOUR EXISTING UI — unchanged */}
+     {/* Just wire in: */}
+     {/*   - pref.channel → initial delivery method selection */}
+     {/*   - pref.notificationEmail → Reminder Email Address input */}
+     {/*   - pref.notificationPhone → Reminder Phone Number input */}
+     {/*   - pref.preferredDay → SELECT REMINDER DAY (display-only, no save action) */}
+     {/*   - pref.preferredTime → SELECT TIME (display-only, no save action) */}
+     {/* "Reminders Paused" toggle — display-only, no API call */}
+     {/* "Save Reminder Settings" button → calls handleSave() */}
+     <button onClick={handleSave} disabled={isPending}>
+       {isPending ? "Saving…" : "Save Reminder Settings"}
+     </button>
+     {isSuccess && <p>Settings saved!</p>}
+     {isError && <p>Failed to save. Please try again.</p>}
+   </div>
+ );
+}
+IMPORTANT
+Display-only fields — The reminder day, time, and "Reminders Paused" toggle shown in the screenshot are visible to owners but have no active scheduling function. They are still persisted via the PATCH call (so the owner sees their last selection) but the backend does not use preferredDay / preferredTime to actually schedule automated reminders at this time. Do not attach any scheduling logic to them on the frontend.
+
+8. "Test Reminder Now" Button
+The "Test Reminder Now" button in the screenshot is not connected to any owner-facing API route. It requires a SUPER_ADMIN call (POST /owners/:id/availability-reminder) — see Part B below.
+For the owner UI, keep the button visible but disable it:
+tsx
+<button disabled title="Test reminders are triggered by your administrator">
+ Test Reminder Now
+</button>
+
+9. Time Format Mapping
+The backend expects preferredTime in "HH:mm" (24-hour) format. Map like this:
+ts
+// utils/timeMap.ts
+export const TIME_OPTIONS: { label: string; value: string }[] = [
+ { label: "06:00 AM (Morning)", value: "06:00" },
+ { label: "09:00 AM (Morning)", value: "09:00" },
+ { label: "12:00 PM (Noon)", value: "12:00" },
+ { label: "03:00 PM (Afternoon)", value: "15:00" },
+ { label: "06:00 PM (Evening)", value: "18:00" },
+ { label: "09:00 PM (Night)", value: "21:00" },
+];
+export const timeValueToLabel = (value: string | null): string =>
+ TIME_OPTIONS.find((t) => t.value === value)?.label ?? value ?? "";
+
+10. Owner-Facing Flow Summary
+Owner opens Notification Pref page
+       │
+       ▼
+useMyNotificationPref() → GET /api/v1/owners/me/notification-pref
+       │
+       ▼
+Populate form:
+ • Delivery method chips  ← channel
+ • Reminder Phone Number  ← notificationPhone
+ • Reminder Email         ← notificationEmail
+ • Reminder Day           ← preferredDay  (display-only)
+ • Time dropdown          ← preferredTime (display-only)
+ • Reminders Paused tog.  ← display-only, no API
+       │
+Owner clicks "Save Reminder Settings"
+       │
+       ▼
+useUpdateNotificationPref() → PATCH /api/v1/owners/me/notification-pref
+ { channel, notificationEmail, notificationPhone, preferredDay, preferredTime }
+       │
+       ▼
+onSuccess → invalidate cache → form reflects saved state
+
+Part B — Admin Panel Integration
+Auth role required: SUPER_ADMIN
+Key principle: Admin reads the owner's ownerNotificationPreference.channel first, then renders the correct send action and passes the matching channel in the reminder body.
+
+B1. Route 3 — GET /api/v1/owners (List All Owners)
+Purpose
+Fetches all owners with full profile, apartment, financial summary, and their notification channel preference. Use this to build the admin owners table where each row shows the owner's active channel.
+Request
+http
+GET /api/v1/owners?page=1&limit=10&searchTerm=&channel=BOTH
+Authorization: Bearer <admin-token>
+Query Param
+Type
+Description
+searchTerm
+string
+Searches username, email, phone, apartment title/city
+hasDue
+"true" | "false"
+Filter owners with/without overdue payments
+status
+string
+Filter by user account status
+channel
+"EMAIL" | "PHONE" | "BOTH"
+Filter by notification channel
+notificationPreference
+same as channel
+Alias for channel
+page
+number
+Page number (default: 1)
+limit
+number
+Page size (default: 10)
+sortBy
+string
+Field to sort by
+sortOrder
+"asc" | "desc"
+Sort direction
+
+Response — 200 OK (abbreviated)
+json
+{
+ "success": true,
+ "statusCode": 200,
+ "message": "Owners retrieved successfully",
+ "meta": { "page": 1, "limit": 10, "total": 42 },
+ "data": [
+   {
+     "id": "clx00xyz...",
+     "username": "Moshe Cohen",
+     "email": "moshe@example.com",
+     "phone": "+9720501234567",
+     "status": "ACTIVE",
+     "notificationPreference": "BOTH",
+     "ownerNotificationPreference": {
+       "id": "clx12abc...",
+       "channel": "BOTH",
+       "notificationEmail": "owner@shabbosrent.com",
+       "notificationPhone": "+9720501234567",
+       "preferredDay": "THURSDAY",
+       "preferredTime": "18:00"
+     },
+     "financials": {
+       "totalDue": 78,
+       "hasOverduePayment": true
+     }
+   }
+ ]
+}
+NOTE
+notificationPreference (top-level) is a convenience shorthand = ownerNotificationPreference.channel. Use ownerNotificationPreference.channel for the full object.
+
+B2. Route 4 — GET /api/v1/owners/:id (Single Owner)
+Purpose
+Fetches a single owner's full details including ownerNotificationPreference. Use this on the owner detail/modal page to confirm the channel before sending a reminder.
+Request
+http
+GET /api/v1/owners/clx00xyz...
+Authorization: Bearer <admin-token>
+Response — 200 OK (key fields)
+json
+{
+ "success": true,
+ "statusCode": 200,
+ "message": "Owner details retrieved successfully",
+ "data": {
+   "id": "clx00xyz...",
+   "username": "Moshe Cohen",
+   "email": "moshe@example.com",
+   "ownerNotificationPreference": {
+     "channel": "PHONE",
+     "notificationEmail": null,
+     "notificationPhone": "+9720501234567",
+     "preferredDay": "FRIDAY",
+     "preferredTime": "09:00"
+   },
+   "financials": {
+     "totalDue": 128,
+     "hasOverduePayment": true,
+     "reportRented": {
+       "unpaidCount": 2,
+       "unpaidAmount": 100
+     }
+   }
+ }
+}
+
+B3. Route 5 — POST /api/v1/owners/:id/availability-reminder
+Purpose
+Sends an availability reminder to the owner. Channel used = owner's saved preference by default, or override via channel in the body.
+channel: "EMAIL" → sends HTML email
+channel: "PHONE" → initiates Twilio voice call to owner's phone
+channel: "BOTH" → email + phone call
+Also always dispatches an in-app notification
+Request
+http
+POST /api/v1/owners/clx00xyz.../availability-reminder
+Authorization: Bearer <admin-token>
+Content-Type: application/json
+Request Body Schema
+ts
+{
+ emailSubject?: string;   // defaults to "Please Update Availability Status for..."
+ emailBody?: string;      // raw HTML — overrides the default template
+ channel?: "EMAIL" | "PHONE" | "BOTH"; // override owner's saved channel
+}
+NOTE
+All fields are optional. If omitted, backend uses the owner's saved ownerNotificationPreference.channel. If the owner has no saved preference, defaults to "EMAIL".
+Example — Use Owner's Own Preference
+json
+{}
+Example — Force Email Only
+json
+{
+ "channel": "EMAIL"
+}
+Example — Custom Email Content
+json
+{
+ "channel": "EMAIL",
+ "emailSubject": "Reminder: Update Your Shabbat Availability",
+ "emailBody": "<p>Dear Moshe, please update your calendar.</p>"
+}
+Response — 200 OK
+json
+{
+ "success": true,
+ "statusCode": 200,
+ "message": "Availability reminder processed for Moshe Cohen",
+ "data": {
+   "success": true,
+   "message": "Availability reminder processed for Moshe Cohen",
+   "channelUsed": "BOTH",
+   "notificationPreference": "BOTH",
+   "emailSent": true,
+   "callInitiated": true,
+   "callSid": "CA1234abc...",
+   "notices": null
+ }
+}
+Response Fields
+Field
+Type
+Description
+channelUsed
+string
+The channel actually used for this send
+emailSent
+boolean
+Whether email was dispatched successfully
+callInitiated
+boolean
+Whether Twilio voice call was initiated
+callSid
+string | null
+Twilio Call SID for tracking
+notices
+string[] | undefined
+Non-fatal warnings (e.g. "Owner has no phone on file")
+
+
+B4. Route 6 — POST /api/v1/owners/:id/payment-due-reminder
+Purpose
+Sends a payment due reminder. Backend auto-calculates the outstanding amount (listing fee + unpaid reports × 50 ILS) unless overridden.
+Request
+http
+POST /api/v1/owners/clx00xyz.../payment-due-reminder
+Authorization: Bearer <admin-token>
+Content-Type: application/json
+Request Body Schema
+ts
+{
+ emailSubject?: string;
+ emailBody?: string;      // raw HTML override
+ amount?: number;         // override calculated due amount (ILS)
+ channel?: "EMAIL" | "PHONE" | "BOTH";
+}
+Example — Send with Auto-Calculated Amount
+json
+{}
+Example — Override Amount + Force Both Channels
+json
+{
+ "amount": 150,
+ "channel": "BOTH"
+}
+Response — 200 OK
+json
+{
+ "success": true,
+ "statusCode": 200,
+ "message": "Payment due reminder of 128 ILS processed for Moshe Cohen",
+ "data": {
+   "success": true,
+   "message": "Payment due reminder of 128 ILS processed for Moshe Cohen",
+   "dueAmount": 128,
+   "channelUsed": "EMAIL",
+   "emailSent": true,
+   "callInitiated": false,
+   "callSid": null,
+   "notices": null
+ }
+}
+
+B5. Admin TypeScript Types
+Append to your types/owner.ts:
+ts
+// --- Admin types ---
+export interface SendReminderPayload {
+ emailSubject?: string;
+ emailBody?: string;
+ channel?: NotificationChannel; // override owner's saved channel
+}
+export interface SendPaymentReminderPayload extends SendReminderPayload {
+ amount?: number; // override auto-calculated due amount
+}
+export interface SendReminderResponse {
+ success: boolean;
+ message: string;
+ channelUsed: NotificationChannel;
+ notificationPreference: NotificationChannel;
+ emailSent: boolean;
+ callInitiated: boolean;
+ callSid: string | null;
+ notices?: string[];
+ dueAmount?: number; // only in payment reminder
+}
+export interface OwnerListItem {
+ id: string;
+ username: string;
+ email: string;
+ phone: string | null;
+ profileImage: string | null;
+ status: string;
+ isVerified: boolean;
+ notificationPreference: NotificationChannel;
+ ownerNotificationPreference: OwnerNotificationPref | null;
+ financials: {
+   totalEarnings: number;
+   totalDue: number;
+   hasOverduePayment: boolean;
+ };
+ apartment: Record<string, unknown> | null;
+}
+export interface PaginatedOwners {
+ meta: { page: number; limit: number; total: number };
+ data: OwnerListItem[];
+}
+
+B6. Admin Axios Service
+Add to services/ownerService.ts:
+ts
+import type {
+ OwnerListItem,
+ PaginatedOwners,
+ SendReminderPayload,
+ SendPaymentReminderPayload,
+ SendReminderResponse,
+} from "@/types/owner";
+export interface OwnerFilters {
+ searchTerm?: string;
+ hasDue?: "true" | "false";
+ status?: string;
+ channel?: string;
+ page?: number;
+ limit?: number;
+ sortBy?: string;
+ sortOrder?: "asc" | "desc";
+}
+/** GET /owners — admin only */
+export const getAllOwners = async (filters?: OwnerFilters): Promise<PaginatedOwners> => {
+ const res = await axiosInstance.get("/owners", { params: filters });
+ return { meta: res.data.meta, data: res.data.data };
+};
+/** GET /owners/:id — admin only */
+export const getOwnerById = async (id: string): Promise<OwnerListItem> => {
+ const res = await axiosInstance.get(`/owners/${id}`);
+ return res.data.data;
+};
+/** POST /owners/:id/availability-reminder — admin only */
+export const sendAvailabilityReminder = async (
+ ownerId: string,
+ payload: SendReminderPayload = {}
+): Promise<SendReminderResponse> => {
+ const res = await axiosInstance.post(`/owners/${ownerId}/availability-reminder`, payload);
+ return res.data.data;
+};
+/** POST /owners/:id/payment-due-reminder — admin only */
+export const sendPaymentDueReminder = async (
+ ownerId: string,
+ payload: SendPaymentReminderPayload = {}
+): Promise<SendReminderResponse> => {
+ const res = await axiosInstance.post(`/owners/${ownerId}/payment-due-reminder`, payload);
+ return res.data.data;
+};
+
+B7. Admin React Query Hooks
+Add to hooks/useAdminOwners.ts:
+ts
+// hooks/useAdminOwners.ts
+import { useQuery, useMutation } from "@tanstack/react-query";
+import {
+ getAllOwners,
+ getOwnerById,
+ sendAvailabilityReminder,
+ sendPaymentDueReminder,
+} from "@/services/ownerService";
+import type { OwnerFilters, SendReminderPayload, SendPaymentReminderPayload } from "@/services/ownerService";
+export const OWNERS_LIST_KEY = ["admin", "owners"] as const;
+export const ownerDetailKey = (id: string) => ["admin", "owner", id] as const;
+/** List all owners with channel pref visible */
+export const useAllOwners = (filters?: OwnerFilters) =>
+ useQuery({
+   queryKey: [...OWNERS_LIST_KEY, filters],
+   queryFn: () => getAllOwners(filters),
+ });
+/** Single owner detail (shows channel + financials) */
+export const useOwnerDetail = (id: string) =>
+ useQuery({
+   queryKey: ownerDetailKey(id),
+   queryFn: () => getOwnerById(id),
+   enabled: Boolean(id),
+ });
+/** Send availability reminder */
+export const useSendAvailabilityReminder = (ownerId: string) =>
+ useMutation({
+   mutationFn: (payload?: SendReminderPayload) =>
+     sendAvailabilityReminder(ownerId, payload),
+ });
+/** Send payment due reminder */
+export const useSendPaymentDueReminder = (ownerId: string) =>
+ useMutation({
+   mutationFn: (payload?: SendPaymentReminderPayload) =>
+     sendPaymentDueReminder(ownerId, payload),
+ });
+
+B8. Channel-Aware Send UI Pattern
+The admin panel should:
+Read owner.ownerNotificationPreference.channel from the GET response
+Show the owner's channel badge (Email / Phone / Both)
+Enable the relevant send button(s) based on that channel
+Let admin optionally override by passing channel in the body
+tsx
+// Minimal wiring — drop into your existing admin owner detail component
+import { useOwnerDetail, useSendAvailabilityReminder, useSendPaymentDueReminder } from "@/hooks/useAdminOwners";
+export function AdminOwnerActions({ ownerId }: { ownerId: string }) {
+ const { data: owner } = useOwnerDetail(ownerId);
+ const channel = owner?.ownerNotificationPreference?.channel ?? "EMAIL";
+ const { mutate: sendAvail, isPending: sendingAvail } = useSendAvailabilityReminder(ownerId);
+ const { mutate: sendPayment, isPending: sendingPayment } = useSendPaymentDueReminder(ownerId);
+ const handleAvailReminder = () => {
+   // No channel override — use owner's own preference
+   sendAvail({});
+ };
+ const handlePaymentReminder = () => {
+   sendPayment({}); // backend auto-calculates due amount
+ };
+ const handleOverrideEmailOnly = () => {
+   sendAvail({ channel: "EMAIL" }); // force email regardless of saved pref
+ };
+ return (
+   <div>
+     {/* Show owner's active channel — drives what buttons are active */}
+     <span>Notification Channel: <strong>{channel}</strong></span>
+     {/*  EMAIL  → show email icon active          */}
+     {/*  PHONE  → show phone icon active          */}
+     {/*  BOTH   → both icons active               */}
+     {/* Availability reminder */}
+     <button onClick={handleAvailReminder} disabled={sendingAvail}>
+       {sendingAvail ? "Sending…" : "Send Availability Reminder"}
+     </button>
+     {/* Payment due reminder — only meaningful if owner has overdue payments */}
+     {owner?.financials?.hasOverduePayment && (
+       <button onClick={handlePaymentReminder} disabled={sendingPayment}>
+         {sendingPayment ? "Sending…" : `Send Payment Reminder (${owner.financials.totalDue} ILS due)`}
+       </button>
+     )}
+   </div>
+ );
+}
+IMPORTANT
+If ownerNotificationPreference is null (owner never saved prefs), the backend defaults to "EMAIL" and uses the owner's account email. Display "EMAIL (default)" in the admin UI in this case.
+
+B9. Admin Flow Summary
+Admin opens Owner List
+       │
+       ▼
+useAllOwners() → GET /api/v1/owners
+ Each row shows: username, email, channel badge, financials.totalDue
+       │
+Admin clicks on an owner row
+       │
+       ▼
+useOwnerDetail(id) → GET /api/v1/owners/:id
+ Shows: ownerNotificationPreference.channel
+        notificationEmail / notificationPhone
+        financials.hasOverduePayment / totalDue
+       │
+       ├─ channel = EMAIL or BOTH → "Send Email Reminder" button enabled
+       ├─ channel = PHONE or BOTH → "Send Phone Reminder" button enabled
+       └─ hasOverduePayment = true → "Send Payment Reminder" button enabled
+       │
+Admin clicks send
+       │
+       ▼
+useSendAvailabilityReminder(id).mutate({})   → POST /owners/:id/availability-reminder
+ OR
+useSendPaymentDueReminder(id).mutate({})     → POST /owners/:id/payment-due-reminder
+       │
+       ▼
+Response: { emailSent, callInitiated, callSid, channelUsed, notices }
+Show success toast with channelUsed + any notices
+
+
+
+
+
+
+
+
+
+
+
+Master Frontend Integration Guide
+Apartments, Availabilities, Swap Preferences & Swaps API
+This guide provides the complete frontend specification for all 4 modules:
+Apartment Module (/api/v1/apartments)
+Apartment Availability Module (/api/v1/apartment-availability)
+Swap Preference Module (/api/v1/swap-preferences)
+Swap Module (/api/v1/swaps)
+
+1. Global Concepts & Configuration
+Base URL: http://localhost:5000/api/v1 (or your environment base URL)
+Authentication: Most endpoints require Authorization: Bearer <accessToken>.
+Walking Distance Calculation (walkingDistanceToNeighborhood):
+Dynamic US & Israel Locations: Owners can select any coordinates for their apartment and neighborhood anywhere in the United States (e.g. Brooklyn, Monsey, Lakewood, Miami Beach, Chicago, Los Angeles) or Israel.
+Priority Order for Calculation:
+neighborhoodWalkingMinutes: If directly provided by the frontend (from Google Distance Matrix or owner input), it is used directly.
+neighborhoodLat & neighborhoodLng: If the owner/frontend provides coordinates for the neighborhood center (e.g. from Google Places Autocomplete), walking time is calculated using Haversine formula (at 4.8 km/h).
+Predefined Centroids: If neither is provided, falls back to the expanded built-in dictionary covering major Jewish communities in Israel and the US.
+Targeted Destination Search (walkingDistanceToDestination):
+When destLat, destLng, and walkingMinutes are supplied together, the API switches into Destination Mode.
+In Destination Mode, standard text filters (city, neighborhood) are bypassed so users can search across neighborhood boundaries around any landmark.
+Landmark Coordinates Reference (Jerusalem)
+Destination Landmark
+destLat
+destLng
+Suggested walkingMinutes
+Kotel / Western Wall
+31.7767
+35.2345
+10 – 20 min
+Mahane Yehuda Market
+31.7857
+35.2128
+5 – 15 min
+Great Synagogue (King George St)
+31.7763
+35.2163
+10 – 15 min
+Central Bus Station
+31.7891
+35.2032
+10 – 20 min
+Mamilla Mall
+31.7778
+35.2238
+5 – 15 min
+
+
+2. Module 1: Apartment Management & Search (/api/v1/apartments)
+Route Summary
+Method
+Endpoint
+Auth
+Description
+POST
+/api/v1/apartments
+Required
+Create a new apartment listing (multipart/form-data)
+GET
+/api/v1/apartments
+Public
+Search and filter all apartments (standard & destination modes)
+GET
+/api/v1/apartments/my-apartment
+Required
+Get current logged-in owner's apartment listing
+GET
+/api/v1/apartments/:id
+Public
+Get single apartment details by ID or Property ID
+PATCH
+/api/v1/apartments/:id
+Required
+Update apartment listing details (multipart/form-data)
+DELETE
+/api/v1/apartments/:id
+Required
+Delete user's apartment listing
+GET
+/api/v1/apartments/admin-details/:id
+Super Admin
+View complete admin diagnostics for an apartment
+PATCH
+/api/v1/apartments/status/:id
+Super Admin
+Update listing status (PENDING, CONFIRMED, REJECTED, SUSPENDED, BLOCKED)
+PATCH
+/api/v1/apartments/block/:id
+Super Admin
+Block or unblock an apartment
+POST
+/api/v1/apartments/remind-availability
+Super Admin
+Send availability reminder notification to owner
+
+
+2.1 GET /api/v1/apartments — Search & Filter All Apartments
+Query Parameters
+Parameter
+Type
+Required
+Description
+Example
+searchTerm
+string
+Optional
+Searches title, description, city, neighborhood, propertyId
+"luxurious"
+city
+string
+Optional
+Filter by city name
+"Jerusalem"
+neighborhood
+string
+Optional
+Filter by neighborhood name
+"Geula"
+propertyType
+string
+Optional
+APARTMENT, VILLA, PENTHOUSE, STUDIO
+"APARTMENT"
+minPrice
+number
+Optional
+Minimum price per Shabbat
+500
+maxPrice
+number
+Optional
+Maximum price per Shabbat
+2500
+bedrooms
+number
+Optional
+Minimum bedrooms count
+3
+bathrooms
+number
+Optional
+Minimum bathrooms count
+2
+maxGuest
+number
+Optional
+Minimum guest capacity
+6
+weekendId
+string
+Optional
+Check availability for specific weekend calendar ID
+"wknd-uuid-1"
+amenities
+string
+Optional
+Comma-separated amenities
+"WIFI,AC,BALCONY"
+destLat
+number
+Optional
+Latitude for destination search
+31.7767
+destLng
+number
+Optional
+Longitude for destination search
+35.2345
+walkingMinutes
+number
+Optional
+Max walking distance from destination
+15
+page
+number
+Optional
+Page number (default: 1)
+1
+limit
+number
+Optional
+Page size (default: 10)
+10
+sortBy
+string
+Optional
+Sort field (e.g. pricePerShabbat, createdAt)
+"createdAt"
+sortOrder
+string
+Optional
+"asc" or "desc" (default: "desc")
+"desc"
+
+Request Example (Destination Mode)
+GET /api/v1/apartments?destLat=31.7767&destLng=35.2345&walkingMinutes=15&page=1&limit=10
+Response Example (200 OK)
+json
+{
+ "statusCode": 200,
+ "success": true,
+ "message": "Apartments retrieved successfully",
+ "meta": {
+   "page": 1,
+   "limit": 10,
+   "total": 1
+ },
+ "data": [
+   {
+     "id": "apt-uuid-1",
+     "propertyId": "apart-001",
+     "title": "Charming Geula Shabbat Haven",
+     "description": "Quiet, kosher kitchen, spacious dining room",
+     "city": "Jerusalem",
+     "neighborhood": "Geula",
+     "street1": "Malchei Yisrael 15",
+     "street2": "Apt 4",
+     "lat": 31.7895,
+     "lng": 35.2154,
+     "propertyType": "APARTMENT",
+     "bedrooms": 3,
+     "bathrooms": 2,
+     "maxGuest": 6,
+     "pricePerShabbat": 950,
+     "amenities": ["WIFI", "AC", "KOSHER_KITCHEN", "BALCONY", "SHABBAT_ELEVATOR"],
+     "coverImage": "https://example.com/uploads/cover-apt1.jpg",
+     "images": [
+       "https://example.com/uploads/img-1.jpg",
+       "https://example.com/uploads/img-2.jpg"
+     ],
+     "phoneNumber": "+972501234567",
+     "whatsApp": "+972501234567",
+     "howToContact": "BOTH",
+     "status": "CONFIRMED",
+     "averageRating": 4.9,
+     "totalReviews": 12,
+     "walkingDistanceToNeighborhood": 3,
+     "walkingDistanceToDestination": 12,
+     "upcomingAvailability": {
+       "isAvailableNextWeekend": true,
+       "isAvailableSecondWeekend": false,
+       "availabilityMessage": "Available for next weekend (Parshat Noach)",
+       "canNotify": true,
+       "canMakeOffer": true
+     },
+     "user": {
+       "id": "user-uuid-1",
+       "username": "david_cohen",
+       "email": "david@example.com",
+       "phone": "+972501234567",
+       "profileImage": "https://example.com/avatar.jpg"
+     }
+   }
+ ]
+}
+
+2.2 POST /api/v1/apartments — Create Apartment Listing
+Headers:
+Authorization: Bearer <token>
+Content-Type: multipart/form-data
+Form Fields
+Field
+Type
+Required
+Description
+title
+string
+Yes
+Listing title
+description
+string
+No
+Full apartment description
+city
+string
+Yes
+City name (e.g. Jerusalem)
+neighborhood
+string
+Yes
+Neighborhood name (e.g. Geula)
+street1
+string
+No
+Street address
+street2
+string
+No
+Apartment / Floor
+lat
+number
+No
+Apartment latitude coordinate
+lng
+number
+No
+Apartment longitude coordinate
+neighborhoodLat
+number
+No
+Neighborhood center latitude (from Google Places)
+neighborhoodLng
+number
+No
+Neighborhood center longitude (from Google Places)
+neighborhoodWalkingMinutes
+number
+No
+Explicit walking time to neighborhood in minutes
+propertyType
+string
+Yes
+APARTMENT, VILLA, PENTHOUSE, STUDIO
+bedrooms
+number
+Yes
+Number of bedrooms (min: 1)
+bathrooms
+number
+Yes
+Number of bathrooms (min: 1)
+maxGuest
+number
+Yes
+Capacity (min: 0)
+pricePerShabbat
+number
+Yes
+Price per weekend in NIS/USD
+amenities
+string[]
+No
+Array of amenity strings
+phoneNumber
+string
+No
+Direct contact number
+whatsApp
+string
+No
+Direct WhatsApp number
+howToContact
+string
+No
+PHONE, WHATSAPP, BOTH (default: BOTH)
+coverImage
+file
+No
+Single image file upload
+images
+files[]
+No
+Multiple gallery image file uploads
+referralCode
+string
+No
+Ambassador referral code
+
+
+2.3 GET /api/v1/apartments/my-apartment — Get Owner's Apartment
+Headers: Authorization: Bearer <token>
+Response Example (200 OK)
+json
+{
+ "statusCode": 200,
+ "success": true,
+ "message": "User apartment retrieved successfully",
+ "data": {
+   "id": "apt-uuid-1",
+   "propertyId": "apart-001",
+   "title": "Charming Geula Shabbat Haven",
+   "city": "Jerusalem",
+   "neighborhood": "Geula",
+   "walkingDistanceToNeighborhood": 3,
+   "pricePerShabbat": 950,
+   "isListingActive": true,
+   "isListingExpired": false,
+   "daysRemaining": 28,
+   "availabilities": [
+     {
+       "id": "avail-uuid-1",
+       "weekendId": "wknd-uuid-1",
+       "isSpecial": false,
+       "specialPrice": null,
+       "weekend": {
+         "id": "wknd-uuid-1",
+         "title": "Parshat Noach",
+         "date": "2026-10-10T00:00:00.000Z"
+       }
+     }
+   ],
+   "swapPreference": {
+     "id": "swap-pref-1",
+     "isEnabled": true,
+     "weekend": "2026-10-10T00:00:00.000Z"
+   }
+ }
+}
+
+2.4 GET /api/v1/apartments/:id — Get Apartment Details
+URL Parameter: :id (Can be UUID or propertyId like apart-001)
+Response Example (200 OK)
+json
+{
+ "statusCode": 200,
+ "success": true,
+ "message": "Apartment retrieved successfully",
+ "data": {
+   "id": "apt-uuid-1",
+   "propertyId": "apart-001",
+   "title": "Charming Geula Shabbat Haven",
+   "city": "Jerusalem",
+   "neighborhood": "Geula",
+   "walkingDistanceToNeighborhood": 3,
+   "bedrooms": 3,
+   "bathrooms": 2,
+   "maxGuest": 6,
+   "pricePerShabbat": 950,
+   "averageRating": 4.9,
+   "totalReviews": 12,
+   "user": {
+     "id": "user-uuid-1",
+     "username": "david_cohen",
+     "phone": "+972501234567"
+   }
+ }
+}
+
+3. Module 2: Apartment Availability (/api/v1/apartment-availability)
+Route Summary
+Method
+Endpoint
+Auth
+Description
+GET
+/api/v1/apartment-availability/weekends
+Public
+Get all upcoming weekend calendar dates
+POST
+/api/v1/apartment-availability/add
+Required
+Mark apartment available for a specific weekend
+POST
+/api/v1/apartment-availability/remove
+Required
+Mark apartment unavailable for a specific weekend
+POST
+/api/v1/apartment-availability/bulk-set
+Required
+Set multiple active weekends at once
+POST
+/api/v1/apartment-availability/special-price
+Required
+Set holiday / special pricing for a weekend
+PATCH
+/api/v1/apartment-availability/:availabilityId/special
+Required
+Toggle special pricing for an availability record
+GET
+/api/v1/apartment-availability/:apartmentId
+Public
+Get all scheduled availability dates for an apartment
+
+
+3.1 GET /api/v1/apartment-availability/weekends — Get Upcoming Weekends
+Returns the system-wide weekend calendar records with Shabbos / Holiday parsha titles and dates.
+Response Example (200 OK)
+json
+{
+ "statusCode": 200,
+ "success": true,
+ "message": "Weekend calendars retrieved successfully",
+ "data": [
+   {
+     "id": "wknd-uuid-1",
+     "title": "Parshat Noach",
+     "date": "2026-10-10T00:00:00.000Z"
+   },
+   {
+     "id": "wknd-uuid-2",
+     "title": "Parshat Lech Lecha",
+     "date": "2026-10-17T00:00:00.000Z"
+   }
+ ]
+}
+
+3.2 POST /api/v1/apartment-availability/bulk-set — Bulk Set Availability
+Headers: Authorization: Bearer <token>
+Request Body
+json
+{
+ "apartmentId": "apt-uuid-1",
+ "weekendIds": ["wknd-uuid-1", "wknd-uuid-2", "wknd-uuid-3"]
+}
+Response Example (200 OK)
+json
+{
+ "statusCode": 200,
+ "success": true,
+ "message": "Apartment availabilities updated successfully",
+ "data": {
+   "count": 3
+ }
+}
+
+3.3 POST /api/v1/apartment-availability/special-price — Special Pricing
+Headers: Authorization: Bearer <token>
+Request Body
+json
+{
+ "apartmentId": "apt-uuid-1",
+ "weekendId": "wknd-uuid-1",
+ "isSpecial": true,
+ "specialPrice": 1450
+}

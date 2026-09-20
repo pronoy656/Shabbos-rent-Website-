@@ -1,9 +1,13 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { X, Globe, Heart, Building, User, LayoutDashboard, LogOut } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
 import { useFavorites } from "@/hooks/useFavorites";
+import { useMe } from "@/hooks/useAuth";
+import UserAvatar from "@/components/common/UserAvatar";
+import type { AuthUser } from "@/types/auth.types";
 
 interface MobileMenuDrawerProps {
   isOpen: boolean;
@@ -28,6 +32,22 @@ export default function MobileMenuDrawer({
 }: MobileMenuDrawerProps) {
   const { language, setLanguage, t } = useLanguage();
   const { savedCount } = useFavorites();
+  const { data: meUser } = useMe();
+  const [localUser, setLocalUser] = useState<AuthUser | null>(null);
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem("authUser");
+      if (stored) {
+        setLocalUser(JSON.parse(stored));
+      }
+    } catch {}
+  }, [isOpen, meUser]);
+
+  const currentUser = meUser || localUser;
+  const displayName = currentUser?.username || t("nav.user_account") || "My Account";
+  const displayEmail =
+    currentUser?.email || (userRole === "admin" ? "admin@shabbosrent.com" : "user@shabbosrent.com");
 
   if (!isOpen) return null;
 
@@ -141,18 +161,20 @@ export default function MobileMenuDrawer({
               </>
             ) : (
               <>
-                <div className="flex items-center gap-3 px-2 py-3 bg-zinc-50 dark:bg-zinc-900/50 rounded-xl mb-2">
-                  <div className="w-10 h-10 rounded-full bg-zinc-200 dark:bg-zinc-800 overflow-hidden shrink-0">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&q=80"
-                      alt="avatar"
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                  <div className="overflow-hidden">
-                    <p className="text-sm font-bold text-zinc-900 dark:text-white truncate">My Account</p>
-                    <p className="text-xs text-zinc-500 truncate">user@shabbosrent.com</p>
+                <div className="flex items-center gap-3 px-3 py-3 bg-zinc-50 dark:bg-zinc-900/70 border border-zinc-200/60 dark:border-zinc-800 rounded-2xl mb-2">
+                  <UserAvatar
+                    src={currentUser?.profileImage}
+                    name={displayName}
+                    email={displayEmail}
+                    size="md"
+                  />
+                  <div className="overflow-hidden flex-1">
+                    <p className="text-sm font-bold text-zinc-900 dark:text-white truncate">
+                      {displayName}
+                    </p>
+                    <p className="text-xs text-zinc-500 truncate">
+                      {displayEmail}
+                    </p>
                   </div>
                 </div>
 

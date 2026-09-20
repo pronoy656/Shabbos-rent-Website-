@@ -1,0 +1,73 @@
+
+method: POST
+{{baseUrl}}/news
+
+body : 
+{"title":"Ambassador Program Launched","content":"We are excited to announce...","summary":"New ambassador program.","image":"https://cdn.shabbosrent.com/news/img.jpg","author":"ShabbosRent Team","isPublished":true}
+
+
+response : 
+{
+    "success": true,
+    "message": "News article created successfully",
+    "data": {
+        "id": "f58a1c1c-eb1c-4245-9dfc-033988da4e18",
+        "title": "Ambassador Program Launched",
+        "content": "We are excited to announce...",
+        "summary": "New ambassador program.",
+        "image": "https://cdn.shabbosrent.com/news/img.jpg",
+        "author": "ShabbosRent Team",
+        "isPublished": true,
+        "views": 0,
+        "createdAt": "2026-09-07T04:00:12.157Z",
+        "updatedAt": "2026-09-07T04:00:12.157Z"
+    }
+}
+
+
+
+
+method: PAtch 
+{{baseUrl}}/news/{{newsId}}
+
+
+body: 
+{"title":"Updated Title","isPublished":false}
+
+
+
+method : Delete
+{{baseUrl}}/news/{{newsId}}
+
+
+
+method : Get (For public & admin)
+{{baseUrl}}/news 
+
+response : {
+    "success": true,
+    "message": "News articles retrieved successfully",
+    "data": [
+        {
+            "id": "f58a1c1c-eb1c-4245-9dfc-033988da4e18",
+            "title": "Ambassador Program Launched",
+            "content": "We are excited to announce...",
+            "summary": "New ambassador program.",
+            "image": "https://cdn.shabbosrent.com/news/img.jpg",
+            "author": "ShabbosRent Team",
+            "isPublished": true,
+            "views": 0,
+            "createdAt": "2026-09-07T04:00:12.157Z",
+            "updatedAt": "2026-09-07T04:00:12.157Z"
+        }
+    ]
+}
+
+
+method : Get (For public & admin)
+{{baseUrl}}/news/{{newsId}}
+
+
+
+
+post patch delete from admin  and get data admin and user 

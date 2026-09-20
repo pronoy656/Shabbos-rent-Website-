@@ -1,37 +1,89 @@
 // ─────────────────────────────────────────────
 // Auth Types
-// Shapes will be confirmed when real API docs are available
+// Based on api-integration/auth.txt specifications
 // ─────────────────────────────────────────────
 
-export interface LoginPayload {
-  email?: string;
-  phone?: string;
-  password: string;
-}
-
 export interface RegisterPayload {
-  name: string;
+  username: string;
   email?: string;
+  phone?: string;
   password: string;
-  confirmPassword?: string;
-  phone?: string;
+  confirmPassword: string;
+  referralCode?: string;
+  marketingPlatformId?: string;
 }
 
-export interface AuthResponse {
-  token: string;
-  user: User;
+export interface RegisterResponse {
+  success: boolean;
+  message: string;
+  data: AuthUser;
 }
 
-export interface User {
+export interface LoginPayload {
+  identifier: string; // Email or Phone number (e.g. admin@gmail.com, Anar2@example.com, 0501112233)
+  password: string;
+}
+
+export interface AuthUser {
   id: string;
-  name: string;
-  email?: string;
-  phone?: string;
-  role: "owner" | "renter" | "admin";
-  createdAt: string;
+  username: string;
+  role: "SUPER_ADMIN" | "ADMIN" | "USER" | "OWNER" | "RENTER" | string;
+  email: string;
+  phone?: string | null;
+  profileImage?: string | null;
+  status: "ACTIVE" | "INACTIVE" | string;
+  isDeleted?: boolean;
+  isVerified?: boolean;
+  otp?: string | null;
+  otpExpiry?: string | null;
+  marketingPlatformId?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
-export interface UserProfile extends User {
+export interface LoginResponse {
+  success: boolean;
+  message: string;
+  data: {
+    accessToken: string;
+    refreshToken: string;
+    user: AuthUser;
+  };
+}
+
+export interface ForgotPasswordPayload {
+  email: string;
+}
+
+export interface ForgotPasswordResponse {
+  success: boolean;
+  message: string;
+  data?: unknown;
+}
+
+export interface VerifyOtpPayload {
+  email: string;
+  otp: number;
+}
+
+export interface VerifyOtpResponse {
+  success: boolean;
+  message: string;
+  data?: unknown;
+}
+
+export interface ChangePasswordPayload {
+  oldPassword?: string;
+  newPassword: string;
+}
+
+export interface ChangePasswordResponse {
+  success: boolean;
+  message: string;
+  data?: unknown;
+}
+
+export interface UserProfile extends AuthUser {
   rentFrequency?: string;
 }
 

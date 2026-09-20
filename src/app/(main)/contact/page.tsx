@@ -1,23 +1,49 @@
 "use client";
 
 import { useState } from "react";
-import { MapPin, Phone, Mail, Send, MessageSquare } from "lucide-react";
+import { MapPin, Phone, Mail, Send } from "lucide-react";
 import MainNavbar from "@/components/layout/MainNavbar";
+import { useContactForm } from "@/hooks/useContact";
+import { toast } from "sonner";
 
 export default function ContactPage() {
-  const [formData, setFormData] = useState({ name: "", email: "", subject: "", message: "" });
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    subject: "",
+    message: "",
+  });
   const [isSuccess, setIsSuccess] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const contactMutation = useContactForm();
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitting(true);
-    // Simulate API
-    setTimeout(() => {
-      setIsSubmitting(false);
+    if (!formData.name.trim() || !formData.email.trim() || !formData.message.trim()) {
+      toast.error("Please fill in all required fields.");
+      return;
+    }
+
+    try {
+      const res = await contactMutation.mutateAsync({
+        name: formData.name.trim(),
+        email: formData.email.trim(),
+        phone: formData.phone.trim() || undefined,
+        subject: formData.subject.trim() || "General Inquiry",
+        message: formData.message.trim(),
+      });
+
+      toast.success(res?.message || "Your message has been sent successfully!");
       setIsSuccess(true);
-      setFormData({ name: "", email: "", subject: "", message: "" });
-    }, 1500);
+      setFormData({ name: "", email: "", phone: "", subject: "", message: "" });
+    } catch (err: unknown) {
+      const errorMsg =
+        err && typeof err === "object" && "response" in err
+          ? (err as { response?: { data?: { message?: string } } }).response?.data?.message
+          : "Failed to send message. Please try again.";
+      toast.error(errorMsg);
+    }
   };
 
   return (
@@ -63,10 +89,10 @@ export default function ContactPage() {
                     </div>
                     <div>
                       <h4 className="font-semibold text-lg text-indigo-50 mb-1">Phone Number</h4>
-                      <p className="text-indigo-200/80 leading-relaxed">
+                      <a href="tel:+972501234567" className="text-indigo-200/80 hover:text-white transition-colors leading-relaxed">
                         +972 50-123-4567<br />
                         Sun-Thu, 9am - 5pm IST
-                      </p>
+                      </a>
                     </div>
                   </div>
 
@@ -76,10 +102,10 @@ export default function ContactPage() {
                     </div>
                     <div>
                       <h4 className="font-semibold text-lg text-indigo-50 mb-1">Email Address</h4>
-                      <p className="text-indigo-200/80 leading-relaxed">
+                      <a href="mailto:support@shabbosrent.com" className="text-indigo-200/80 hover:text-white transition-colors leading-relaxed">
                         support@shabbosrent.com<br />
                         info@shabbosrent.com
-                      </p>
+                      </a>
                     </div>
                   </div>
                 </div>
@@ -94,91 +120,103 @@ export default function ContactPage() {
               </div>
 
               {isSuccess ? (
-              <div className="flex-1 flex flex-col items-center justify-center py-10 text-center animate-in fade-in duration-300">
-                <div className="w-20 h-20 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mb-6">
-                  <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center shadow-lg shadow-green-500/30">
-                    <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                    </svg>
+                <div className="flex-1 flex flex-col items-center justify-center py-10 text-center animate-in fade-in duration-300">
+                  <div className="w-20 h-20 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mb-6">
+                    <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center shadow-lg shadow-green-500/30">
+                      <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
                   </div>
+                  <h4 className="text-2xl font-bold text-zinc-900 dark:text-white mb-3">Message Sent!</h4>
+                  <p className="text-zinc-500 mb-8 max-w-sm mx-auto">
+                    Thank you for reaching out. We have received your message and will get back to you shortly.
+                  </p>
+                  <button
+                    onClick={() => setIsSuccess(false)}
+                    className="px-10 py-3 bg-[#4c55a4] hover:bg-[#3d4484] text-white rounded-xl font-bold transition-all shadow-md cursor-pointer"
+                  >
+                    Send Another Message
+                  </button>
                 </div>
-                <h4 className="text-2xl font-bold text-zinc-900 dark:text-white mb-3">Message Sent!</h4>
-                <p className="text-zinc-500 mb-8 max-w-sm mx-auto">
-                  Thank you for reaching out. We have received your message and will get back to you shortly.
-                </p>
-                <button
-                  onClick={() => setIsSuccess(false)}
-                  className="px-10 py-3 bg-[#4c55a4] hover:bg-[#3d4484] text-white rounded-xl font-bold transition-all shadow-md"
-                >
-                  OK
-                </button>
-              </div>
-            ) : (
-              <form onSubmit={handleSubmit} className="space-y-6 flex-1 flex flex-col justify-center">
-                <div className="grid md:grid-cols-2 gap-6">
+              ) : (
+                <form onSubmit={handleSubmit} className="space-y-6 flex-1 flex flex-col justify-center">
+                  <div className="grid md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-2">Full Name *</label>
+                      <input
+                        type="text"
+                        required
+                        value={formData.name}
+                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                        className="w-full px-4 py-3 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#4c55a4] transition-all"
+                        placeholder="John Doe"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-2">Email Address *</label>
+                      <input
+                        type="email"
+                        required
+                        value={formData.email}
+                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                        className="w-full px-4 py-3 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#4c55a4] transition-all"
+                        placeholder="john@example.com"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-2">Phone Number</label>
+                      <input
+                        type="tel"
+                        value={formData.phone}
+                        onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                        className="w-full px-4 py-3 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#4c55a4] transition-all"
+                        placeholder="052-123-4567"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-2">Subject *</label>
+                      <input
+                        type="text"
+                        required
+                        value={formData.subject}
+                        onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
+                        className="w-full px-4 py-3 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#4c55a4] transition-all"
+                        placeholder="How can we help you?"
+                      />
+                    </div>
+                  </div>
+
                   <div>
-                    <label className="block text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-2">Full Name</label>
-                    <input
-                      type="text"
+                    <label className="block text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-2">Message *</label>
+                    <textarea
                       required
-                      value={formData.name}
-                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                      className="w-full px-4 py-3 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#4c55a4] transition-all"
-                      placeholder="John Doe"
+                      rows={5}
+                      value={formData.message}
+                      onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+                      className="w-full px-4 py-3 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#4c55a4] transition-all resize-none"
+                      placeholder="Write your message here..."
                     />
                   </div>
-                  <div>
-                    <label className="block text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-2">Email Address</label>
-                    <input
-                      type="email"
-                      required
-                      value={formData.email}
-                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                      className="w-full px-4 py-3 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#4c55a4] transition-all"
-                      placeholder="john@example.com"
-                    />
-                  </div>
-                </div>
 
-                <div>
-                  <label className="block text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-2">Subject</label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.subject}
-                    onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
-                    className="w-full px-4 py-3 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#4c55a4] transition-all"
-                    placeholder="How can we help you?"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-2">Message</label>
-                  <textarea
-                    required
-                    rows={5}
-                    value={formData.message}
-                    onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                    className="w-full px-4 py-3 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#4c55a4] transition-all resize-none"
-                    placeholder="Write your message here..."
-                  />
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="w-full py-4 bg-[#4c55a4] hover:bg-[#3d4484] text-white rounded-xl font-bold text-lg transition-colors flex items-center justify-center gap-2 disabled:opacity-70"
-                >
-                  {isSubmitting ? (
-                    <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  ) : (
-                    <>
-                      Send Message <Send className="w-5 h-5" />
-                    </>
-                  )}
-                </button>
-              </form>
-            )}
+                  <button
+                    type="submit"
+                    disabled={contactMutation.isPending}
+                    className="w-full py-4 bg-[#4c55a4] hover:bg-[#3d4484] text-white rounded-xl font-bold text-lg transition-colors flex items-center justify-center gap-2 disabled:opacity-70 cursor-pointer shadow-md"
+                  >
+                    {contactMutation.isPending ? (
+                      <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    ) : (
+                      <>
+                        Send Message <Send className="w-5 h-5 ml-1" />
+                      </>
+                    )}
+                  </button>
+                </form>
+              )}
             </div>
           </div>
         </div>

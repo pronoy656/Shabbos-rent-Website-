@@ -111,10 +111,18 @@ export default function FavoritesDropdown({ isOpen, onToggle, onClose }: Favorit
                     <Link
                       href={`/apartments/${apt.id}`}
                       onClick={onClose}
-                      className="w-14 h-14 rounded-xl overflow-hidden shrink-0 relative bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700"
+                      className="w-14 h-14 rounded-xl overflow-hidden shrink-0 relative bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 flex items-center justify-center"
                     >
+                      <Heart className="w-5 h-5 text-red-500 absolute drop-shadow-sm opacity-50" />
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={apt.image} alt={apt.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                      <img 
+                        src={apt.image} 
+                        alt={apt.title} 
+                        className="w-full h-full object-cover relative z-10 group-hover:scale-105 transition-transform" 
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                        }}
+                      />
                     </Link>
 
                     {/* Details */}

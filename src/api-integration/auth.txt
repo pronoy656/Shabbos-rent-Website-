@@ -1,0 +1,96 @@
+// here will be the whole login api integtraion process. End point , response, body tc
+
+method: POST 
+{{baseUrl}}/auth/register
+
+body:
+{
+    "username": "anar",
+    "email": "Anar@example.com",
+    "phone": "05412374567",
+    "password": "Password123!",
+    "confirmPassword": "Password123!",
+    "referralCode": "AMB-XYZ123",
+    "marketingPlatformId": "{{marketingPlatformId}}"
+}
+
+response : 
+{
+    "success": true,
+    "message": "User registered successfully",
+    "data": {
+        "id": "e5387db6-2549-42da-9bca-c2646a7e10b1",
+        "username": "anar",
+        "email": "Anar@example.com",
+        "phone": "05412374567",
+        "profileImage": null,
+        "role": "USER",
+        "status": "ACTIVE",
+        "marketingPlatformId": "4111dcf4-a469-4d97-8ba0-d07b4f11027a",
+        "isVerified": false,
+        "createdAt": "2026-09-07T00:03:24.884Z",
+        "updatedAt": "2026-09-07T00:03:24.884Z"
+    }
+}
+
+
+method : POST 
+{{baseUrl}}/auth/login (This login endpoint will be used by admin, owner and renter)
+
+body : {
+    "identifier": "admin@gmail.com", (This one is for admin login email. so for this email in .env file create next_PUBLIC_ADMIN_EMAIL and password. )
+    "password": "12345678"
+}
+
+body: {
+  "identifier": "Anar2@example.com",
+  "password": "Password123!"
+}
+
+body: {
+  "identifier": "0501112233",
+  "password": "password123"
+} (Also user can login by phone number)
+
+response :
+{
+    "success": true,
+    "message": "User logged in successfully",
+    "data": {
+        "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6Ijk4MzQ1NmI0LWNkNDgtNDUyYi1iMDA4LTE4MWVmZmFlYWM5YiIsInVzZXJuYW1lIjoiQWRtaW4iLCJlbWFpbCI6ImFkbWluQGdtYWlsLmNvbSIsInJvbGUiOiJTVVBFUl9BRE1JTiIsImlhdCI6MTc4ODczOTU5MCwiZXhwIjoxNzg4ODI1OTkwfQ.Ft1cAuKQGhuAtcTxjFi2638VArRER-G7BhxvLWFYeNY",
+        "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6Ijk4MzQ1NmI0LWNkNDgtNDUyYi1iMDA4LTE4MWVmZmFlYWM5YiIsInVzZXJuYW1lIjoiQWRtaW4iLCJlbWFpbCI6ImFkbWluQGdtYWlsLmNvbSIsInJvbGUiOiJTVVBFUl9BRE1JTiIsImlhdCI6MTc4ODczOTU5MCwiZXhwIjoxNzkxMzMxNTkwfQ.RUCnMZ5plvTbksjPdGmT8iFCib4NIx1oBN4hdmJMkkg",
+        "user": {
+            "id": "983456b4-cd48-452b-b008-181effaeac9b",
+            "username": "Admin",
+            "role": "SUPER_ADMIN",
+            "email": "admin@gmail.com",
+            "phone": "01457385594",
+            "profileImage": null,
+            "status": "ACTIVE",
+            "isDeleted": false,
+            "isVerified": true,
+            "otp": null,
+            "otpExpiry": null,
+            "createdAt": "2026-09-06T06:14:41.208Z",
+            "updatedAt": "2026-09-06T06:14:41.208Z",
+            "marketingPlatformId": null
+        }
+    }
+}
+
+
+method : POST
+{{baseUrl}}/auth/forgot-password
+
+body: {"email":"moshe@example.com"}
+
+
+method : POST
+{{baseUrl}}/auth/verify-otp
+
+body: {"email":"moshe@example.com","otp":123456}
+
+method : POST
+{{baseUrl}}/auth/change-password
+
+body: {"oldPassword":"Password123!","newPassword":"NewPass456!"}

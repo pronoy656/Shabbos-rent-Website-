@@ -425,11 +425,12 @@
       "dashboard": "Dashboard",
       "apartments": "Apartments",
       "owners": "Owners",
+      "users": "Users",
       "renters": "Renters",
       "rentals": "Rentals",
       "swaps": "Swaps",
       "weekends": "Weekends",
-      "news": "News",
+      "news": "News & Announcements",
       "advertisements": "Advertisements",
       "alerts": "Alerts",
       "payments": "Payments"
