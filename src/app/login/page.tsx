@@ -74,12 +74,15 @@ function LoginFormContent() {
       const isAdmin = userRole === "SUPER_ADMIN" || userRole === "ADMIN";
 
       setTimeout(() => {
-        if (redirectUrl) {
-          router.replace(redirectUrl);
-        } else if (isAdmin) {
-          router.replace("/dashboard");
+        if (isAdmin) {
+          window.location.href = redirectUrl || "/dashboard";
         } else {
-          router.replace("/user-dashboard");
+          // If not admin but redirectUrl is an admin route, ignore the redirectUrl
+          if (redirectUrl && redirectUrl.startsWith("/dashboard")) {
+            window.location.href = "/user-dashboard";
+          } else {
+            window.location.href = redirectUrl || "/user-dashboard";
+          }
         }
       }, 400);
     } catch (err: unknown) {
@@ -111,7 +114,7 @@ function LoginFormContent() {
       });
       toast.success(res?.message || "Admin login successful!");
       setTimeout(() => {
-        router.replace("/dashboard");
+        window.location.href = "/dashboard";
       }, 400);
     } catch (err: unknown) {
       const errorMsg =

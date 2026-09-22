@@ -31,7 +31,7 @@ export default function AmbassadorLoginPage() {
     }
 
     // Success! Redirect to Dashboard
-    router.push('/ambassador/dashboard');
+    window.location.href = '/ambassador/dashboard';
   };
 
   return (

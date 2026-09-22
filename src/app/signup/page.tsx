@@ -160,10 +160,10 @@ function SignupFormContent() {
       localStorage.setItem("hasUserListing", "false");
 
       setTimeout(() => {
-        if (redirectUrl) {
-          router.push(redirectUrl);
+        if (redirectUrl && !redirectUrl.startsWith("/dashboard")) {
+          window.location.href = redirectUrl;
         } else {
-          router.push("/user-dashboard");
+          window.location.href = "/user-dashboard";
         }
       }, 600);
     } catch (err: unknown) {
