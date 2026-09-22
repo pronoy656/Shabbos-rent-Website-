@@ -14,6 +14,7 @@ import { useLanguage } from "@/context/LanguageContext";
 import { useSwapPreference, useSaveSwapPreference } from "@/hooks/useSwap";
 import { useWeekendCalendars } from "@/hooks/useWeekendCalendar";
 import { CustomSelect } from "@/components/ui/CustomSelect";
+import SearchAutocompleteInput from "@/components/common/SearchAutocompleteInput";
 
 const ApartmentMap = dynamic(() => import("@/components/search/ApartmentMap"), {
   ssr: false,
@@ -315,11 +316,11 @@ export default function SearchWidget({
             <Footprints className="w-3.5 h-3.5 text-[#4c55a4]" /> Target Destination / Shul Address
           </label>
           <div className="relative">
-            <input 
-              type="text" 
+            <SearchAutocompleteInput 
               placeholder="e.g. Kotel, Great Synagogue, Rehavia..." 
               value={destinationAddress}
-              onChange={(e) => setDestinationAddress(e.target.value)}
+              onChange={setDestinationAddress}
+              onClear={() => setDestinationAddress("")}
               className="w-full h-[48px] px-4 pr-9 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#4c55a4] transition-all text-zinc-900 dark:text-white placeholder-zinc-400 font-medium"
             />
             {destinationAddress && (

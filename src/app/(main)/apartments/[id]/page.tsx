@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { useState, use, Suspense, useMemo, useEffect } from "react";
+import { useState, use, Suspense, useMemo, useEffect, useRef, useCallback } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import MainNavbar from "@/components/layout/MainNavbar";
 import ApartmentCard from "@/components/search/ApartmentCard";
@@ -11,7 +11,7 @@ import {
   Coffee, Tv, Snowflake, Car, WashingMachine, Phone, MessageCircle, Copy, ChevronDown, Home, Footprints, Check, LockKeyhole, CheckCircle2, Navigation, Heart
 } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
-import { mockBaseApartments } from "@/data/mockData";
+
 import { getCoordinatesForAddress, calculateWalkingMinutes, calculateDistanceKm } from "@/utils/distanceUtils";
 import { useFavorites } from "@/hooks/useFavorites";
 import { getTelLink, getWhatsAppLink } from "@/utils/phoneUtils";
@@ -24,6 +24,7 @@ import { useMyApartment } from "@/hooks/useApartments";
 import { toast } from "sonner";
 import { getImageUrl } from "@/utils/imageUrl";
 import { ApartmentHistoryService } from "@/services/apartmentHistoryService";
+import { loadGoogleMaps } from "@/utils/googleMapsLoader";
 
 interface AvailableDateItem {
   id: string | number;
@@ -62,26 +63,10 @@ const SHABBATOT = [
   { id: "vayechi", name: "Vayechi", date: "25/12" }
 ];
 
-// Mock Data
-const galleryImages = [
-  "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=1200&q=80",
-  "https://images.unsplash.com/photo-1502672260266-1c1de2d96674?w=800&q=80",
-  "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800&q=80",
-  "https://images.unsplash.com/photo-1493809842364-78817add7ffb?w=800&q=80",
-  "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=800&q=80"
-];
-
 const mockAvailableDates = [
   { id: 1, date: "Oct 13 - 15", day: "Fri - Sun", reason: "Shabbos Parshat Bereishit" },
   { id: 2, date: "Oct 27 - 29", day: "Fri - Sun", reason: "Shabbos Parshat Lech Lecha" },
   { id: 3, date: "Nov 24 - 26", day: "Fri - Sun", reason: "Special Weekend" },
-];
-
-const similarApartments: ApartmentData[] = [
-  { id: "sim-1", title: "Luxury Penthouse near Beach", location: "Tel Aviv, Israel", image: "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&q=80", price: 4000, rating: 4.9, reviews: 120, beds: 3, baths: 2, guests: 6, isSwapAvailable: true, verified: true, isAvailable: true },
-  { id: "sim-2", title: "Historic Stone House in Old City", location: "Jerusalem, Israel", image: "https://images.unsplash.com/photo-1572120360610-d971b9d7767c?w=800&q=80", price: 4500, rating: 4.9, reviews: 150, beds: 4, baths: 3, guests: 10, isSwapAvailable: false, verified: true, isAvailable: false },
-  { id: "sim-3", title: "Elegant Residence with Panoramic View", location: "Jerusalem, Israel", image: "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=800&q=80", price: 5000, rating: 4.8, reviews: 110, beds: 5, baths: 4, guests: 12, isSwapAvailable: true, verified: true, isAvailable: true },
-  { id: "sim-4", title: "Artistic Villa with Mountain Views", location: "Tzfat, Israel", image: "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=800&q=80", price: 3000, rating: 4.9, reviews: 105, beds: 4, baths: 2, guests: 8, isSwapAvailable: true, verified: true, isAvailable: false },
 ];
 
 export default function ApartmentDetailsPage({ params }: { params: Promise<{ id: string }> }) {
@@ -107,10 +92,10 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
     });
   }
 
-  const currentGalleryImages = apiImages.length > 0 ? apiImages : galleryImages;
+  const currentGalleryImages = apiImages.length > 0 ? apiImages : ["https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=1200&q=80"];
 
   const [isAuthChecked, setIsAuthChecked] = useState(false);
-  const [activeImage, setActiveImage] = useState(galleryImages[0]);
+  const [activeImage, setActiveImage] = useState(currentGalleryImages[0]);
 
   useEffect(() => {
     if (apiImages.length > 0) {
@@ -139,6 +124,243 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
   const [isSwapModalOpen, setIsSwapModalOpen] = useState(false);
   const [swapModalState, setSwapModalState] = useState<"initial" | "contact">("initial");
   const [destInput, setDestInput] = useState("Great Synagogue, Jerusalem");
+  
+  // Map and Distance integration states
+  const [targetCoords, setTargetCoords] = useState<{lat: number, lng: number} | null>(null);
+  const [walkingMinsText, setWalkingMinsText] = useState("");
+  const [distanceKmText, setDistanceKmText] = useState("");
+  
+  const [targetSuggestions, setTargetSuggestions] = useState<any[]>([]);
+  const [isTargetDropdownOpen, setIsTargetDropdownOpen] = useState(false);
+  const [isTargetLoading, setIsTargetLoading] = useState(false);
+  const targetContainerRef = useRef<HTMLDivElement>(null);
+
+  const autocompleteServiceRef = useRef<any>(null);
+  const distanceMatrixServiceRef = useRef<any>(null);
+  const geocoderRef = useRef<any>(null);
+  const mapContainerRef = useRef<HTMLDivElement>(null);
+  const mapInstanceRef = useRef<any>(null);
+  const directionsServiceRef = useRef<any>(null);
+  const directionsRendererRef = useRef<any>(null);
+  const aptMarkerRef = useRef<any>(null);
+  const fallbackDestMarkerRef = useRef<any>(null);
+
+  useEffect(() => {
+    let mounted = true;
+    loadGoogleMaps().then((googleMaps) => {
+      if (!mounted) return;
+      if (googleMaps.places?.AutocompleteService) {
+        autocompleteServiceRef.current = new googleMaps.places.AutocompleteService();
+      }
+      if (googleMaps.DistanceMatrixService) {
+        distanceMatrixServiceRef.current = new googleMaps.DistanceMatrixService();
+      }
+      if (googleMaps.Geocoder) {
+        geocoderRef.current = new googleMaps.Geocoder();
+      }
+      if (googleMaps.DirectionsService && googleMaps.DirectionsRenderer) {
+        directionsServiceRef.current = new googleMaps.DirectionsService();
+        directionsRendererRef.current = new googleMaps.DirectionsRenderer({
+          suppressMarkers: false,
+          polylineOptions: { strokeColor: "#4c55a4", strokeWeight: 5 }
+        });
+      }
+      
+      // Initialize Map
+      if (mapContainerRef.current && !mapInstanceRef.current && apiApartment) {
+        const aptLat = apiApartment?.lat || apiApartment?.marker?.lat || 31.7745;
+        const aptLng = apiApartment?.lng || apiApartment?.marker?.lng || 35.2150;
+        
+        mapInstanceRef.current = new googleMaps.Map(mapContainerRef.current, {
+          center: { lat: aptLat, lng: aptLng },
+          zoom: 15,
+          mapTypeControl: false,
+          streetViewControl: false,
+          fullscreenControl: true,
+        });
+
+        directionsRendererRef.current.setMap(mapInstanceRef.current);
+
+        aptMarkerRef.current = new googleMaps.Marker({
+          position: { lat: aptLat, lng: aptLng },
+          map: mapInstanceRef.current,
+          title: apiApartment?.title || "Apartment Location",
+          icon: {
+            url: "data:image/svg+xml;charset=UTF-8," + encodeURIComponent(`
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 50" width="40" height="50">
+                <path d="M20 0C8.954 0 0 8.954 0 20c0 14.5 20 30 20 30s20-15.5 20-30C40 8.954 31.046 0 20 0z" fill="#ef4444" stroke="#ffffff" stroke-width="2.5"/>
+                <path d="M12 18v10h5v-6h6v6h5v-10l-8-7-8 7z" fill="#ffffff"/>
+              </svg>
+            `),
+            scaledSize: new googleMaps.Size(40, 50),
+            anchor: new googleMaps.Point(20, 50),
+          },
+          animation: googleMaps.Animation.DROP,
+          zIndex: 10
+        });
+
+        // Add a subtle bounce when clicked
+        aptMarkerRef.current.addListener('click', () => {
+          if (aptMarkerRef.current.getAnimation() !== null) {
+            aptMarkerRef.current.setAnimation(null);
+          } else {
+            aptMarkerRef.current.setAnimation(googleMaps.Animation.BOUNCE);
+            setTimeout(() => {
+              if (aptMarkerRef.current) aptMarkerRef.current.setAnimation(null);
+            }, 1400); // Stop bouncing after 2 bounces
+          }
+        });
+      }
+    }).catch(console.warn);
+    return () => { mounted = false; };
+  }, [apiApartment]);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (targetContainerRef.current && !targetContainerRef.current.contains(e.target as Node)) {
+        setIsTargetDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const calculateDistanceWithGoogle = useCallback((destLat: number, destLng: number) => {
+    const aptLat = apiApartment?.lat || apiApartment?.marker?.lat;
+    const aptLng = apiApartment?.lng || apiApartment?.marker?.lng;
+    
+    if (!aptLat || !aptLng) return;
+    
+    if (distanceMatrixServiceRef.current) {
+      distanceMatrixServiceRef.current.getDistanceMatrix({
+        origins: [{ lat: aptLat, lng: aptLng }],
+        destinations: [{ lat: destLat, lng: destLng }],
+        travelMode: "WALKING",
+      }, (response: any, status: string) => {
+        if (status === "OK" && response?.rows?.[0]?.elements?.[0]?.status === "OK") {
+          const element = response.rows[0].elements[0];
+          setWalkingMinsText(element.duration.text);
+          setDistanceKmText(element.distance.text);
+        } else {
+          // Fallback to Haversine if Google fails
+          const km = calculateDistanceKm(destLat, destLng, aptLat, aptLng);
+          const mins = Math.max(2, Math.round(km * 13.33));
+          setDistanceKmText(`${km} km`);
+          setWalkingMinsText(`${mins} mins`);
+        }
+      });
+    }
+
+    if (directionsServiceRef.current && directionsRendererRef.current) {
+      directionsServiceRef.current.route({
+        origin: { lat: aptLat, lng: aptLng },
+        destination: { lat: destLat, lng: destLng },
+        travelMode: "WALKING"
+      }, (response: any, status: string) => {
+        if (status === "OK") {
+          directionsRendererRef.current.setDirections(response);
+          if (aptMarkerRef.current) {
+            aptMarkerRef.current.setMap(null); // Hide default marker when route is drawn to avoid overlap
+          }
+          if (fallbackDestMarkerRef.current) {
+             fallbackDestMarkerRef.current.setMap(null);
+          }
+        } else {
+          // Fallback: Drop a destination pin if Directions API is not enabled
+          if (!fallbackDestMarkerRef.current && mapInstanceRef.current) {
+            fallbackDestMarkerRef.current = new (window as any).google.maps.Marker({
+               position: { lat: destLat, lng: destLng },
+               map: mapInstanceRef.current,
+               title: "Target Destination",
+               icon: {
+                 url: "data:image/svg+xml;charset=UTF-8," + encodeURIComponent(`
+                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 50" width="40" height="50">
+                     <path d="M20 0C8.954 0 0 8.954 0 20c0 14.5 20 30 20 30s20-15.5 20-30C40 8.954 31.046 0 20 0z" fill="#3b82f6" stroke="#ffffff" stroke-width="2.5"/>
+                     <circle cx="20" cy="18" r="8" fill="#ffffff"/>
+                   </svg>
+                 `),
+                 scaledSize: new (window as any).google.maps.Size(40, 50),
+                 anchor: new (window as any).google.maps.Point(20, 50),
+               },
+               animation: (window as any).google.maps.Animation.DROP,
+               zIndex: 20
+            });
+            
+            // Add click interaction for the blue pin too
+            fallbackDestMarkerRef.current.addListener('click', () => {
+              if (fallbackDestMarkerRef.current.getAnimation() !== null) {
+                fallbackDestMarkerRef.current.setAnimation(null);
+              } else {
+                fallbackDestMarkerRef.current.setAnimation((window as any).google.maps.Animation.BOUNCE);
+                setTimeout(() => {
+                  if (fallbackDestMarkerRef.current) fallbackDestMarkerRef.current.setAnimation(null);
+                }, 1400);
+              }
+            });
+
+            // Re-center map to fit both pins with padding
+            const bounds = new (window as any).google.maps.LatLngBounds();
+            bounds.extend({ lat: aptLat, lng: aptLng });
+            bounds.extend({ lat: destLat, lng: destLng });
+            mapInstanceRef.current.fitBounds(bounds, 50); // 50px padding
+          } else if (fallbackDestMarkerRef.current) {
+            fallbackDestMarkerRef.current.setPosition({ lat: destLat, lng: destLng });
+            fallbackDestMarkerRef.current.setMap(mapInstanceRef.current);
+            fallbackDestMarkerRef.current.setAnimation((window as any).google.maps.Animation.DROP);
+            
+            const bounds = new (window as any).google.maps.LatLngBounds();
+            bounds.extend({ lat: aptLat, lng: aptLng });
+            bounds.extend({ lat: destLat, lng: destLng });
+            mapInstanceRef.current.fitBounds(bounds, 50);
+          }
+        }
+      });
+    }
+  }, [apiApartment]);
+
+  const handleTargetSearch = (val: string) => {
+    setDestInput(val);
+    if (!val.trim()) {
+      setTargetSuggestions([]);
+      setIsTargetDropdownOpen(false);
+      return;
+    }
+    
+    setIsTargetLoading(true);
+    setIsTargetDropdownOpen(true);
+    
+    if (autocompleteServiceRef.current) {
+      autocompleteServiceRef.current.getPlacePredictions({
+        input: val + ", Israel",
+        componentRestrictions: { country: "il" }
+      }, (predictions: any[], status: string) => {
+        setIsTargetLoading(false);
+        if (status === "OK" && predictions) {
+          setTargetSuggestions(predictions.slice(0, 5));
+        } else {
+          setTargetSuggestions([]);
+        }
+      });
+    }
+  };
+
+  const handleSelectTargetPlace = (place: any) => {
+    const text = place.structured_formatting?.main_text || place.description;
+    setDestInput(text);
+    setIsTargetDropdownOpen(false);
+    
+    if (geocoderRef.current && place.place_id) {
+      geocoderRef.current.geocode({ placeId: place.place_id }, (results: any[], status: string) => {
+        if (status === "OK" && results?.[0]) {
+          const location = results[0].geometry.location;
+          const lat = location.lat();
+          const lng = location.lng();
+          setTargetCoords({ lat, lng });
+          calculateDistanceWithGoogle(lat, lng);
+        }
+      });
+    }
+  };
 
   const [isUnavailableModalOpen, setIsUnavailableModalOpen] = useState(false);
   const [isNotified, setIsNotified] = useState(false);
@@ -354,27 +576,12 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
 
   // Record current apartment into Recently Viewed localStorage history (logged in users only)
   useEffect(() => {
-    if (typeof window !== "undefined" && isAuthChecked) {
+    if (typeof window !== "undefined" && isAuthChecked && apiApartment && !isAptLoading) {
       const userRole = localStorage.getItem("userRole");
       if (!userRole) return;
 
       try {
-        const matchingBase = mockBaseApartments.find((a) => a.id === id);
-        const aptToRecord: ApartmentData = matchingBase || {
-          id: id,
-          title: "Beautiful Apartment in Jerusalem",
-          location: "Rehavia, Jerusalem",
-          image: "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&q=80",
-          price: 4500,
-          rating: 4.9,
-          reviews: 128,
-          beds: 3,
-          baths: 2,
-          guests: 6,
-          isSwapAvailable: true,
-          verified: true,
-          availabilityStatus: "available",
-        };
+        const aptToRecord: ApartmentData = apiApartment as unknown as ApartmentData;
 
         const existingStr = localStorage.getItem("recently_viewed_apartments");
         let existingList: ApartmentData[] = existingStr ? JSON.parse(existingStr) : [];
@@ -385,7 +592,7 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
         console.error("Failed to update recently viewed apartments:", err);
       }
     }
-  }, [id, isAuthChecked]);
+  }, [id, isAuthChecked, apiApartment, isAptLoading]);
 
   const { isSaved: checkIsSaved, toggleFavorite } = useFavorites();
   const isSaved = checkIsSaved(id);
@@ -428,8 +635,6 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
   const displayedAmenities = showAllAmenities ? amenitiesList : amenitiesList.slice(0, 6);
 
   // Dynamic Logic: Determine availability based on API data and metadata
-  const baseId = id ? id.split("-")[0] : "1";
-  const targetApartment = mockBaseApartments.find((a) => a.id === id || a.id === baseId) || similarApartments.find((a) => a.id === id);
 
   const isAvailableForNextWeekend =
     !apiApartment?.unavailable &&
@@ -455,10 +660,10 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
       }
       return true;
     }
-    return targetApartment ? targetApartment.isAvailable !== false : (id !== "2" && id !== "4" && id !== "6" && id !== "rent-demo-1" && id !== "rent-demo-3" && id !== "swap-demo-1" && id !== "swap-demo-3");
-  }, [apiApartment, targetApartment, id]);
+    return false;
+  }, [apiApartment, id]);
 
-  const isSwapAvailableForApt = apiApartment ? (apiApartment as any).isSwapAvailable !== false : (targetApartment?.isSwapAvailable ?? true);
+  const isSwapAvailableForApt = apiApartment ? (apiApartment as any).isSwapAvailable !== false : true;
 
   const isAcceptingRequests = useMemo(() => {
     if (apiApartment) {
@@ -477,8 +682,8 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
       }
       return true;
     }
-    return targetApartment ? targetApartment.acceptRequestsWhenUnavailable : (id === "2" || id === "rent-demo-1" || id === "swap-demo-1");
-  }, [apiApartment, targetApartment, id]);
+    return true;
+  }, [apiApartment, id]);
 
   // Derived available dates from API availabilities
   const availableDates = useMemo<AvailableDateItem[]>(() => {
@@ -517,16 +722,16 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
   }, [apiApartment?.availabilities, isApartmentAvailable]);
 
   // Display Fields (API with fallback)
-  const displayTitle = apiApartment?.title || targetApartment?.title || "Beautiful Apartment in Jerusalem";
-  const displayCity = apiApartment?.city || targetApartment?.city || "Jerusalem";
-  const displayNeighborhood = apiApartment?.neighborhood || targetApartment?.neighborhood || "Rehavia";
-  const displayStreet = apiApartment?.street1 || targetApartment?.street || "Ramban Street";
-  const displayPrice = apiApartment?.pricePerShabbat ? `₪${apiApartment.pricePerShabbat}` : (targetApartment?.price ? `₪${targetApartment.price}` : "₪4500");
-  const displayBeds = apiApartment?.bedrooms ?? (targetApartment?.beds ?? 4);
-  const displayBaths = apiApartment?.bathrooms ?? (targetApartment?.baths ?? 3);
-  const displayGuests = apiApartment?.maxGuest ?? (targetApartment?.guests ?? 8);
-  const displayCode = apiApartment?.propertyId || (id ? `APT-${id}` : "APT-001");
-  const displayDescription = apiApartment?.description || (targetApartment as any)?.description || "Experience the perfect Shabbos in this beautifully appointed apartment. Centrally located with easy access to shuls and kosher dining. The apartment features a fully equipped kosher kitchen with double sinks, a spacious dining area that comfortably seats your whole family, and comfortable beds with premium linens.";
+  const displayTitle = apiApartment?.title || "Apartment Details";
+  const displayCity = apiApartment?.city || "";
+  const displayNeighborhood = apiApartment?.neighborhood || "";
+  const displayStreet = apiApartment?.street1 || "";
+  const displayPrice = apiApartment?.pricePerShabbat ? `₪${apiApartment.pricePerShabbat}` : "";
+  const displayBeds = apiApartment?.bedrooms ?? 0;
+  const displayBaths = apiApartment?.bathrooms ?? 0;
+  const displayGuests = apiApartment?.maxGuest ?? 0;
+  const displayCode = apiApartment?.propertyId || (id ? `APT-${id}` : "");
+  const displayDescription = apiApartment?.description || "";
   const ownerPhone = apiApartment?.user?.phone || (apiApartment as any)?.phoneNumber || "972541234567";
   const ownerWhatsApp = apiApartment?.whatsApp || apiApartment?.user?.phone || (apiApartment as any)?.phoneNumber || "972541234567";
   const isPhoneEnabled = (apiApartment as any)?.phone !== false;
@@ -562,8 +767,8 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
     toggleFavorite({
       id: apiApartment?.id || id,
       title: displayTitle,
-      image: apiImages[0] || targetApartment?.image || activeImage,
-      price: apiApartment?.pricePerShabbat ?? (targetApartment?.price ? Number(targetApartment.price) : 2500),
+      image: apiImages[0] || activeImage,
+      price: apiApartment?.pricePerShabbat ?? 0,
       city: displayCity,
       location: `${displayNeighborhood}, ${displayCity}`,
       beds: Number(displayBeds),
@@ -587,6 +792,44 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
           >
             Click here if not redirected
           </a>
+        </div>
+      </div>
+    );
+  }
+
+  if (isAptLoading) {
+    return (
+      <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 font-sans pb-20 relative">
+        <MainNavbar />
+        <div className="container mx-auto px-4 py-8">
+          <div className="animate-pulse">
+            <div className="h-6 bg-zinc-200 dark:bg-zinc-800 rounded w-1/4 mb-4"></div>
+            <div className="h-10 bg-zinc-200 dark:bg-zinc-800 rounded w-1/2 mb-4"></div>
+            <div className="h-20 bg-zinc-200 dark:bg-zinc-800 rounded w-full mb-8"></div>
+            <div className="w-full h-[400px] md:h-[500px] bg-zinc-200 dark:bg-zinc-800 rounded-3xl mt-8"></div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-8">
+              <div className="md:col-span-2 space-y-4">
+                <div className="h-8 bg-zinc-200 dark:bg-zinc-800 rounded w-1/2"></div>
+                <div className="h-4 bg-zinc-200 dark:bg-zinc-800 rounded w-full"></div>
+                <div className="h-4 bg-zinc-200 dark:bg-zinc-800 rounded w-full"></div>
+                <div className="h-4 bg-zinc-200 dark:bg-zinc-800 rounded w-3/4"></div>
+              </div>
+              <div className="md:col-span-1 h-64 bg-zinc-200 dark:bg-zinc-800 rounded-3xl"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!apiApartment) {
+    return (
+      <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 font-sans flex flex-col items-center justify-center p-4">
+        <MainNavbar />
+        <div className="text-center mt-20">
+          <h2 className="text-3xl font-bold mb-4">Apartment Not Found</h2>
+          <p className="text-zinc-500 mb-8">The apartment you are looking for does not exist or has been removed.</p>
+          <button onClick={() => router.back()} className="px-6 py-2.5 bg-[#4c55a4] text-white rounded-xl">Go Back</button>
         </div>
       </div>
     );
@@ -627,10 +870,10 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
                    <span className="text-zinc-400 dark:text-zinc-500 font-semibold">Street Name:</span>
                    <span className="font-semibold text-zinc-800 dark:text-zinc-200">{displayStreet}</span>
                  </div>
-                 {(targetApartment?.houseNumber || baseId === "1") && (
+                 {(apiApartment as any)?.houseNumber && (
                    <div className="pl-5 flex items-center gap-1.5 text-zinc-600 dark:text-zinc-400 font-medium">
                      <span className="text-zinc-400 dark:text-zinc-500 font-semibold">House Number:</span>
-                     <span className="font-extrabold text-zinc-900 dark:text-zinc-100">{targetApartment?.houseNumber || "14"}</span>
+                     <span className="font-extrabold text-zinc-900 dark:text-zinc-100">{(apiApartment as any)?.houseNumber}</span>
                    </div>
                  )}
                </div>
@@ -770,10 +1013,10 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
                       <span className="block text-zinc-400 dark:text-zinc-500 font-semibold mb-0.5">Street Name</span>
                       <span className="font-semibold text-zinc-800 dark:text-zinc-200 text-sm">{displayStreet}</span>
                     </div>
-                    {(targetApartment?.houseNumber || baseId === "1") && (
+                    {((apiApartment as any)?.houseNumber) && (
                       <div className="p-2.5 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-100 dark:border-zinc-800">
                         <span className="block text-zinc-400 dark:text-zinc-500 font-semibold mb-0.5">House Number</span>
-                        <span className="font-extrabold text-zinc-900 dark:text-zinc-100 text-sm">{targetApartment?.houseNumber || "14"}</span>
+                        <span className="font-extrabold text-zinc-900 dark:text-zinc-100 text-sm">{(apiApartment as any)?.houseNumber}</span>
                       </div>
                     )}
                   </div>
@@ -874,12 +1117,21 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
                 </div>
 
                 {/* Interactive Walking Distance Calculator Card */}
+                {/* Interactive Walking Distance Calculator Card */}
                 {(() => {
-                  const targetCoords = getCoordinatesForAddress(destInput || "Jerusalem");
-                  const aptLat = 31.7745;
-                  const aptLng = 35.2150;
-                  const walkingMins = calculateWalkingMinutes(targetCoords.lat, targetCoords.lng, aptLat, aptLng);
-                  const distanceKm = calculateDistanceKm(targetCoords.lat, targetCoords.lng, aptLat, aptLng);
+                  const fallbackCoords = getCoordinatesForAddress(destInput || "Jerusalem");
+                  const aptLat = apiApartment?.lat || apiApartment?.marker?.lat || 31.7745;
+                  const aptLng = apiApartment?.lng || apiApartment?.marker?.lng || 35.2150;
+                  
+                  let displayWalkingMins = walkingMinsText;
+                  let displayDistanceKm = distanceKmText;
+                  
+                  if (!displayWalkingMins) {
+                     const km = calculateDistanceKm(fallbackCoords.lat, fallbackCoords.lng, aptLat, aptLng);
+                     const mins = Math.max(2, Math.round(km * 13.33));
+                     displayDistanceKm = `${km} km`;
+                     displayWalkingMins = `${mins} mins`;
+                  }
 
                   return (
                     <div className="bg-gradient-to-r from-indigo-50/80 via-blue-50/50 to-indigo-50/80 dark:from-zinc-800/80 dark:to-zinc-800/50 p-5 rounded-2xl border border-indigo-100 dark:border-zinc-700/80 mb-6 shadow-sm">
@@ -890,17 +1142,43 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
                         Enter your target destination (e.g. Shul, Kotel, Great Synagogue, Rehavia) to calculate walking time:
                       </p>
                       
-                      <div className="relative mb-4">
+                      <div ref={targetContainerRef} className="relative mb-4">
                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                           <MapPin className="h-4 w-4 text-[#4c55a4]" />
                         </div>
                         <input 
                           type="text" 
                           value={destInput}
-                          onChange={(e) => setDestInput(e.target.value)}
+                          onChange={(e) => handleTargetSearch(e.target.value)}
                           placeholder="e.g. Kotel, Great Synagogue, Rehavia..."
                           className="w-full pl-9 pr-4 py-2.5 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-700 rounded-xl text-sm font-semibold text-zinc-900 dark:text-white placeholder-zinc-400 outline-none focus:ring-2 focus:ring-[#4c55a4] transition-all shadow-sm"
                         />
+                        {isTargetDropdownOpen && (targetSuggestions.length > 0 || isTargetLoading) && (
+                          <div className="absolute z-10 w-full mt-1 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-lg max-h-60 overflow-y-auto">
+                            {isTargetLoading ? (
+                              <div className="p-4 text-center text-zinc-500 text-sm">Loading suggestions...</div>
+                            ) : (
+                              <ul className="py-2">
+                                {targetSuggestions.map((place, idx) => (
+                                  <li 
+                                    key={idx}
+                                    onClick={() => handleSelectTargetPlace(place)}
+                                    className="px-4 py-2.5 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 cursor-pointer transition-colors"
+                                  >
+                                    <div className="text-sm font-bold text-zinc-900 dark:text-white">
+                                      {place.structured_formatting?.main_text || place.description}
+                                    </div>
+                                    {place.structured_formatting?.secondary_text && (
+                                      <div className="text-xs text-zinc-500">
+                                        {place.structured_formatting.secondary_text}
+                                      </div>
+                                    )}
+                                  </li>
+                                ))}
+                              </ul>
+                            )}
+                          </div>
+                        )}
                       </div>
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-3 border-t border-indigo-100 dark:border-zinc-700/60">
@@ -910,7 +1188,7 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
                           </div>
                           <div>
                             <span className="block text-[11px] font-bold text-zinc-400 uppercase tracking-wider">Walking Time</span>
-                            <span className="text-base font-black text-[#4c55a4] dark:text-indigo-400">🚶 {walkingMins} Minutes</span>
+                            <span className="text-base font-black text-[#4c55a4] dark:text-indigo-400">🚶 {displayWalkingMins}</span>
                           </div>
                         </div>
 
@@ -920,7 +1198,7 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
                           </div>
                           <div>
                             <span className="block text-[11px] font-bold text-zinc-400 uppercase tracking-wider">Distance</span>
-                            <span className="text-base font-black text-zinc-900 dark:text-white">📍 {distanceKm} km</span>
+                            <span className="text-base font-black text-zinc-900 dark:text-white">📍 {displayDistanceKm}</span>
                           </div>
                         </div>
                       </div>
@@ -929,23 +1207,15 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
                 })()}
 
                 <div className="w-full h-[350px] bg-zinc-200 dark:bg-zinc-800 rounded-2xl overflow-hidden relative border border-zinc-200 dark:border-zinc-700">
-                    <iframe 
-                      width="100%" 
-                      height="100%" 
-                      frameBorder="0" 
-                      scrolling="no" 
-                      marginHeight={0} 
-                      marginWidth={0} 
-                      src={`https://maps.google.com/maps?width=100%25&height=100%25&hl=en&q=${
-                        apiApartment?.marker?.lat && apiApartment?.marker?.lng
-                          ? `${apiApartment.marker.lat},${apiApartment.marker.lng}`
-                          : (apiApartment?.lat && apiApartment?.lng)
-                            ? `${apiApartment.lat},${apiApartment.lng}`
-                            : encodeURIComponent(`${apiApartment?.street1 ? `${apiApartment.street1}, ` : ""}${apiApartment?.neighborhood || "Mamilla"}, ${apiApartment?.city || "Jerusalem"}`)
-                      }&t=&z=15&ie=UTF8&iwloc=B&output=embed`}
-                      className="w-full h-full grayscale-[20%] contrast-[1.1] dark:invert-[90%] dark:hue-rotate-180"
-                      title="Apartment Location"
-                    />
+                  {/* The dynamic Google Map will mount here - isolated from React children */}
+                  <div ref={mapContainerRef} className="absolute inset-0" />
+                  
+                  {!mapInstanceRef.current && (
+                     <div className="absolute inset-0 flex flex-col items-center justify-center text-zinc-500 gap-2 bg-zinc-200 dark:bg-zinc-800 z-10 pointer-events-none">
+                       <MapPin className="w-8 h-8 animate-bounce text-[#4c55a4]" />
+                       <span className="text-sm font-semibold">Loading Map...</span>
+                     </div>
+                  )}
                 </div>
             </div>
 
@@ -985,19 +1255,7 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
          </div>
       </div>
 
-      {/* Similar Luxury Stays Section */}
-      <div className="border-t border-zinc-200 dark:border-zinc-800 mt-8 pt-16 bg-[#fafafa] dark:bg-zinc-950">
-        <div className="container mx-auto px-4">
-          <h2 className="text-3xl font-black text-zinc-900 dark:text-white tracking-tight mb-8">
-            {t("apartment_details.similar_stays")}
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {similarApartments.map(apt => (
-              <ApartmentCard key={apt.id} apartment={apt} />
-            ))}
-          </div>
-        </div>
-      </div>
+
 
       {/* Contact Modal */}
       {isModalOpen && (
@@ -1648,11 +1906,11 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
                   id: `offer-${Date.now()}`,
                   type: 'offer',
                   apartmentId: id,
-                  apartmentTitle: targetApartment?.title || "Apartment",
+                  apartmentTitle: apiApartment?.title || "Apartment",
                   userEmail: localStorage.getItem("userEmail") || "user@example.com",
                   date: new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
                   weekend: weekend,
-                  offerPrice: offerPrice || (targetApartment?.price?.toString() || "690"),
+                  offerPrice: offerPrice || ((apiApartment as any)?.price?.toString() || apiApartment?.pricePerShabbat?.toString() || "690"),
                   status: 'Pending'
                 });
                 localStorage.setItem("apartment_offers", JSON.stringify(requests));

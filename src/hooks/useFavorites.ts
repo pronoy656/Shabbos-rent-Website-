@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { ApartmentData } from "@/types";
-import { mockBaseApartments, mockApartments } from "@/data/mockData";
 import { showToast } from "@/utils/toast";
 import { toggleWishlist, getMyWishlist } from "@/services/wishlist.service";
 import { getImageUrl } from "@/utils/imageUrl";
@@ -14,10 +13,6 @@ const EVENT_NAME = "savedApartmentsChanged";
 // Global in-flight promise to prevent concurrent identical requests across multiple hook mounts
 let inFlightWishlistPromise: Promise<any> | null = null;
 let lastWishlistFetchTime = 0;
-
-function getAllAvailableApartments(): ApartmentData[] {
-  return [...mockBaseApartments, ...mockApartments];
-}
 
 function getStoredApartmentDataMap(): Record<string, Partial<ApartmentData>> {
   if (typeof window === "undefined") return {};
@@ -38,9 +33,8 @@ function setStoredApartmentDataMap(dataMap: Record<string, Partial<ApartmentData
 
 function resolveApartment(
   id: string,
-  allApts: ApartmentData[],
   cachedMap: Record<string, Partial<ApartmentData>>
-): ApartmentData {
+): ApartmentData | null {
   // 1. Check if we have cached live data for this apartment
   if (cachedMap[id]) {
     const c = cachedMap[id];
@@ -61,26 +55,7 @@ function resolveApartment(
     };
   }
 
-  // 2. Check in static/mock apartments
-  const found = allApts.find((a) => a.id === id);
-  if (found) return found;
-
-  // 3. Fallback apartment object
-  return {
-    id,
-    title: `Apartment #${id}`,
-    location: "Jerusalem",
-    city: "Jerusalem",
-    image: "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&q=80",
-    price: 2500,
-    rating: 4.8,
-    reviews: 12,
-    beds: 3,
-    baths: 2,
-    guests: 6,
-    isSwapAvailable: true,
-    verified: true,
-  };
+  return null;
 }
 
 function getCleanStoredIds(): string[] {
@@ -107,6 +82,7 @@ function getCleanStoredIds(): string[] {
 export function useFavorites() {
   const [savedIds, setSavedIds] = useState<string[]>([]);
   const [savedApartments, setSavedApartments] = useState<ApartmentData[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
 
   const reloadFavorites = useCallback(() => {
     if (typeof window === "undefined") return;
@@ -115,7 +91,6 @@ export function useFavorites() {
       const cleanIds = getCleanStoredIds();
       setSavedIds(cleanIds);
 
-      const allApts = getAllAvailableApartments();
       const cachedMap = getStoredApartmentDataMap();
       const seen = new Set<string>();
       const matched: ApartmentData[] = [];
@@ -123,7 +98,8 @@ export function useFavorites() {
       for (const id of cleanIds) {
         if (seen.has(id)) continue;
         seen.add(id);
-        matched.push(resolveApartment(id, allApts, cachedMap));
+        const resolved = resolveApartment(id, cachedMap);
+        if (resolved) matched.push(resolved);
       }
 
       setSavedApartments(matched);
@@ -144,6 +120,7 @@ export function useFavorites() {
     // Cache backend sync for 10 seconds to avoid multi-component request flooding
     if (token && now - lastWishlistFetchTime > 10000) {
       if (!inFlightWishlistPromise) {
+        setIsLoading(true);
         lastWishlistFetchTime = now;
         inFlightWishlistPromise = getMyWishlist()
           .then((res: any) => {
@@ -190,8 +167,11 @@ export function useFavorites() {
           })
           .finally(() => {
             inFlightWishlistPromise = null;
+            setIsLoading(false);
           });
       }
+    } else {
+      setIsLoading(false);
     }
 
     if (typeof window !== "undefined") {
@@ -332,6 +312,7 @@ export function useFavorites() {
     toggleFavorite,
     removeFavorite,
     reloadFavorites,
+    isLoading,
   };
 }
 

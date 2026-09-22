@@ -41,108 +41,6 @@ interface DisplayNewsItem {
   authorRole: string;
 }
 
-// Default Fallback Articles in case API database is empty initially
-const fallbackArticles: DisplayNewsItem[] = [
-  {
-    id: "fb-1",
-    title: "High Holiday & Shabbat Booking Guidelines 2026",
-    summary: "Everything you need to know about early bookings for Shabbat, Rosh Hashanah, and Sukkot with guaranteed kosher standards.",
-    content: "Ahead of the upcoming busy High Holidays and Shabbat seasons, Shabos Rent is proud to launch our upgraded verification protocol. All listings enrolled for the upcoming season undergo strict kitchen kosher verification, Shabbat hot plates, compliant water urns, and mechanical Shabbat key-locks. We strongly advise booking at least 3 weeks in advance to secure prime walk-to-synagogue locations.",
-    category: "notice",
-    categoryLabel: "OFFICIAL NOTICE",
-    date: "May 1, 2026",
-    readTime: "5 min read",
-    views: "12.5K views",
-    image: "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=1200&q=80",
-    author: "Shabos Rent Team",
-    authorRole: "Official Announcement",
-  },
-  {
-    id: "fb-2",
-    title: "Voice Hotline Booking Service Expanded for Smoother Planning",
-    summary: "You can now enjoy availability, request changes, and book Shabbat rentals easily via our interactive voice hotline.",
-    content: "To make our platform accessible to everyone in the community, we have officially rolled out the Shabos Rent Voice Hotline. Callers can search kosher accommodations, verify Shabbat appliance equipment, and confirm bookings 24/6 without requiring computer access.",
-    category: "feature",
-    categoryLabel: "GUIDE",
-    date: "Apr 30, 2026",
-    readTime: "4 min read",
-    views: "8.2K views",
-    image: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800&q=80",
-    author: "Tech & Product Dept.",
-    authorRole: "Product Team",
-  },
-  {
-    id: "fb-3",
-    title: "Host Masterclass: Preparing Your Apartment for Shabbat Guests",
-    summary: "Practical tips on cleaning, setup, and creating a warm, inviting space with all necessary Shabbat essentials.",
-    content: "Successful Shabbat hosting is all in the details. Shabbat renters deeply appreciate a backup mechanical key, timers pre-set for hallway lights, kosher salt, and clear instructions for the warming plate and hot water urn.",
-    category: "tips",
-    categoryLabel: "TIPS & GUIDES",
-    date: "Apr 28, 2026",
-    readTime: "6 min read",
-    views: "9.4K views",
-    image: "https://images.unsplash.com/photo-1513694203232-719a280e022f?w=800&q=80",
-    author: "Host Guide Advisory",
-    authorRole: "Host Guild",
-  },
-  {
-    id: "fb-4",
-    title: "New Neighborhood Clusters Go Live: Find the Best Fit",
-    summary: "We've launched 5 new neighborhood clusters to help you discover Shabbat-friendly stays in the perfect location.",
-    content: "We are thrilled to announce major expansion in central Israel and greater Jerusalem regions. Find vetted kosher apartments within steps of major synagogues, minyanim, and kosher bakeries.",
-    category: "community",
-    categoryLabel: "COMMUNITY NEWS",
-    date: "Apr 25, 2026",
-    readTime: "7 min read",
-    views: "5.1K views",
-    image: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=600&q=80",
-    author: "Regional Operations",
-    authorRole: "Expansion Team",
-  },
-  {
-    id: "fb-5",
-    title: "Security & Privacy Update: Enhanced Host & Guest Verification",
-    summary: "We've upgraded verification and privacy protocols to ensure a safer and more trusted community.",
-    content: "Community trust is our highest priority. Moving forward, all platform members undergo phone verification and identity checks to safeguard all home bookings.",
-    category: "security",
-    categoryLabel: "SECURITY",
-    date: "Apr 22, 2026",
-    readTime: "4 min read",
-    views: "6.8K views",
-    image: "https://images.unsplash.com/photo-1563986768609-322da13575f3?w=600&q=80",
-    author: "Security Team",
-    authorRole: "Safety Guild",
-  },
-  {
-    id: "fb-6",
-    title: "Shabbat Apartment Swaps Pass 1,000 Successful Matches",
-    summary: "Our community apartment swap initiative has reached a major milestone—over 1,000 successful swaps!",
-    content: "The Shabos Rent Swap feature celebrates a major milestone. Families visiting relatives in Jerusalem swap homes completely rent-free with fellow vetted community members.",
-    category: "community",
-    categoryLabel: "COMMUNITY PORTFOLIO",
-    date: "Apr 18, 2026",
-    readTime: "6 min read",
-    views: "14.2K views",
-    image: "https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=600&q=80",
-    author: "Community Portfolio",
-    authorRole: "Community Manager",
-  },
-  {
-    id: "fb-7",
-    title: "Behind the Scenes: How We Ensure Kosher Standards",
-    summary: "A closer look at our verification process, partnerships, and commitment to quality.",
-    content: "Every Shabbat listing undergoes rigorous checks to confirm kitchen kosher status, urns, plates, and key-lock compliance.",
-    category: "feature",
-    categoryLabel: "FEATURE",
-    date: "Apr 15, 2026",
-    readTime: "5 min read",
-    views: "11.3K views",
-    image: "https://images.unsplash.com/photo-1572120360610-d971b9d7767c?w=600&q=80",
-    author: "Quality & Standards",
-    authorRole: "Verification Team",
-  },
-];
-
 export default function NewsPage() {
   const { language } = useLanguage();
   const isHebrew = language === "HE";
@@ -224,7 +122,7 @@ export default function NewsPage() {
         });
       }
     }
-    return fallbackArticles;
+    return [];
   }, [apiResponse]);
 
   // Filtered by Search & Category
@@ -253,9 +151,7 @@ export default function NewsPage() {
     : displayArticles.slice(0, 3);
   const latestArticles = filteredArticles.length > 3 
     ? filteredArticles.slice(3) 
-    : filteredArticles.length > 0 
-      ? filteredArticles 
-      : fallbackArticles.slice(3);
+    : filteredArticles;
 
   const handleSubscribe = (e: React.FormEvent) => {
     e.preventDefault();
@@ -289,6 +185,35 @@ export default function NewsPage() {
       setTimeout(() => setCopiedLink(false), 3000);
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-[#f8fafc] dark:bg-zinc-950 font-sans flex flex-col justify-between">
+        <div>
+          <MainNavbar />
+          <div className="container mx-auto px-4 max-w-7xl py-12 animate-pulse space-y-12">
+            {/* Hero Skeleton */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+              <div className="lg:col-span-6 space-y-4">
+                <div className="w-32 h-6 bg-zinc-200 dark:bg-zinc-800 rounded-full"></div>
+                <div className="w-full h-16 bg-zinc-200 dark:bg-zinc-800 rounded-lg"></div>
+                <div className="w-3/4 h-16 bg-zinc-200 dark:bg-zinc-800 rounded-lg"></div>
+                <div className="w-full h-12 bg-zinc-200 dark:bg-zinc-800 rounded-full mt-6"></div>
+              </div>
+              <div className="lg:col-span-6 h-[420px] bg-zinc-200 dark:bg-zinc-800 rounded-3xl"></div>
+            </div>
+            
+            {/* Editor's Picks Skeleton */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 pt-8">
+              <div className="lg:col-span-6 h-[360px] bg-zinc-200 dark:bg-zinc-800 rounded-3xl"></div>
+              <div className="lg:col-span-3 h-[360px] bg-zinc-200 dark:bg-zinc-800 rounded-3xl"></div>
+              <div className="lg:col-span-3 h-[360px] bg-zinc-200 dark:bg-zinc-800 rounded-3xl"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#f8fafc] dark:bg-zinc-950 font-sans flex flex-col justify-between selection:bg-[#1b365d]/20 selection:text-[#1b365d]">

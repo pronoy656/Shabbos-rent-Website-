@@ -6,7 +6,7 @@ import { useFavorites } from "@/hooks/useFavorites";
 import ApartmentCard from "@/components/search/ApartmentCard";
 
 export default function FavoritesPage() {
-  const { savedApartments } = useFavorites();
+  const { savedApartments, isLoading } = useFavorites();
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -20,7 +20,24 @@ export default function FavoritesPage() {
         </p>
       </div>
 
-      {savedApartments.length === 0 ? (
+      {isLoading ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div
+              key={i}
+              className="bg-white dark:bg-zinc-900 rounded-2xl overflow-hidden border border-zinc-200 dark:border-zinc-800 animate-pulse shadow-sm"
+            >
+              <div className="h-56 bg-zinc-200 dark:bg-zinc-800" />
+              <div className="p-5 space-y-3">
+                <div className="h-5 bg-zinc-200 dark:bg-zinc-800 rounded-md w-3/4" />
+                <div className="h-16 bg-zinc-100 dark:bg-zinc-800/50 rounded-xl" />
+                <div className="h-10 bg-zinc-100 dark:bg-zinc-800/60 rounded-md" />
+                <div className="h-6 bg-zinc-200 dark:bg-zinc-800 rounded-md w-1/3" />
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : savedApartments.length === 0 ? (
         <div className="bg-white dark:bg-zinc-900 rounded-3xl border border-zinc-200 dark:border-zinc-800 p-12 text-center shadow-sm">
           <div className="w-16 h-16 rounded-full bg-red-50 dark:bg-red-950/30 text-red-500 flex items-center justify-center mx-auto mb-4">
             <Heart className="w-8 h-8" />

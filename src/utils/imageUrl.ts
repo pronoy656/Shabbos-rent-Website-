@@ -29,7 +29,10 @@ export function getImageUrl(
     "https://chaim-backend.onrender.com";
 
   const cleanHost = backendHost.replace(/\/+$/, "");
-  const cleanPath = trimmed.startsWith("/") ? trimmed : `/${trimmed}`;
+  
+  // Normalize Windows backslashes to forward slashes
+  const normalizedPath = trimmed.replace(/\\/g, "/");
+  const cleanPath = normalizedPath.startsWith("/") ? normalizedPath : `/${normalizedPath}`;
 
   return `${cleanHost}${cleanPath}`;
 }
