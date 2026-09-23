@@ -28,9 +28,12 @@ export const api = axios.create({
 });
 
 // ─── Request Interceptor ──────────────────────
-// Automatically attaches the auth token to every request
+// Automatically attaches the auth token to every request and handles FormData
 api.interceptors.request.use(
   (config) => {
+    if (config.data instanceof FormData) {
+      delete config.headers["Content-Type"];
+    }
     if (typeof window !== "undefined") {
       const token = localStorage.getItem("auth_token") || localStorage.getItem("accessToken");
       if (token) {

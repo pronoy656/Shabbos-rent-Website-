@@ -133,6 +133,7 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
   const [targetSuggestions, setTargetSuggestions] = useState<any[]>([]);
   const [isTargetDropdownOpen, setIsTargetDropdownOpen] = useState(false);
   const [isTargetLoading, setIsTargetLoading] = useState(false);
+  const [isMapLoaded, setIsMapLoaded] = useState(false);
   const targetContainerRef = useRef<HTMLDivElement>(null);
 
   const autocompleteServiceRef = useRef<any>(null);
@@ -140,8 +141,7 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
   const geocoderRef = useRef<any>(null);
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
-  const directionsServiceRef = useRef<any>(null);
-  const directionsRendererRef = useRef<any>(null);
+  const routePolylineRef = useRef<any>(null);
   const aptMarkerRef = useRef<any>(null);
   const fallbackDestMarkerRef = useRef<any>(null);
 
@@ -152,18 +152,8 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
       if (googleMaps.places?.AutocompleteService) {
         autocompleteServiceRef.current = new googleMaps.places.AutocompleteService();
       }
-      if (googleMaps.DistanceMatrixService) {
-        distanceMatrixServiceRef.current = new googleMaps.DistanceMatrixService();
-      }
       if (googleMaps.Geocoder) {
         geocoderRef.current = new googleMaps.Geocoder();
-      }
-      if (googleMaps.DirectionsService && googleMaps.DirectionsRenderer) {
-        directionsServiceRef.current = new googleMaps.DirectionsService();
-        directionsRendererRef.current = new googleMaps.DirectionsRenderer({
-          suppressMarkers: false,
-          polylineOptions: { strokeColor: "#4c55a4", strokeWeight: 5 }
-        });
       }
       
       // Initialize Map
@@ -179,7 +169,14 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
           fullscreenControl: true,
         });
 
-        directionsRendererRef.current.setMap(mapInstanceRef.current);
+        // Setup Polyline for Routes API
+        if (googleMaps.Polyline) {
+          routePolylineRef.current = new googleMaps.Polyline({
+            map: mapInstanceRef.current,
+            strokeColor: "#4c55a4",
+            strokeWeight: 5,
+          });
+        }
 
         aptMarkerRef.current = new googleMaps.Marker({
           position: { lat: aptLat, lng: aptLng },
@@ -210,6 +207,8 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
             }, 1400); // Stop bouncing after 2 bounces
           }
         });
+
+        setIsMapLoaded(true);
       }
     }).catch(console.warn);
     return () => { mounted = false; };
@@ -225,96 +224,135 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const calculateDistanceWithGoogle = useCallback((destLat: number, destLng: number) => {
+  const calculateDistanceWithGoogle = useCallback(async (destLat: number, destLng: number) => {
     const aptLat = apiApartment?.lat || apiApartment?.marker?.lat;
     const aptLng = apiApartment?.lng || apiApartment?.marker?.lng;
     
     if (!aptLat || !aptLng) return;
     
-    if (distanceMatrixServiceRef.current) {
-      distanceMatrixServiceRef.current.getDistanceMatrix({
-        origins: [{ lat: aptLat, lng: aptLng }],
-        destinations: [{ lat: destLat, lng: destLng }],
-        travelMode: "WALKING",
-      }, (response: any, status: string) => {
-        if (status === "OK" && response?.rows?.[0]?.elements?.[0]?.status === "OK") {
-          const element = response.rows[0].elements[0];
-          setWalkingMinsText(element.duration.text);
-          setDistanceKmText(element.distance.text);
+    // Always ensure the apartment marker is visible
+    if (aptMarkerRef.current && mapInstanceRef.current) {
+      aptMarkerRef.current.setMap(mapInstanceRef.current);
+    }
+    
+    // Always draw or update destination pin
+    if (!fallbackDestMarkerRef.current && mapInstanceRef.current) {
+      fallbackDestMarkerRef.current = new (window as any).google.maps.Marker({
+         position: { lat: destLat, lng: destLng },
+         map: mapInstanceRef.current,
+         title: "Target Destination",
+         icon: {
+           url: "data:image/svg+xml;charset=UTF-8," + encodeURIComponent(`
+             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 50" width="40" height="50">
+               <path d="M20 0C8.954 0 0 8.954 0 20c0 14.5 20 30 20 30s20-15.5 20-30C40 8.954 31.046 0 20 0z" fill="#3b82f6" stroke="#ffffff" stroke-width="2.5"/>
+               <circle cx="20" cy="18" r="8" fill="#ffffff"/>
+             </svg>
+           `),
+           scaledSize: new (window as any).google.maps.Size(40, 50),
+           anchor: new (window as any).google.maps.Point(20, 50),
+         },
+         animation: (window as any).google.maps.Animation.DROP,
+         zIndex: 20
+      });
+      
+      fallbackDestMarkerRef.current.addListener('click', () => {
+        if (fallbackDestMarkerRef.current.getAnimation() !== null) {
+          fallbackDestMarkerRef.current.setAnimation(null);
         } else {
-          // Fallback to Haversine if Google fails
-          const km = calculateDistanceKm(destLat, destLng, aptLat, aptLng);
-          const mins = Math.max(2, Math.round(km * 13.33));
-          setDistanceKmText(`${km} km`);
-          setWalkingMinsText(`${mins} mins`);
+          fallbackDestMarkerRef.current.setAnimation((window as any).google.maps.Animation.BOUNCE);
+          setTimeout(() => {
+            if (fallbackDestMarkerRef.current) fallbackDestMarkerRef.current.setAnimation(null);
+          }, 1400);
         }
       });
+    } else if (fallbackDestMarkerRef.current) {
+      fallbackDestMarkerRef.current.setPosition({ lat: destLat, lng: destLng });
+      fallbackDestMarkerRef.current.setMap(mapInstanceRef.current);
+      fallbackDestMarkerRef.current.setAnimation((window as any).google.maps.Animation.DROP);
+    }
+    
+    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "";
+    if (apiKey) {
+      try {
+        const res = await fetch("https://routes.googleapis.com/directions/v2:computeRoutes", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Goog-Api-Key": apiKey,
+            "X-Goog-FieldMask": "routes.duration,routes.distanceMeters,routes.polyline.encodedPolyline"
+          },
+          body: JSON.stringify({
+            origin: { location: { latLng: { latitude: aptLat, longitude: aptLng } } },
+            destination: { location: { latLng: { latitude: destLat, longitude: destLng } } },
+            travelMode: "WALK"
+          })
+        });
+        
+        if (res.ok) {
+          const data = await res.json();
+          if (data.routes && data.routes.length > 0) {
+            const route = data.routes[0];
+            
+            // Format distance and duration
+            const distKm = Math.round((route.distanceMeters || 0) / 100) / 10;
+            const durationSecs = parseInt(route.duration?.replace('s', '') || '0', 10);
+            const durationMins = Math.round(durationSecs / 60);
+            
+            setDistanceKmText(`${distKm} km`);
+            setWalkingMinsText(`${durationMins} mins`);
+            
+            // Draw polyline if geometry library is available
+            if (route.polyline?.encodedPolyline && (window as any).google?.maps?.geometry?.encoding) {
+              const path = (window as any).google.maps.geometry.encoding.decodePath(route.polyline.encodedPolyline);
+              if (routePolylineRef.current) {
+                // Clear existing path first
+                routePolylineRef.current.setPath([]);
+                
+                // Animate drawing the polyline
+                let step = 0;
+                const numSteps = path.length;
+                const animate = () => {
+                  if (step < numSteps) {
+                    const currentPath = routePolylineRef.current.getPath();
+                    // Add points dynamically. Speed scales with path length (~1-1.5s total duration)
+                    const pointsPerFrame = Math.max(1, Math.ceil(numSteps / 45)); 
+                    for (let i = 0; i < pointsPerFrame && step < numSteps; i++) {
+                      currentPath.push(path[step]);
+                      step++;
+                    }
+                    requestAnimationFrame(animate);
+                  }
+                };
+                requestAnimationFrame(animate);
+              }
+              
+              // Fit bounds to polyline
+              const bounds = new (window as any).google.maps.LatLngBounds();
+              path.forEach((latLng: any) => bounds.extend(latLng));
+              if (mapInstanceRef.current) {
+                mapInstanceRef.current.fitBounds(bounds, 50);
+              }
+              return; // Success! Exit early.
+            }
+          }
+        }
+      } catch (err) {
+        console.error("Routes API failed:", err);
+      }
     }
 
-    if (directionsServiceRef.current && directionsRendererRef.current) {
-      directionsServiceRef.current.route({
-        origin: { lat: aptLat, lng: aptLng },
-        destination: { lat: destLat, lng: destLng },
-        travelMode: "WALKING"
-      }, (response: any, status: string) => {
-        if (status === "OK") {
-          directionsRendererRef.current.setDirections(response);
-          if (aptMarkerRef.current) {
-            aptMarkerRef.current.setMap(null); // Hide default marker when route is drawn to avoid overlap
-          }
-          if (fallbackDestMarkerRef.current) {
-             fallbackDestMarkerRef.current.setMap(null);
-          }
-        } else {
-          // Fallback: Drop a destination pin if Directions API is not enabled
-          if (!fallbackDestMarkerRef.current && mapInstanceRef.current) {
-            fallbackDestMarkerRef.current = new (window as any).google.maps.Marker({
-               position: { lat: destLat, lng: destLng },
-               map: mapInstanceRef.current,
-               title: "Target Destination",
-               icon: {
-                 url: "data:image/svg+xml;charset=UTF-8," + encodeURIComponent(`
-                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 50" width="40" height="50">
-                     <path d="M20 0C8.954 0 0 8.954 0 20c0 14.5 20 30 20 30s20-15.5 20-30C40 8.954 31.046 0 20 0z" fill="#3b82f6" stroke="#ffffff" stroke-width="2.5"/>
-                     <circle cx="20" cy="18" r="8" fill="#ffffff"/>
-                   </svg>
-                 `),
-                 scaledSize: new (window as any).google.maps.Size(40, 50),
-                 anchor: new (window as any).google.maps.Point(20, 50),
-               },
-               animation: (window as any).google.maps.Animation.DROP,
-               zIndex: 20
-            });
-            
-            // Add click interaction for the blue pin too
-            fallbackDestMarkerRef.current.addListener('click', () => {
-              if (fallbackDestMarkerRef.current.getAnimation() !== null) {
-                fallbackDestMarkerRef.current.setAnimation(null);
-              } else {
-                fallbackDestMarkerRef.current.setAnimation((window as any).google.maps.Animation.BOUNCE);
-                setTimeout(() => {
-                  if (fallbackDestMarkerRef.current) fallbackDestMarkerRef.current.setAnimation(null);
-                }, 1400);
-              }
-            });
-
-            // Re-center map to fit both pins with padding
-            const bounds = new (window as any).google.maps.LatLngBounds();
-            bounds.extend({ lat: aptLat, lng: aptLng });
-            bounds.extend({ lat: destLat, lng: destLng });
-            mapInstanceRef.current.fitBounds(bounds, 50); // 50px padding
-          } else if (fallbackDestMarkerRef.current) {
-            fallbackDestMarkerRef.current.setPosition({ lat: destLat, lng: destLng });
-            fallbackDestMarkerRef.current.setMap(mapInstanceRef.current);
-            fallbackDestMarkerRef.current.setAnimation((window as any).google.maps.Animation.DROP);
-            
-            const bounds = new (window as any).google.maps.LatLngBounds();
-            bounds.extend({ lat: aptLat, lng: aptLng });
-            bounds.extend({ lat: destLat, lng: destLng });
-            mapInstanceRef.current.fitBounds(bounds, 50);
-          }
-        }
-      });
+    // Fallback to Haversine if Google Routes API fails or no API key
+    const km = calculateDistanceKm(destLat, destLng, aptLat, aptLng);
+    const mins = Math.max(2, Math.round(km * 13.33));
+    setDistanceKmText(`${km} km`);
+    setWalkingMinsText(`${mins} mins`);
+    
+    // Re-center map to fit both pins with padding
+    if (mapInstanceRef.current) {
+      const bounds = new (window as any).google.maps.LatLngBounds();
+      bounds.extend({ lat: aptLat, lng: aptLng });
+      bounds.extend({ lat: destLat, lng: destLng });
+      mapInstanceRef.current.fitBounds(bounds, 50); // 50px padding
     }
   }, [apiApartment]);
 
@@ -1210,7 +1248,7 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
                   {/* The dynamic Google Map will mount here - isolated from React children */}
                   <div ref={mapContainerRef} className="absolute inset-0" />
                   
-                  {!mapInstanceRef.current && (
+                  {!isMapLoaded && (
                      <div className="absolute inset-0 flex flex-col items-center justify-center text-zinc-500 gap-2 bg-zinc-200 dark:bg-zinc-800 z-10 pointer-events-none">
                        <MapPin className="w-8 h-8 animate-bounce text-[#4c55a4]" />
                        <span className="text-sm font-semibold">Loading Map...</span>

@@ -12,9 +12,6 @@ import {
   Upload,
   AlertTriangle,
   CheckCircle2,
-  Share2,
-  Globe,
-  Tag,
   Check
 } from "lucide-react";
 import {
@@ -23,79 +20,43 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { showToast } from "@/utils/toast";
+import { toast } from "sonner";
+import { 
+  useAdvertisements, 
+  useCreateAdvertisement, 
+  useUpdateAdvertisement, 
+  useDeleteAdvertisement 
+} from "@/hooks/useAdvertisement";
+import { Advertisement, AdvertisementPosition } from "@/types/advertisement.types";
 
-interface AdvertisementItem {
-  id: number;
-  title: string;
-  cities: string;
-  status: "Active" | "Inactive";
-  clicks: number;
-}
 
-interface PlatformItem {
-  id: number;
-  name: string;
-  category: "Social Media" | "Video & Content" | "Print Media" | "Broadcast & Voice" | "Community & Word of Mouth" | "Search & Other";
-  status: "Active" | "Inactive";
-  signupsTracked: number;
-}
-
-const initialAds: AdvertisementItem[] = [
-  {
-    id: 1,
-    title: "Jerusalem Kosher Bistro Ad",
-    cities: "Jerusalem",
-    status: "Active",
-    clicks: 124,
-  },
-  {
-    id: 2,
-    title: "Tel Aviv Seaside Cafe Deal",
-    cities: "Tel Aviv",
-    status: "Active",
-    clicks: 89,
-  },
-  {
-    id: 3,
-    title: "Tzfat Heritage Judaica Store",
-    cities: "Tzfat",
-    status: "Active",
-    clicks: 45,
-  },
-];
-
-const initialPlatforms: PlatformItem[] = [
-  { id: 1, name: "Facebook / Social Media", category: "Social Media", status: "Active", signupsTracked: 142 },
-  { id: 2, name: "YouTube", category: "Video & Content", status: "Active", signupsTracked: 98 },
-  { id: 3, name: "Instagram", category: "Social Media", status: "Active", signupsTracked: 115 },
-  { id: 4, name: "Twitter / X", category: "Social Media", status: "Active", signupsTracked: 34 },
-  { id: 5, name: "Newspaper / Print Ad", category: "Print Media", status: "Active", signupsTracked: 62 },
-  { id: 6, name: "Radio / Voice Hotline", category: "Broadcast & Voice", status: "Active", signupsTracked: 87 },
-  { id: 7, name: "Friend / Word of Mouth", category: "Community & Word of Mouth", status: "Active", signupsTracked: 210 },
-  { id: 8, name: "Synagogue / Community Bulletin", category: "Community & Word of Mouth", status: "Active", signupsTracked: 76 },
-  { id: 9, name: "Google Search / Other", category: "Search & Other", status: "Active", signupsTracked: 130 },
-];
 
 export default function AdvertisementsPage() {
-  const [activePageTab, setActivePageTab] = useState<"ads" | "platforms">("ads");
-
   // Ads state
-  const [advertisements, setAdvertisements] = useState<AdvertisementItem[]>(initialAds);
+  const { data: adsData, isLoading: isLoadingAds } = useAdvertisements();
+  const { mutate: createAd, isPending: isCreatingAd } = useCreateAdvertisement();
+  const { mutate: updateAd, isPending: isUpdatingAd } = useUpdateAdvertisement();
+  const { mutate: deleteAd, isPending: isDeletingAd } = useDeleteAdvertisement();
+  const advertisements = adsData?.data || [];
+
   const [isAdModalOpen, setIsAdModalOpen] = useState(false);
+  const [editingAd, setEditingAd] = useState<Advertisement | null>(null);
+  
+  // Ad Form State
+  const [adCompanyName, setAdCompanyName] = useState("");
+  const [adTitle, setAdTitle] = useState("");
+  const [adSubtitle, setAdSubtitle] = useState("");
+  const [adUrl, setAdUrl] = useState("");
+  const [adPosition, setAdPosition] = useState<AdvertisementPosition>(AdvertisementPosition.HOME_MIDDLE);
+  const [adIsActive, setAdIsActive] = useState(true);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);
   const [dragActive, setDragActive] = useState(false);
 
-  // Platforms state
-  const [platforms, setPlatforms] = useState<PlatformItem[]>(initialPlatforms);
-  const [isPlatformModalOpen, setIsPlatformModalOpen] = useState(false);
-  const [editingPlatform, setEditingPlatform] = useState<PlatformItem | null>(null);
-  const [platformName, setPlatformName] = useState("");
-  const [platformCategory, setPlatformCategory] = useState<PlatformItem["category"]>("Social Media");
-  const [platformStatus, setPlatformStatus] = useState<"Active" | "Inactive">("Active");
+
 
   // Deletion confirmation state
-  const [deleteItem, setDeleteItem] = useState<{ id: number; type: "ad" | "platform" } | null>(null);
+  const [deleteItem, setDeleteItem] = useState<{ id: number | string; type: "ad" } | null>(null);
 
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault();
@@ -125,6 +86,7 @@ export default function AdvertisementsPage() {
 
   const handleImageChange = (file: File) => {
     if (file && file.type.startsWith("image/")) {
+      setSelectedImageFile(file);
       const reader = new FileReader();
       reader.onload = (e) => {
         setSelectedImage(e.target?.result as string);
@@ -133,76 +95,89 @@ export default function AdvertisementsPage() {
     }
   };
 
-  // Open Platform Modal
-  const handleOpenPlatformModal = (platform?: PlatformItem) => {
-    if (platform) {
-      setEditingPlatform(platform);
-      setPlatformName(platform.name);
-      setPlatformCategory(platform.category);
-      setPlatformStatus(platform.status);
+  const handleOpenAdModal = (ad?: Advertisement) => {
+    if (ad) {
+      setEditingAd(ad);
+      setAdCompanyName(ad.companyName);
+      setAdTitle(ad.title);
+      setAdSubtitle(ad.subtitle || "");
+      setAdUrl(ad.url);
+      setAdPosition(ad.position);
+      setAdIsActive(ad.isActive);
+      setSelectedImage(ad.image);
+      setSelectedImageFile(null);
     } else {
-      setEditingPlatform(null);
-      setPlatformName("");
-      setPlatformCategory("Social Media");
-      setPlatformStatus("Active");
+      setEditingAd(null);
+      setAdCompanyName("");
+      setAdTitle("");
+      setAdSubtitle("");
+      setAdUrl("");
+      setAdPosition(AdvertisementPosition.HOME_MIDDLE);
+      setAdIsActive(true);
+      setSelectedImage(null);
+      setSelectedImageFile(null);
     }
-    setIsPlatformModalOpen(true);
+    setIsAdModalOpen(true);
   };
 
-  // Save Platform
-  const handleSavePlatform = (e: React.FormEvent) => {
+  const handleSaveAd = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!platformName.trim()) return;
-
-    if (editingPlatform) {
-      setPlatforms((prev) =>
-        prev.map((p) =>
-          p.id === editingPlatform.id
-            ? { ...p, name: platformName, category: platformCategory, status: platformStatus }
-            : p
-        )
-      );
-      showToast({
-        title: "Platform Updated! 🟢",
-        message: `Advertisement platform "${platformName}" successfully updated.`,
-        type: "info",
+    if (!adTitle.trim() || !adCompanyName.trim() || !adUrl.trim()) return;
+    
+    // Using multipart/form-data as per API spec
+    const formData = new FormData();
+    if (selectedImageFile) {
+      formData.append("image", selectedImageFile);
+    }
+    
+    const payload = {
+      companyName: adCompanyName,
+      title: adTitle,
+      subtitle: adSubtitle,
+      url: adUrl,
+      position: adPosition,
+      isActive: adIsActive,
+    };
+    
+    formData.append("data", JSON.stringify(payload));
+    
+    if (editingAd) {
+      updateAd({ id: editingAd.id, data: formData }, {
+        onSuccess: (res) => {
+          toast.success(res.message || "Advertisement updated successfully.");
+          setIsAdModalOpen(false);
+        },
+        onError: (err: any) => {
+          toast.error(err?.response?.data?.message || err.message || "Failed to update advertisement");
+        }
       });
     } else {
-      const newPlatform: PlatformItem = {
-        id: Date.now(),
-        name: platformName,
-        category: platformCategory,
-        status: platformStatus,
-        signupsTracked: 0,
-      };
-      setPlatforms((prev) => [...prev, newPlatform]);
-      showToast({
-        title: "Platform Added! 🎉",
-        message: `New platform "${platformName}" added for user signup tracking.`,
-        type: "info",
+      createAd(formData, {
+        onSuccess: (res) => {
+          toast.success(res.message || "Advertisement created successfully.");
+          setIsAdModalOpen(false);
+        },
+        onError: (err: any) => {
+          toast.error(err?.response?.data?.message || err.message || "Failed to create advertisement");
+        }
       });
     }
-
-    setIsPlatformModalOpen(false);
   };
+
+
 
   // Confirm Delete
   const handleConfirmDelete = () => {
     if (!deleteItem) return;
 
     if (deleteItem.type === "ad") {
-      setAdvertisements((prev) => prev.filter((a) => a.id !== deleteItem.id));
-      showToast({
-        title: "Advertisement Deleted",
-        message: "The advertisement banner has been removed.",
-        type: "info",
-      });
-    } else {
-      setPlatforms((prev) => prev.filter((p) => p.id !== deleteItem.id));
-      showToast({
-        title: "Platform Deleted",
-        message: "The advertisement referral platform has been deleted.",
-        type: "info",
+      deleteAd(deleteItem.id as string, {
+        onSuccess: (res) => {
+          toast.success(res.message || "The advertisement banner has been removed.");
+        },
+        onError: (err: any) => {
+          toast.error(err?.response?.data?.message || err.message || "Failed to delete advertisement");
+        }
       });
     }
 
@@ -224,35 +199,8 @@ export default function AdvertisementsPage() {
       {/* Main Container */}
       <div className="rounded-2xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900 overflow-hidden">
         
-        {/* Top Navigation Tabs */}
-        <div className="flex p-2 bg-zinc-100/80 dark:bg-zinc-800/60 border-b border-zinc-200 dark:border-zinc-800 gap-2">
-          <button
-            onClick={() => setActivePageTab("ads")}
-            className={`flex-1 sm:flex-initial px-6 py-2.5 rounded-xl font-bold text-xs transition-all cursor-pointer ${
-              activePageTab === "ads"
-                ? "bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white shadow-sm"
-                : "text-zinc-500 hover:text-zinc-900 dark:hover:text-white"
-            }`}
-          >
-            Advertisements
-          </button>
-          
-          <button
-            onClick={() => setActivePageTab("platforms")}
-            className={`flex-1 sm:flex-initial px-6 py-2.5 rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-2 cursor-pointer ${
-              activePageTab === "platforms"
-                ? "bg-white dark:bg-zinc-900 text-blue-600 dark:text-blue-400 shadow-sm"
-                : "text-zinc-500 hover:text-zinc-900 dark:hover:text-white"
-            }`}
-          >
-            <Share2 className="w-3.5 h-3.5" />
-            <span>Advertisement Platforms (Referral Sources)</span>
-          </button>
-        </div>
-
-        {/* TAB 1: CITY-BASED ADVERTISEMENTS */}
-        {activePageTab === "ads" && (
-          <div>
+        {/* ADVERTISEMENTS */}
+        <div>
             {/* Action / Search Bar */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/50">
               <div className="relative w-full sm:max-w-xs">
@@ -267,7 +215,7 @@ export default function AdvertisementsPage() {
               </div>
 
               <button 
-                onClick={() => setIsAdModalOpen(true)}
+                onClick={() => handleOpenAdModal()}
                 className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-zinc-900 px-4 py-2 text-xs font-extrabold text-white shadow-sm hover:bg-zinc-800 dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-200 transition-all cursor-pointer active:scale-95"
               >
                 <Plus className="h-4 w-4" />
@@ -288,27 +236,52 @@ export default function AdvertisementsPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
-                  {advertisements.map((item) => (
+                  {isLoadingAds ? (
+                    <tr>
+                      <td colSpan={5} className="px-6 py-8 text-center text-zinc-500">
+                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#4c55a4] mx-auto"></div>
+                      </td>
+                    </tr>
+                  ) : advertisements.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="px-6 py-8 text-center text-zinc-500 text-sm font-semibold">
+                        No advertisements found.
+                      </td>
+                    </tr>
+                  ) : advertisements.map((item) => (
                     <tr key={item.id} className="hover:bg-zinc-50/60 dark:hover:bg-zinc-800/30 transition-colors">
-                      <td className="px-6 py-4 font-extrabold text-zinc-900 dark:text-white">
-                        {item.title}
+                      <td className="px-6 py-4 font-extrabold text-zinc-900 dark:text-white flex items-center gap-3">
+                        {item.image && (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={item.image} alt={item.title} className="w-10 h-10 rounded-lg object-cover bg-zinc-100" />
+                        )}
+                        <div>
+                          <div>{item.title}</div>
+                          <div className="text-[10px] font-semibold text-zinc-500 uppercase">{item.companyName}</div>
+                        </div>
                       </td>
                       <td className="px-6 py-4 text-xs font-bold text-zinc-700 dark:text-zinc-300">
-                        {item.cities}
+                        <span className="bg-zinc-100 dark:bg-zinc-800 px-2 py-1 rounded-md">{item.position}</span>
                       </td>
                       <td className="px-6 py-4">
-                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-extrabold bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800">
-                          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                          {item.status}
-                        </span>
+                        {item.isActive ? (
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-extrabold bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800">
+                            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                            Active
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-zinc-100 text-zinc-600 border border-zinc-200 dark:bg-zinc-800 dark:text-zinc-400 dark:border-zinc-700">
+                            Inactive
+                          </span>
+                        )}
                       </td>
                       <td className="px-6 py-4 font-bold text-zinc-900 dark:text-white text-xs">
-                        {item.clicks} clicks
+                        {item.clicks || 0} clicks
                       </td>
                       <td className="px-6 py-4 text-right">
                         <div className="flex items-center justify-end gap-2">
                           <button 
-                            onClick={() => setIsAdModalOpen(true)}
+                            onClick={() => handleOpenAdModal(item)}
                             className="inline-flex items-center justify-center rounded-xl border border-zinc-200 bg-white px-3 py-1.5 text-xs font-bold text-zinc-700 shadow-sm hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700 transition-colors cursor-pointer"
                           >
                             <Edit className="mr-1.5 h-3.5 w-3.5" />
@@ -329,105 +302,6 @@ export default function AdvertisementsPage() {
               </table>
             </div>
           </div>
-        )}
-
-        {/* TAB 2: ADVERTISEMENT PLATFORMS (REFERRAL SOURCES) */}
-        {activePageTab === "platforms" && (
-          <div>
-            {/* Header & Add Button Bar */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/50">
-              <div>
-                <h3 className="text-sm font-extrabold text-zinc-900 dark:text-white">
-                  Referral Source & Advertisement Platforms List
-                </h3>
-                <p className="text-xs text-zinc-500 mt-0.5">
-                  These platforms appear as dropdown options during Renter & Owner account registration.
-                </p>
-              </div>
-
-              <button
-                onClick={() => handleOpenPlatformModal()}
-                className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 px-4 py-2 text-xs font-extrabold text-white shadow-md shadow-blue-500/20 transition-all cursor-pointer active:scale-95"
-              >
-                <Plus className="h-4 w-4" />
-                <span>Add Platform</span>
-              </button>
-            </div>
-
-            {/* Platforms Table */}
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm">
-                <thead className="bg-zinc-50 dark:bg-zinc-800/40 text-zinc-900 dark:text-white font-bold text-xs">
-                  <tr>
-                    <th className="px-6 py-3.5 border-b border-zinc-200 dark:border-zinc-800">Platform Name</th>
-                    <th className="px-6 py-3.5 border-b border-zinc-200 dark:border-zinc-800">Channel Category</th>
-                    <th className="px-6 py-3.5 border-b border-zinc-200 dark:border-zinc-800">Status</th>
-                    <th className="px-6 py-3.5 border-b border-zinc-200 dark:border-zinc-800">Signups Tracked</th>
-                    <th className="px-6 py-3.5 border-b border-zinc-200 dark:border-zinc-800 text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
-                  {platforms.map((platform) => (
-                    <tr key={platform.id} className="hover:bg-zinc-50/60 dark:hover:bg-zinc-800/30 transition-colors">
-                      {/* Name */}
-                      <td className="px-6 py-4 font-extrabold text-zinc-900 dark:text-white text-sm flex items-center gap-2">
-                        <Globe className="w-4 h-4 text-blue-500" />
-                        <span>{platform.name}</span>
-                      </td>
-
-                      {/* Category */}
-                      <td className="px-6 py-4">
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-xs font-bold text-zinc-700 dark:text-zinc-300">
-                          <Tag className="w-3 h-3 text-zinc-400" />
-                          {platform.category}
-                        </span>
-                      </td>
-
-                      {/* Status */}
-                      <td className="px-6 py-4">
-                        {platform.status === "Active" ? (
-                          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-extrabold bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800">
-                            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                            Active
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-zinc-100 text-zinc-600 border border-zinc-200 dark:bg-zinc-800 dark:text-zinc-400 dark:border-zinc-700">
-                            Inactive
-                          </span>
-                        )}
-                      </td>
-
-                      {/* Signups Tracked */}
-                      <td className="px-6 py-4 font-extrabold text-zinc-900 dark:text-white text-xs">
-                        {platform.signupsTracked} users
-                      </td>
-
-                      {/* Actions */}
-                      <td className="px-6 py-4 text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <button
-                            onClick={() => handleOpenPlatformModal(platform)}
-                            className="inline-flex items-center justify-center rounded-xl border border-zinc-200 bg-white px-3 py-1.5 text-xs font-bold text-zinc-700 shadow-sm hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700 transition-colors cursor-pointer"
-                          >
-                            <Edit className="mr-1.5 h-3.5 w-3.5" />
-                            Edit
-                          </button>
-                          <button
-                            onClick={() => setDeleteItem({ id: platform.id, type: "platform" })}
-                            className="inline-flex items-center justify-center rounded-xl border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-bold text-red-600 hover:bg-red-100 dark:border-red-900/40 dark:bg-red-950/40 dark:text-red-400 dark:hover:bg-red-900/50 transition-colors cursor-pointer"
-                          >
-                            <Trash2 className="mr-1.5 h-3.5 w-3.5" />
-                            Delete
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
       </div>
 
       {/* MODAL 1: ADD / EDIT ADVERTISEMENT BANNER */}
@@ -444,27 +318,57 @@ export default function AdvertisementsPage() {
               </button>
             </div>
             
-            <div className="p-6 space-y-5">
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-zinc-700 dark:text-zinc-300">Ad Title</label>
-                <input
-                  type="text"
-                  placeholder="Jerusalem Kosher Bistro Ad"
-                  className="block w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-2.5 text-sm text-zinc-900 outline-none focus:border-blue-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white"
-                />
+            <form onSubmit={handleSaveAd} className="p-6 space-y-5">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-zinc-700 dark:text-zinc-300">Company Name *</label>
+                  <input
+                    type="text"
+                    required
+                    value={adCompanyName}
+                    onChange={(e) => setAdCompanyName(e.target.value)}
+                    placeholder="Acme Real Estate Ltd"
+                    className="block w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-2.5 text-sm text-zinc-900 outline-none focus:border-blue-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-zinc-700 dark:text-zinc-300">Ad Title *</label>
+                  <input
+                    type="text"
+                    required
+                    value={adTitle}
+                    onChange={(e) => setAdTitle(e.target.value)}
+                    placeholder="Special Holiday Promotion"
+                    className="block w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-2.5 text-sm text-zinc-900 outline-none focus:border-blue-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white"
+                  />
+                </div>
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-zinc-700 dark:text-zinc-300">Description</label>
+                <label className="text-xs font-bold text-zinc-700 dark:text-zinc-300">Subtitle</label>
                 <textarea
-                  rows={3}
+                  rows={2}
+                  value={adSubtitle}
+                  onChange={(e) => setAdSubtitle(e.target.value)}
                   placeholder="Short promotional text..."
                   className="block w-full rounded-xl border border-zinc-200 bg-zinc-50 p-3 text-sm text-zinc-900 outline-none focus:border-blue-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white resize-none"
                 />
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-zinc-700 dark:text-zinc-300">Upload Ad Image Banner</label>
+                <label className="text-xs font-bold text-zinc-700 dark:text-zinc-300">Target URL *</label>
+                <input
+                  type="url"
+                  required
+                  value={adUrl}
+                  onChange={(e) => setAdUrl(e.target.value)}
+                  placeholder="https://example.com/promotion"
+                  className="block w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-2.5 text-sm text-zinc-900 outline-none focus:border-blue-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-zinc-700 dark:text-zinc-300">Upload Ad Image Banner {editingAd ? "" : "*"}</label>
                 <label 
                   onDragEnter={handleDrag}
                   onDragLeave={handleDrag}
@@ -502,164 +406,63 @@ export default function AdvertisementsPage() {
                 </label>
               </div>
 
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-zinc-700 dark:text-zinc-300">Assign to Cities</label>
-                <DropdownMenu>
-                  <DropdownMenuTrigger className="w-full flex items-center justify-between rounded-xl border border-zinc-200 bg-zinc-50 dark:bg-zinc-950 px-4 py-2.5 text-sm font-semibold text-zinc-900 dark:text-white outline-none focus:border-blue-500 cursor-pointer">
-                    <span>Jerusalem</span>
-                    <ChevronDown className="w-4 h-4 text-zinc-400 opacity-80" />
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="start" className="w-[--anchor-width] rounded-xl bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 p-1.5 shadow-xl z-50">
-                    {["Jerusalem", "Tel Aviv", "Bnei Brak", "Tzfat"].map((city) => (
-                      <DropdownMenuItem key={city} className="cursor-pointer rounded-lg py-2 px-3 text-xs font-bold text-zinc-800 dark:text-zinc-200">
-                        {city}
-                      </DropdownMenuItem>
-                    ))}
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-end gap-3 border-t border-zinc-100 dark:border-zinc-800 p-6 bg-zinc-50/50 dark:bg-zinc-900 rounded-b-3xl">
-              <button 
-                onClick={() => setIsAdModalOpen(false)}
-                className="px-4 py-2 text-xs font-bold text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-xl transition-colors"
-              >
-                Cancel
-              </button>
-              <button 
-                onClick={() => {
-                  setIsAdModalOpen(false);
-                  showToast({ title: "Ad Saved!", message: "Advertisement banner saved successfully.", type: "info" });
-                }}
-                className="px-5 py-2.5 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-xl text-xs font-bold shadow-md transition-all cursor-pointer"
-              >
-                Save Advertisement
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* MODAL 2: ADD / EDIT ADVERTISEMENT PLATFORM */}
-      {isPlatformModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-          <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-6 max-w-lg w-full shadow-2xl relative">
-            
-            <div className="flex items-center justify-between pb-4 border-b border-zinc-100 dark:border-zinc-800 mb-5">
-              <div>
-                <h3 className="text-xl font-extrabold text-zinc-900 dark:text-white flex items-center gap-2">
-                  <Share2 className="w-5 h-5 text-blue-600" />
-                  {editingPlatform ? "Edit Advertisement Platform" : "Add Advertisement Platform"}
-                </h3>
-                <p className="text-xs text-zinc-500 mt-0.5">
-                  Configure referral platform options for user signup tracking.
-                </p>
-              </div>
-
-              <button
-                onClick={() => setIsPlatformModalOpen(false)}
-                className="p-2 rounded-full text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <form onSubmit={handleSavePlatform} className="space-y-4">
-              <div>
-                <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1">
-                  Platform / Referral Source Name *
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={platformName}
-                  onChange={(e) => setPlatformName(e.target.value)}
-                  placeholder="e.g. TikTok, Podcast Ad, Radio"
-                  className="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-sm font-semibold text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-
-              {/* Channel Category Shadcn Dropdown */}
-              <div>
-                <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1">
-                  Channel Category
-                </label>
-                <DropdownMenu>
-                  <DropdownMenuTrigger className="w-full flex items-center justify-between rounded-xl border border-zinc-200 bg-zinc-50 dark:bg-zinc-950 px-4 py-2.5 text-sm font-semibold text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer">
-                    <span>{platformCategory}</span>
-                    <ChevronDown className="w-4 h-4 text-zinc-400 opacity-80" />
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="start" className="w-[--anchor-width] rounded-xl bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 p-1.5 shadow-xl z-50">
-                    {[
-                      "Social Media",
-                      "Video & Content",
-                      "Print Media",
-                      "Broadcast & Voice",
-                      "Community & Word of Mouth",
-                      "Search & Other",
-                    ].map((cat) => (
-                      <DropdownMenuItem
-                        key={cat}
-                        onClick={() => setPlatformCategory(cat as PlatformItem["category"])}
-                        className="flex items-center justify-between cursor-pointer rounded-lg py-2 px-3 text-xs font-bold text-zinc-800 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-900"
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-zinc-700 dark:text-zinc-300">Advertisement Position</label>
+                  <div className="w-full flex items-center justify-between rounded-xl border border-zinc-200 bg-zinc-50/50 dark:bg-zinc-950/50 px-4 py-2.5 text-sm font-semibold text-zinc-500 dark:text-zinc-400 opacity-70">
+                    <span>{AdvertisementPosition.HOME_MIDDLE}</span>
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-zinc-700 dark:text-zinc-300">Status</label>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger className="w-full flex items-center justify-between rounded-xl border border-zinc-200 bg-zinc-50 dark:bg-zinc-950 px-4 py-2.5 text-sm font-semibold text-zinc-900 dark:text-white outline-none focus:border-blue-500 cursor-pointer">
+                      <span>{adIsActive ? "🟢 Active" : "🔴 Inactive"}</span>
+                      <ChevronDown className="w-4 h-4 text-zinc-400 opacity-80" />
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start" className="w-[--anchor-width] rounded-xl bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 p-1.5 shadow-xl z-50">
+                      <DropdownMenuItem 
+                        onClick={() => setAdIsActive(true)}
+                        className="cursor-pointer rounded-lg py-2 px-3 text-xs font-bold text-emerald-600 dark:text-emerald-400"
                       >
-                        <span>{cat}</span>
-                        {platformCategory === cat && <Check className="w-4 h-4 text-blue-600" />}
+                        🟢 Active
+                        {adIsActive && <Check className="w-4 h-4 text-emerald-600 ml-auto" />}
                       </DropdownMenuItem>
-                    ))}
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                      <DropdownMenuItem 
+                        onClick={() => setAdIsActive(false)}
+                        className="cursor-pointer rounded-lg py-2 px-3 text-xs font-bold text-zinc-600 dark:text-zinc-400"
+                      >
+                        🔴 Inactive
+                        {!adIsActive && <Check className="w-4 h-4 text-zinc-600 ml-auto" />}
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
               </div>
 
-              {/* Status Shadcn Dropdown */}
-              <div>
-                <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1">
-                  Status
-                </label>
-                <DropdownMenu>
-                  <DropdownMenuTrigger className="w-full flex items-center justify-between rounded-xl border border-zinc-200 bg-zinc-50 dark:bg-zinc-950 px-4 py-2.5 text-sm font-semibold text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer">
-                    <span>{platformStatus === "Active" ? "🟢 Active (Visible on Signup)" : "🔴 Inactive (Hidden)"}</span>
-                    <ChevronDown className="w-4 h-4 text-zinc-400 opacity-80" />
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="start" className="w-[--anchor-width] rounded-xl bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 p-1.5 shadow-xl z-50">
-                    <DropdownMenuItem
-                      onClick={() => setPlatformStatus("Active")}
-                      className="flex items-center justify-between cursor-pointer rounded-lg py-2 px-3 text-xs font-bold text-emerald-600 dark:text-emerald-400"
-                    >
-                      <span>🟢 Active (Visible on Signup)</span>
-                      {platformStatus === "Active" && <Check className="w-4 h-4 text-emerald-600" />}
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() => setPlatformStatus("Inactive")}
-                      className="flex items-center justify-between cursor-pointer rounded-lg py-2 px-3 text-xs font-bold text-zinc-600 dark:text-zinc-400"
-                    >
-                      <span>🔴 Inactive (Hidden)</span>
-                      {platformStatus === "Inactive" && <Check className="w-4 h-4 text-zinc-600" />}
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-
-              <div className="pt-4 flex items-center justify-end gap-3 border-t border-zinc-100 dark:border-zinc-800">
-                <button
+              <div className="flex items-center justify-end gap-3 border-t border-zinc-100 dark:border-zinc-800 pt-6 mt-4">
+                <button 
                   type="button"
-                  onClick={() => setIsPlatformModalOpen(false)}
+                  onClick={() => setIsAdModalOpen(false)}
                   className="px-4 py-2 text-xs font-bold text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-xl transition-colors"
                 >
                   Cancel
                 </button>
-                <button
+                <button 
                   type="submit"
-                  className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow-md shadow-blue-500/20 transition-all cursor-pointer active:scale-95"
+                  disabled={isCreatingAd || isUpdatingAd}
+                  className="px-5 py-2.5 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-xl text-xs font-bold shadow-md transition-all cursor-pointer disabled:opacity-50 flex items-center gap-2"
                 >
-                  {editingPlatform ? "Save Platform Changes" : "Add Platform"}
+                  {(isCreatingAd || isUpdatingAd) && <div className="w-3 h-3 rounded-full border-2 border-white border-t-transparent animate-spin"></div>}
+                  {editingAd ? "Save Changes" : "Create Advertisement"}
                 </button>
               </div>
             </form>
           </div>
         </div>
       )}
+
+
 
       {/* Delete Confirmation Modal */}
       {deleteItem !== null && (
@@ -672,7 +475,7 @@ export default function AdvertisementsPage() {
               Are you sure?
             </h3>
             <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-6">
-              This action cannot be undone. This will permanently delete the selected {deleteItem.type === "ad" ? "advertisement banner" : "marketing platform"}.
+              This action cannot be undone. This will permanently delete the selected advertisement banner.
             </p>
 
             <div className="flex items-center gap-3">

@@ -27,6 +27,9 @@ export const useSwapPreference = () =>
   useQuery({
     queryKey: SWAP_PREFERENCE_KEY,
     queryFn: getMySwapPreference,
+    enabled:
+      typeof window !== "undefined" &&
+      Boolean(localStorage.getItem("auth_token") || localStorage.getItem("accessToken") || localStorage.getItem("userRole")),
     retry: 1,
   });
 

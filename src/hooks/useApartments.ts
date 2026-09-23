@@ -37,6 +37,9 @@ export const useMyApartment = () =>
   useQuery({
     queryKey: MY_APARTMENT_KEY,
     queryFn: getMyApartment,
+    enabled:
+      typeof window !== "undefined" &&
+      Boolean(localStorage.getItem("auth_token") || localStorage.getItem("accessToken") || localStorage.getItem("userRole")),
     retry: 1,
   });
 
