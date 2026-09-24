@@ -11,6 +11,8 @@ import type {
   VerifyOtpResponse,
   ChangePasswordPayload,
   ChangePasswordResponse,
+  ResetPasswordPayload,
+  ResetPasswordResponse,
   AuthUser,
 } from "@/types/auth.types";
 
@@ -146,11 +148,20 @@ export const verifyOtp = (
 ): Promise<VerifyOtpResponse> =>
   api.post("/auth/verify-otp", payload).then((res) => res.data);
 
-/** Change / Reset Password */
+/** Change Password (Logged in users) */
 export const changePassword = (
   payload: ChangePasswordPayload
 ): Promise<ChangePasswordResponse> =>
   api.post("/auth/change-password", payload).then((res) => res.data);
+
+/** Reset Password (via email token) */
+export const resetPassword = (
+  payload: ResetPasswordPayload
+): Promise<ResetPasswordResponse> => {
+  // If token is in the payload body, you can pass it, or you can configure headers if required.
+  // The backend accepts it in the body based on the guide (`token` field).
+  return api.post("/auth/reset-password", payload).then((res) => res.data);
+};
 
 /** Logout current user — immediately wipes tokens & cookies and calls backend */
 export const logout = async (): Promise<void> => {

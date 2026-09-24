@@ -7,6 +7,7 @@ import {
   forgotPassword,
   verifyOtp,
   changePassword,
+  resetPassword,
   saveAuthSession,
   clearAuthSession,
 } from "@/services/auth.service";
@@ -17,6 +18,7 @@ import type {
   ForgotPasswordPayload,
   VerifyOtpPayload,
   ChangePasswordPayload,
+  ResetPasswordPayload,
 } from "@/types/auth.types";
 
 // ─────────────────────────────────────────────
@@ -81,10 +83,16 @@ export const useVerifyOtp = () =>
     mutationFn: (payload: VerifyOtpPayload) => verifyOtp(payload),
   });
 
-/** Change / Reset Password mutation */
+/** Change Password mutation */
 export const useChangePassword = () =>
   useMutation({
     mutationFn: (payload: ChangePasswordPayload) => changePassword(payload),
+  });
+
+/** Reset Password mutation (via token) */
+export const useResetPassword = () =>
+  useMutation({
+    mutationFn: (payload: ResetPasswordPayload) => resetPassword(payload),
   });
 
 /** Logout mutation */

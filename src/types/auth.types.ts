@@ -57,24 +57,32 @@ export interface LoginResponse {
 }
 
 export interface ForgotPasswordPayload {
-  email: string;
+  email?: string;
+  identifier?: string;
 }
 
 export interface ForgotPasswordResponse {
   success: boolean;
   message: string;
-  data?: unknown;
+  data?: {
+    message?: string;
+    email?: string;
+  };
 }
 
 export interface VerifyOtpPayload {
-  email: string;
-  otp: number;
+  email?: string;
+  identifier?: string;
+  otp: number | string;
 }
 
 export interface VerifyOtpResponse {
   success: boolean;
   message: string;
-  data?: unknown;
+  data?: {
+    message?: string;
+    resetToken?: string;
+  };
 }
 
 export interface ChangePasswordPayload {
@@ -85,7 +93,23 @@ export interface ChangePasswordPayload {
 export interface ChangePasswordResponse {
   success: boolean;
   message: string;
-  data?: unknown;
+  data?: {
+    message?: string;
+  };
+}
+
+export interface ResetPasswordPayload {
+  newPassword: string;
+  confirmNewPassword: string;
+  token?: string;
+}
+
+export interface ResetPasswordResponse {
+  success: boolean;
+  message: string;
+  data?: {
+    message?: string;
+  };
 }
 
 export interface UserProfile extends AuthUser {

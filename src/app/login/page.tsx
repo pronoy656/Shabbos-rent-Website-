@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, Suspense } from "react";
+import { useState, Suspense, useRef } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
@@ -18,7 +18,7 @@ import {
   Phone,
 } from "lucide-react";
 import { PhoneInput } from "@/components/common/PhoneInput";
-import { useLogin, useForgotPassword, useVerifyOtp, useChangePassword } from "@/hooks/useAuth";
+import { useLogin, useForgotPassword, useVerifyOtp, useResetPassword } from "@/hooks/useAuth";
 import { toast } from "sonner";
 
 function LoginFormContent() {
@@ -30,7 +30,7 @@ function LoginFormContent() {
   const loginMutation = useLogin();
   const forgotPasswordMutation = useForgotPassword();
   const verifyOtpMutation = useVerifyOtp();
-  const changePasswordMutation = useChangePassword();
+  const resetPasswordMutation = useResetPassword();
 
   // Form State
   const [showPassword, setShowPassword] = useState(false);
@@ -45,10 +45,41 @@ function LoginFormContent() {
   const [forgotStep, setForgotStep] = useState<"EMAIL" | "OTP" | "NEW_PASSWORD" | "SUCCESS">("EMAIL");
   const [forgotEmail, setForgotEmail] = useState("");
   const [forgotOtp, setForgotOtp] = useState("");
+  const [resetToken, setResetToken] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmNewPassword, setConfirmNewPassword] = useState("");
   const [forgotError, setForgotError] = useState<string | null>(null);
   const [forgotSuccessMessage, setForgotSuccessMessage] = useState<string | null>(null);
+
+  const otpInputRefs = useRef<(HTMLInputElement | null)[]>([]);
+
+  const handleOtpChange = (index: number, value: string) => {
+    if (!/^\d*$/.test(value)) return;
+    const newOtp = forgotOtp.padEnd(6, "").split("");
+    newOtp[index] = value.substring(value.length - 1); // take last char if multiple
+    const combinedOtp = newOtp.join("");
+    setForgotOtp(combinedOtp);
+
+    if (value && index < 5) {
+      otpInputRefs.current[index + 1]?.focus();
+    }
+  };
+
+  const handleOtpKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Backspace" && !forgotOtp[index] && index > 0) {
+      otpInputRefs.current[index - 1]?.focus();
+    }
+  };
+
+  const handleOtpPaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+    e.preventDefault();
+    const pastedData = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
+    if (pastedData) {
+      setForgotOtp(pastedData);
+      const focusIndex = Math.min(pastedData.length, 5);
+      otpInputRefs.current[focusIndex]?.focus();
+    }
+  };
 
   // Normal Login Submit (supports email or phone number as identifier)
   const handleFormLogin = async (e?: React.FormEvent) => {
@@ -146,7 +177,7 @@ function LoginFormContent() {
 
     try {
       const res = await forgotPasswordMutation.mutateAsync({ email: forgotEmail.trim() });
-      const msg = res?.message || "OTP code sent to your email!";
+      const msg = res?.data?.message || res?.message || "OTP code sent to your email!";
       setForgotSuccessMessage(msg);
       toast.success(msg);
       setForgotStep("OTP");
@@ -173,9 +204,15 @@ function LoginFormContent() {
 
     try {
       const res = await verifyOtpMutation.mutateAsync({
-        email: forgotEmail.trim(),
+        identifier: forgotEmail.trim(), 
         otp: numericOtp,
-      });
+      }); 
+      
+      const token = res?.data?.resetToken || (res as any)?.resetToken;
+      if (!token) {
+         throw new Error("Reset token not found in response.");
+      }
+      setResetToken(token);
       toast.success(res?.message || "OTP code verified successfully!");
       setForgotStep("NEW_PASSWORD");
       setForgotSuccessMessage(null);
@@ -198,10 +235,17 @@ function LoginFormContent() {
       toast.error("Passwords do not match.");
       return;
     }
+    if (newPassword.length < 6) {
+      setForgotError("Password must be at least 6 characters.");
+      toast.error("Password must be at least 6 characters.");
+      return;
+    }
 
     try {
-      const res = await changePasswordMutation.mutateAsync({
+      const res = await resetPasswordMutation.mutateAsync({
         newPassword,
+        confirmNewPassword,
+        token: resetToken,
       });
       toast.success(res?.message || "Password updated successfully!");
       setForgotStep("SUCCESS");
@@ -214,6 +258,7 @@ function LoginFormContent() {
       toast.error(errorMsg || "Failed to update password.");
     }
   };
+
 
   return (
     <div className="flex min-h-screen bg-white dark:bg-black font-sans selection:bg-blue-100 selection:text-blue-900">
@@ -476,7 +521,7 @@ function LoginFormContent() {
                     disabled={forgotPasswordMutation.isPending}
                     className="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm shadow-md transition-all disabled:opacity-60 cursor-pointer flex items-center justify-center gap-1.5"
                   >
-                    {forgotPasswordMutation.isPending ? "Sending OTP..." : "Send Verification Code"}
+                    {forgotPasswordMutation.isPending ? "Sending OTP..." : "Send OTP"}
                   </button>
                 </form>
               </div>
@@ -513,15 +558,24 @@ function LoginFormContent() {
                     <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1">
                       6-Digit OTP Code
                     </label>
-                    <input
-                      type="text"
-                      maxLength={6}
-                      required
-                      placeholder="123456"
-                      value={forgotOtp}
-                      onChange={(e) => setForgotOtp(e.target.value)}
-                      className="w-full px-4 py-2.5 text-center tracking-widest font-mono text-lg rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-blue-500"
-                    />
+                    <div className="flex justify-between gap-2" onPaste={handleOtpPaste}>
+                      {[0, 1, 2, 3, 4, 5].map((index) => (
+                        <input
+                          key={index}
+                          ref={(el) => {
+                            otpInputRefs.current[index] = el;
+                          }}
+                          type="text"
+                          inputMode="numeric"
+                          maxLength={1}
+                          required
+                          value={forgotOtp[index] || ""}
+                          onChange={(e) => handleOtpChange(index, e.target.value)}
+                          onKeyDown={(e) => handleOtpKeyDown(index, e)}
+                          className="w-12 h-14 text-center font-mono text-xl font-bold rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 text-zinc-900 dark:text-white outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all shadow-sm"
+                        />
+                      ))}
+                    </div>
                   </div>
 
                   <button
@@ -545,7 +599,7 @@ function LoginFormContent() {
                   Create New Password
                 </h2>
                 <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-5">
-                  Choose a secure password with at least 8 characters.
+                  Choose a secure password with at least 6 characters.
                 </p>
 
                 {forgotError && (
@@ -585,10 +639,10 @@ function LoginFormContent() {
 
                   <button
                     type="submit"
-                    disabled={changePasswordMutation.isPending}
+                    disabled={resetPasswordMutation.isPending}
                     className="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm shadow-md transition-all disabled:opacity-60 cursor-pointer flex items-center justify-center gap-1.5"
                   >
-                    {changePasswordMutation.isPending ? "Updating Password..." : "Set New Password"}
+                    {resetPasswordMutation.isPending ? "Updating Password..." : "Set New Password"}
                   </button>
                 </form>
               </div>
@@ -608,7 +662,10 @@ function LoginFormContent() {
                 </p>
 
                 <button
-                  onClick={() => setIsForgotModalOpen(false)}
+                  onClick={() => {
+                    setIsForgotModalOpen(false);
+                    setForgotStep("EMAIL");
+                  }}
                   className="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm shadow-md transition-all cursor-pointer"
                 >
                   Back to Sign In
