@@ -78,35 +78,40 @@ export default function EditProfileModal({
       const initialPhone = user?.phone || "";
       const initialLocation = user?.location || "";
 
-      // 1. Update Profile Information (using FormData to support image)
+      // 1. Update Profile Information
       let hasProfileChanges = false;
+      const jsonPayload: any = {};
       const formData = new FormData();
       
       if (name.trim() !== initialName.trim()) {
+        jsonPayload.username = name.trim();
         formData.append("username", name.trim());
         hasProfileChanges = true;
       }
       if (email.trim() !== initialEmail.trim()) {
+        jsonPayload.email = email.trim();
         formData.append("email", email.trim());
         hasProfileChanges = true;
       }
       if (phone.trim() !== initialPhone.trim()) {
+        jsonPayload.phone = phone.trim();
         formData.append("phone", phone.trim());
         hasProfileChanges = true;
       }
       if (location.trim() !== initialLocation.trim()) {
+        jsonPayload.location = location.trim();
         formData.append("location", location.trim());
-        hasProfileChanges = true;
-      }
-      if (imageFile) {
-        formData.append("image", imageFile);
         hasProfileChanges = true;
       }
 
       let updatedProfileImage = user?.profileImage;
       
-      if (hasProfileChanges) {
-        const response = await updateMe(formData);
+      if (hasProfileChanges || imageFile) {
+        let payloadToSubmit = imageFile ? formData : jsonPayload;
+        if (imageFile) {
+           formData.append("image", imageFile);
+        }
+        const response = await updateMe(payloadToSubmit);
         if (response?.data?.profileImage) {
           updatedProfileImage = response.data.profileImage;
         }

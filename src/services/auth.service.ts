@@ -68,6 +68,7 @@ export const clearAuthSession = () => {
   // Clear TanStack Query Cache
   try {
     queryClient.clear();
+    sessionStorage.removeItem("hasSeenWelcomeGuide");
   } catch {}
 
   // List of user-specific keys to remove

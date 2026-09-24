@@ -127,6 +127,7 @@ function SignupFormContent() {
         password,
         confirmPassword,
         marketingPlatformId: marketingPlatformId || undefined,
+        role: isRenter ? "USER" : "OWNER",
       };
 
       if (noEmail) {
@@ -160,10 +161,10 @@ function SignupFormContent() {
       localStorage.setItem("hasUserListing", "false");
 
       setTimeout(() => {
-        if (redirectUrl && !redirectUrl.startsWith("/dashboard")) {
+        if (redirectUrl && !redirectUrl.startsWith("/dashboard") && !redirectUrl.startsWith("/user-dashboard")) {
           window.location.href = redirectUrl;
         } else {
-          window.location.href = "/user-dashboard";
+          window.location.href = isRenter ? "/" : "/user-dashboard";
         }
       }, 600);
     } catch (err: unknown) {

@@ -20,8 +20,13 @@ export const saveSwapPreference = (
   api.post("/swap-preference", payload).then((res) => res.data);
 
 /** Get My Swap Preference */
-export const getMySwapPreference = (): Promise<{ data: SwapPreference }> =>
-  api.get("/swap-preference/my-preference").then((res) => res.data);
+export const getMySwapPreference = (): Promise<{ data: SwapPreference | null }> =>
+  api.get("/swap-preference/my-preference").then((res) => res.data).catch((err) => {
+    if (err?.response?.data?.message === "You have not listed an apartment yet") {
+      return { data: null };
+    }
+    throw err;
+  });
 
 /** Get Matched Swappable Listings (Scored Matching Engine) */
 export const getMatchedSwaps = (

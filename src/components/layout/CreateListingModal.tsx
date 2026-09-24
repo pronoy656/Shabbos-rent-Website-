@@ -96,6 +96,7 @@ export default function CreateListingModal({
   const [emailEnabled, setEmailEnabled] = useState(false);
   const [isAvailable, setIsAvailable] = useState(true);
   const [acceptRequestsWhenUnavailable, setAcceptRequestsWhenUnavailable] = useState(false);
+  const [isActive, setIsActive] = useState(true);
   
   const [coverImageFile, setCoverImageFile] = useState<File | null>(null);
   const [coverImagePreview, setCoverImagePreview] = useState<string | null>(null);
@@ -160,6 +161,7 @@ export default function CreateListingModal({
       setEmailEnabled(initialApartment?.email === true);
       setIsAvailable(initialApartment?.unavailable !== true);
       setAcceptRequestsWhenUnavailable(initialApartment?.receiveRequestWhenUnavailable === true);
+      setIsActive(initialApartment?.isActive !== false);
       setDescription(initialApartment?.description || "");
       if (initialApartment?.coverImage) {
         setCoverImagePreview(initialApartment.coverImage);
@@ -194,6 +196,7 @@ export default function CreateListingModal({
       setEmailEnabled(false);
       setIsAvailable(true);
       setAcceptRequestsWhenUnavailable(false);
+      setIsActive(true);
       setCoverImageFile(null);
       setCoverImagePreview(null);
       setGalleryFiles([]);
@@ -302,7 +305,7 @@ export default function CreateListingModal({
     formData.append("email", String(emailEnabled));
     formData.append("unavailable", String(!isAvailable));
     formData.append("receiveRequestWhenUnavailable", String(!isAvailable && acceptRequestsWhenUnavailable));
-    formData.append("isActive", "true");
+    formData.append("isActive", String(isActive));
 
     if (coverImageFile) {
       formData.append("coverImage", coverImageFile);
@@ -1026,6 +1029,21 @@ export default function CreateListingModal({
                       </button>
                     </div>
                   )}
+
+                  {/* Active / Inactive Status */}
+                  <div className="flex items-center justify-between pt-4 border-t border-zinc-100 dark:border-zinc-800">
+                    <div>
+                      <p className="font-bold text-zinc-900 dark:text-white">Active Listing</p>
+                      <p className="text-sm text-zinc-500">Uncheck this to completely hide the listing from search results.</p>
+                    </div>
+                    <button 
+                      type="button" 
+                      onClick={() => setIsActive(!isActive)}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#4c55a4] ${isActive ? 'bg-[#4c55a4]' : 'bg-zinc-200 dark:bg-zinc-700'}`}
+                    >
+                      <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${isActive ? 'translate-x-6' : 'translate-x-1'}`} />
+                    </button>
+                  </div>
                 </div>
               </div>
 

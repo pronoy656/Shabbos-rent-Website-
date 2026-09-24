@@ -21,6 +21,7 @@ import { useMyApartment, useApartmentAvailabilities } from "@/hooks/useApartment
 import { useWeekendCalendars } from "@/hooks/useWeekendCalendar";
 import { getImageUrl } from "@/utils/imageUrl";
 import CreateListingModal from "@/components/layout/CreateListingModal";
+import WelcomeGuideModal from "@/components/dashboard/WelcomeGuideModal";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function MyListingPage() {
@@ -35,6 +36,12 @@ export default function MyListingPage() {
   const [modalMode, setModalMode] = useState<"create" | "edit">("edit");
   const [isViewDetailsModalOpen, setIsViewDetailsModalOpen] = useState(false);
   const [modalActiveImage, setModalActiveImage] = useState<string>("");
+  const [isWelcomeGuideOpen, setIsWelcomeGuideOpen] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   const [localSelectedShabbatot, setLocalSelectedShabbatot] = useState<string[]>([]);
   const [localSpecialShabbatot, setLocalSpecialShabbatot] = useState<string[]>([]);
@@ -173,7 +180,22 @@ export default function MyListingPage() {
     return Array.from(listMap.values());
   })();
 
-  if (isMyApartmentLoading) {
+  const hasApartment = Boolean(
+    myApartment && (myApartment.id || (myApartment as any)._id || myApartment.title)
+  );
+
+  // Auto-show welcome guide for users without an apartment
+  useEffect(() => {
+    if (!isMyApartmentLoading && !hasApartment) {
+      const hasSeen = sessionStorage.getItem("hasSeenWelcomeGuide");
+      if (!hasSeen) {
+        setIsWelcomeGuideOpen(true);
+        sessionStorage.setItem("hasSeenWelcomeGuide", "true");
+      }
+    }
+  }, [isMyApartmentLoading, hasApartment]);
+
+  if (!isMounted || isMyApartmentLoading) {
     return (
       <div className="bg-white dark:bg-zinc-900 rounded-3xl border border-zinc-200 dark:border-zinc-800 p-6 sm:p-8 space-y-6 animate-pulse">
         <div className="flex flex-col sm:flex-row justify-between gap-4">
@@ -196,10 +218,6 @@ export default function MyListingPage() {
       </div>
     );
   }
-
-  const hasApartment = Boolean(
-    myApartment && (myApartment.id || (myApartment as any)._id || myApartment.title)
-  );
 
   // Empty State if user hasn't added an apartment
   if (!hasApartment) {
@@ -236,6 +254,15 @@ export default function MyListingPage() {
           onSave={() => {
             setIsCreateModalOpen(false);
             refetchMyApartment();
+          }}
+        />
+
+        <WelcomeGuideModal 
+          isOpen={isWelcomeGuideOpen}
+          onClose={() => setIsWelcomeGuideOpen(false)}
+          onAddApartment={() => {
+            setModalMode("create");
+            setIsCreateModalOpen(true);
           }}
         />
       </>

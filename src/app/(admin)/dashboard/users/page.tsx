@@ -47,7 +47,7 @@ export default function AdminUsersPage() {
   // Filters & Query State
   const [searchTerm, setSearchTerm] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
-  const [selectedRole, setSelectedRole] = useState<string>("ALL");
+  const [selectedRole, setSelectedRole] = useState<string>("USER");
   const [selectedStatus, setSelectedStatus] = useState<string>("ALL");
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [pageSize, setPageSize] = useState<number>(10);
@@ -92,7 +92,7 @@ export default function AdminUsersPage() {
 
   const clearFilters = () => {
     setSearchTerm("");
-    setSelectedRole("ALL");
+    setSelectedRole("USER");
     setSelectedStatus("ALL");
     setCurrentPage(1);
   };
@@ -186,66 +186,37 @@ export default function AdminUsersPage() {
               )}
             </div>
 
-            {/* Role Filter (shadcn UI) */}
-            <DropdownMenu>
-              <DropdownMenuTrigger className="inline-flex items-center justify-between gap-2 px-3.5 py-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl text-xs font-bold text-zinc-700 dark:text-zinc-200 outline-none hover:bg-zinc-50 dark:hover:bg-zinc-750 transition-colors shadow-2xs cursor-pointer min-w-[120px]">
-                <div className="flex items-center gap-1.5">
-                  <span className="text-zinc-400 font-medium">Role:</span>
-                  <span>
-                    {selectedRole === "ALL"
-                      ? "All"
-                      : selectedRole === "USER"
-                      ? "User"
-                      : "Super Admin"}
-                  </span>
-                </div>
-                <ChevronDown className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="w-44 rounded-xl p-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-xl z-50">
-                <DropdownMenuItem
-                  onClick={() => {
-                    setSelectedRole("ALL");
-                    setCurrentPage(1);
-                  }}
-                  className={`px-3 py-2 text-xs font-bold rounded-lg cursor-pointer flex items-center justify-between transition-colors ${
-                    selectedRole === "ALL"
-                      ? "bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400"
-                      : "text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
-                  }`}
-                >
-                  <span>All Roles</span>
-                  {selectedRole === "ALL" && <Check className="w-3.5 h-3.5" />}
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => {
-                    setSelectedRole("USER");
-                    setCurrentPage(1);
-                  }}
-                  className={`px-3 py-2 text-xs font-bold rounded-lg cursor-pointer flex items-center justify-between transition-colors ${
-                    selectedRole === "USER"
-                      ? "bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400"
-                      : "text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
-                  }`}
-                >
-                  <span>User</span>
-                  {selectedRole === "USER" && <Check className="w-3.5 h-3.5" />}
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => {
-                    setSelectedRole("SUPER_ADMIN");
-                    setCurrentPage(1);
-                  }}
-                  className={`px-3 py-2 text-xs font-bold rounded-lg cursor-pointer flex items-center justify-between transition-colors ${
-                    selectedRole === "SUPER_ADMIN"
-                      ? "bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400"
-                      : "text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
-                  }`}
-                >
-                  <span>Super Admin</span>
-                  {selectedRole === "SUPER_ADMIN" && <Check className="w-3.5 h-3.5" />}
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            {/* Role Tabs */}
+            <div className="flex items-center gap-1 p-1 bg-zinc-100 dark:bg-zinc-800 rounded-xl">
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedRole("USER");
+                  setCurrentPage(1);
+                }}
+                className={`px-4 py-2 text-xs font-bold rounded-lg transition-all ${
+                  selectedRole === "USER"
+                    ? "bg-white dark:bg-zinc-900 text-indigo-600 dark:text-indigo-400 shadow-sm"
+                    : "text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
+                }`}
+              >
+                Renters
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedRole("OWNER");
+                  setCurrentPage(1);
+                }}
+                className={`px-4 py-2 text-xs font-bold rounded-lg transition-all ${
+                  selectedRole === "OWNER"
+                    ? "bg-white dark:bg-zinc-900 text-indigo-600 dark:text-indigo-400 shadow-sm"
+                    : "text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
+                }`}
+              >
+                Owners
+              </button>
+            </div>
 
             {/* Status Filter (shadcn UI) */}
             <DropdownMenu>

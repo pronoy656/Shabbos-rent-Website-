@@ -72,16 +72,24 @@ function LoginFormContent() {
 
       const userRole = res?.data?.user?.role;
       const isAdmin = userRole === "SUPER_ADMIN" || userRole === "ADMIN";
+      const isOwner = userRole === "OWNER";
 
       setTimeout(() => {
         if (isAdmin) {
           window.location.href = redirectUrl || "/dashboard";
-        } else {
-          // If not admin but redirectUrl is an admin route, ignore the redirectUrl
-          if (redirectUrl && redirectUrl.startsWith("/dashboard")) {
-            window.location.href = "/user-dashboard";
+        } else if (isOwner) {
+          // If redirectUrl is not appropriate, fallback to owner dashboard
+          if (redirectUrl && !redirectUrl.startsWith("/dashboard")) {
+            window.location.href = redirectUrl;
           } else {
-            window.location.href = redirectUrl || "/user-dashboard";
+            window.location.href = "/user-dashboard";
+          }
+        } else {
+          // USER / Renter
+          if (redirectUrl && !redirectUrl.startsWith("/dashboard") && !redirectUrl.startsWith("/user-dashboard")) {
+            window.location.href = redirectUrl;
+          } else {
+            window.location.href = "/";
           }
         }
       }, 400);

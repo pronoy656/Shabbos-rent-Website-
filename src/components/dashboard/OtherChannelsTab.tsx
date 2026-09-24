@@ -99,7 +99,7 @@ export default function OtherChannelsTab() {
             </div>
 
             {/* Smartphone Graphic Mockup */}
-            <div className="relative w-48 h-52 flex items-center justify-center -translate-x-32">
+            <div className="relative w-48 h-52 flex items-center justify-center -translate-x-12 translate-y-4">
               
               {/* Phone Body with 3D tilt */}
               <div className="relative w-36 h-48 rounded-[2.2rem] bg-gradient-to-b from-[#18233d] to-[#0c1424] border-[3px] border-slate-700/80 shadow-2xl p-2.5 flex flex-col justify-between transform rotate-[10deg] hover:rotate-0 transition-transform duration-500">

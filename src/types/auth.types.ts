@@ -11,12 +11,17 @@ export interface RegisterPayload {
   confirmPassword: string;
   referralCode?: string;
   marketingPlatformId?: string;
+  role?: string;
 }
 
 export interface RegisterResponse {
   success: boolean;
   message: string;
-  data: AuthUser;
+  data: {
+    accessToken: string;
+    refreshToken: string;
+    user: AuthUser;
+  };
 }
 
 export interface LoginPayload {

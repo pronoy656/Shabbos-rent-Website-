@@ -139,6 +139,7 @@ export const OwnerReminderSettingsCard: React.FC<OwnerReminderSettingsCardProps>
       notificationPhone: config.deliveryMethod === 'email' ? null : (config.phone || null),
       preferredDay: uiDayToApi[config.dayOfWeek] || 'THURSDAY',
       preferredTime: config.time || '18:00',
+      isPaused: !config.enabled,
     };
 
     updatePrefMutation.mutate(payload, {

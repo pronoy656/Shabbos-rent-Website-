@@ -44,12 +44,19 @@ export const getApartments = async (
 
 /** GET /apartments/my-apartment — Get current logged-in owner's apartment */
 export const getMyApartment = async (): Promise<ApartmentItem | null> => {
-  const res = await api.get<any>(`${BASE_APARTMENTS}/my-apartment`);
-  const data = res.data?.data;
-  if (Array.isArray(data)) {
-    return data.length > 0 ? (data[0] as ApartmentItem) : null;
+  try {
+    const res = await api.get<any>(`${BASE_APARTMENTS}/my-apartment`);
+    const data = res.data?.data;
+    if (Array.isArray(data)) {
+      return data.length > 0 ? (data[0] as ApartmentItem) : null;
+    }
+    return (data as ApartmentItem) || null;
+  } catch (err: any) {
+    if (err?.response?.status === 404 || err?.response?.data?.message?.includes("not listed")) {
+      return null;
+    }
+    throw err;
   }
-  return (data as ApartmentItem) || null;
 };
 
 /** GET /apartments/:id — Get single apartment details by ID or propertyId */

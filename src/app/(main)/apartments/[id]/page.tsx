@@ -95,6 +95,8 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
   const currentGalleryImages = apiImages.length > 0 ? apiImages : ["https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=1200&q=80"];
 
   const [isAuthChecked, setIsAuthChecked] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isLoginPopupOpen, setIsLoginPopupOpen] = useState(false);
   const [activeImage, setActiveImage] = useState(currentGalleryImages[0]);
 
   useEffect(() => {
@@ -602,25 +604,17 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
 
   useEffect(() => {
     if (typeof window !== "undefined") {
-      const isLoggedIn = localStorage.getItem("userRole") !== null;
-      if (!isLoggedIn) {
-        const currentPath = `/apartments/${id}${isSwapMode ? '?mode=swap' : ''}`;
-        router.push(`/login?redirect=${encodeURIComponent(currentPath)}`);
-      } else {
-        setIsAuthChecked(true);
-      }
+      const isLogged = localStorage.getItem("userRole") !== null;
+      setIsLoggedIn(isLogged);
+      setIsAuthChecked(true);
     }
-  }, [id, isSwapMode, router]);
+  }, []);
 
-  // Record current apartment into Recently Viewed localStorage history (logged in users only)
+  // Record current apartment into Recently Viewed localStorage history
   useEffect(() => {
     if (typeof window !== "undefined" && isAuthChecked && apiApartment && !isAptLoading) {
-      const userRole = localStorage.getItem("userRole");
-      if (!userRole) return;
-
       try {
         const aptToRecord: ApartmentData = apiApartment as unknown as ApartmentData;
-
         const existingStr = localStorage.getItem("recently_viewed_apartments");
         let existingList: ApartmentData[] = existingStr ? JSON.parse(existingStr) : [];
         existingList = existingList.filter((item) => item.id !== aptToRecord.id);
@@ -802,6 +796,10 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
   };
 
   const toggleSaveApartment = () => {
+    if (!isLoggedIn) {
+      setIsLoginPopupOpen(true);
+      return;
+    }
     toggleFavorite({
       id: apiApartment?.id || id,
       title: displayTitle,
@@ -815,25 +813,7 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
     });
   };
 
-  if (!isAuthChecked) {
-    return (
-      <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 flex flex-col items-center justify-center p-4">
-        <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-8 max-w-md w-full text-center shadow-xl">
-          <div className="w-12 h-12 border-4 border-[#4c55a4] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <h3 className="text-xl font-bold text-zinc-900 dark:text-white mb-2">Login Required</h3>
-          <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-6">
-            You must be logged in to view apartment details. Redirecting to login page...
-          </p>
-          <a 
-            href={`/login?redirect=${encodeURIComponent(`/apartments/${id}${isSwapMode ? '?mode=swap' : ''}`)}`} 
-            className="inline-block px-6 py-2.5 bg-[#4c55a4] hover:bg-[#3d4484] text-white text-xs font-bold rounded-xl shadow-md transition-colors"
-          >
-            Click here if not redirected
-          </a>
-        </div>
-      </div>
-    );
-  }
+  // Auth check blocking screen removed - page is public
 
   if (isAptLoading) {
     return (
@@ -1011,7 +991,7 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
                             View all available dates
                           </button>
                           <button 
-                            onClick={() => setIsModalOpen(true)}
+                            onClick={() => isLoggedIn ? setIsModalOpen(true) : setIsLoginPopupOpen(true)}
                             className="flex-1 px-4 py-3 bg-[#4c55a4] hover:bg-[#3d4484] text-white rounded-xl font-bold text-sm flex items-center justify-center whitespace-nowrap"
                           >
                             I'm interested
@@ -1020,7 +1000,7 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
                         
                         <div className="flex gap-2 mt-1">
                           <button 
-                            onClick={handleNotifyMe}
+                            onClick={() => isLoggedIn ? handleNotifyMe() : setIsLoginPopupOpen(true)}
                             disabled={isSendingNotify || isNotified}
                             className="w-full px-4 py-2.5 border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-800 rounded-xl font-bold text-sm disabled:opacity-50 text-zinc-900 dark:text-white"
                           >
@@ -1109,7 +1089,7 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
                 {isApartmentAvailable ? (
                   <div className="flex flex-col sm:flex-row gap-3">
                     <button 
-                       onClick={() => setIsLandlordModalOpen(true)}
+                       onClick={() => isLoggedIn ? setIsLandlordModalOpen(true) : setIsLoginPopupOpen(true)}
                        className="px-8 py-3.5 bg-[#4c55a4] hover:bg-[#3d4484] text-white rounded-xl font-extrabold transition-all shadow-md shadow-[#4c55a4]/20 flex items-center justify-center gap-2 whitespace-nowrap active:scale-95"
                     >
                        <Phone className="w-4 h-4" />
@@ -1117,7 +1097,7 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
                     </button>
                     {(isSwapMode || isSwapAvailableForApt) && (
                       <button 
-                        onClick={handleProposeSwapFromDetails}
+                        onClick={() => isLoggedIn ? handleProposeSwapFromDetails() : setIsLoginPopupOpen(true)}
                         disabled={isSendingSwapRequest}
                         className="px-8 py-3.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl font-extrabold transition-all shadow-md flex items-center justify-center gap-2 whitespace-nowrap active:scale-95 disabled:opacity-50"
                       >
@@ -1129,7 +1109,7 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
                 ) : isAcceptingRequests ? (
                   <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto mt-4 sm:mt-0">
                     <button 
-                       onClick={() => setIsModalOpen(true)}
+                       onClick={() => isLoggedIn ? setIsModalOpen(true) : setIsLoginPopupOpen(true)}
                        className="px-6 py-3.5 bg-[#4c55a4] hover:bg-[#3d4484] text-white rounded-xl font-extrabold transition-all shadow-md shadow-[#4c55a4]/20 flex items-center justify-center whitespace-nowrap active:scale-95"
                     >
                        I'm interested
@@ -1138,7 +1118,7 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
                 ) : (
                   <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto mt-4 sm:mt-0">
                     <button 
-                       onClick={() => setIsModalOpen(true)}
+                       onClick={() => isLoggedIn ? setIsModalOpen(true) : setIsLoginPopupOpen(true)}
                        className="px-6 py-3.5 bg-[#4c55a4] hover:bg-[#3d4484] text-white rounded-xl font-extrabold transition-all shadow-md shadow-[#4c55a4]/20 flex items-center justify-center whitespace-nowrap active:scale-95"
                     >
                        Send request or offer
@@ -2097,6 +2077,45 @@ export default function ApartmentDetailsPage({ params }: { params: Promise<{ id:
             >
               Continue
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Login Required Popup */}
+      {isLoginPopupOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-zinc-950/60 backdrop-blur-md animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-zinc-900 rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden border border-zinc-200/80 dark:border-zinc-800 animate-in zoom-in-95 duration-200 text-center p-8 relative">
+            <button 
+              onClick={() => setIsLoginPopupOpen(false)}
+              className="absolute top-4 right-4 p-2 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            <div className="w-16 h-16 bg-blue-50 dark:bg-blue-900/30 rounded-2xl flex items-center justify-center mx-auto mb-5 text-[#4c55a4]">
+              <LockKeyhole className="w-8 h-8" />
+            </div>
+            <h3 className="text-xl font-extrabold text-zinc-900 dark:text-white mb-2">Login Required</h3>
+            <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-8 leading-relaxed">
+              You must be logged in to contact the landlord and view further details. Please log in or create an account.
+            </p>
+            <button 
+              onClick={() => {
+                const currentPath = window.location.pathname + window.location.search;
+                router.push(`/login?redirect=${encodeURIComponent(currentPath)}`);
+              }}
+              className="w-full py-3.5 bg-[#4c55a4] hover:bg-[#3d4484] text-white rounded-xl font-bold shadow-md shadow-[#4c55a4]/20 transition-all mb-3 cursor-pointer"
+            >
+              Log In
+            </button>
+            <p className="text-xs text-zinc-500 dark:text-zinc-400">
+              Don't have an account?{" "}
+              <button onClick={() => {
+                const currentPath = window.location.pathname + window.location.search;
+                router.push(`/signup?redirect=${encodeURIComponent(currentPath)}`);
+              }} className="text-[#4c55a4] hover:underline font-bold">
+                Sign up
+              </button>
+            </p>
           </div>
         </div>
       )}

@@ -57,9 +57,15 @@ export const useRegister = () =>
   useMutation({
     mutationFn: (payload: RegisterPayload) => register(payload),
     onSuccess: (data) => {
-      if (data?.data) {
-        localStorage.setItem("authUser", JSON.stringify(data.data));
+      queryClient.clear();
+      if (data?.data?.accessToken) {
+        saveAuthSession({
+          accessToken: data.data.accessToken,
+          refreshToken: data.data.refreshToken,
+          user: data.data.user,
+        });
       }
+      queryClient.invalidateQueries();
     },
   });
 
