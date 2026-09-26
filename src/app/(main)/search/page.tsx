@@ -359,6 +359,7 @@ function SearchContent() {
             initialType={initialType}
             hideResults={true}
             onFilterChange={handleFilterChange}
+            initialFilters={filters}
           />
         </div>
 

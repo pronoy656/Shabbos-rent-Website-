@@ -252,7 +252,6 @@ export default function MyListingPage() {
           initialApartment={undefined}
           onClose={() => setIsCreateModalOpen(false)}
           onSave={() => {
-            setIsCreateModalOpen(false);
             refetchMyApartment();
           }}
         />
@@ -486,7 +485,6 @@ export default function MyListingPage() {
         initialApartment={myApartment}
         onClose={() => setIsCreateModalOpen(false)}
         onSave={() => {
-          setIsCreateModalOpen(false);
           refetchMyApartment();
         }}
       />

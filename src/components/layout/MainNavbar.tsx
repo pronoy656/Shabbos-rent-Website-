@@ -50,7 +50,7 @@ export default function MainNavbar() {
     try {
       await logout();
     } catch {}
-    router.replace("/login");
+    router.replace("/");
   };
 
   const navLinks = [
@@ -123,8 +123,8 @@ export default function MainNavbar() {
               />
             )}
 
-            {!userRole ? (
-              <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3">
+              {(!userRole || userRole.toUpperCase() === "RENTER") && (
                 <button
                   onClick={() => setIsAddModalOpen(true)}
                   className="relative inline-flex h-10 overflow-hidden rounded-xl p-[2px] focus:outline-none cursor-pointer"
@@ -134,6 +134,9 @@ export default function MainNavbar() {
                     {t("nav.add_apartment")}
                   </span>
                 </button>
+              )}
+
+              {!userRole ? (
                 <Link
                   href="/login"
                   className="flex items-center gap-2 px-5 py-2.5 text-sm font-bold text-zinc-900 bg-white border border-zinc-200 rounded-xl hover:bg-zinc-50 hover:border-zinc-300 dark:bg-zinc-900 dark:border-zinc-800 dark:text-white dark:hover:bg-zinc-800 transition-all shadow-sm"
@@ -141,9 +144,8 @@ export default function MainNavbar() {
                   <User className="w-4 h-4 text-zinc-500" />
                   {t("nav.login")}
                 </Link>
-              </div>
-            ) : (
-              <div className="flex items-center gap-4">
+              ) : (
+                <div className="flex items-center gap-4">
                 {/* Notifications Dropdown */}
                 <NotificationsDropdown
                   isOpen={isNotifDropdownOpen}
@@ -171,6 +173,7 @@ export default function MainNavbar() {
                 />
               </div>
             )}
+            </div>
           </div>
 
           {/* Mobile Menu Button */}

@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { MapPin, Phone, Mail, Send } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
 import { useContactForm } from "@/hooks/useContact";
+import { useMe } from "@/hooks/useAuth";
 import { toast } from "sonner";
 
 export default function ContactSection() {
@@ -16,6 +17,33 @@ export default function ContactSection() {
     message: "",
   });
   const [isSuccess, setIsSuccess] = useState(false);
+  const [isAuth, setIsAuth] = useState(false);
+  
+  const { data: meUser } = useMe();
+
+  useEffect(() => {
+    let authUser = meUser;
+    if (!authUser && typeof window !== "undefined") {
+      const stored = localStorage.getItem("authUser");
+      if (stored) {
+        try {
+          authUser = JSON.parse(stored);
+        } catch {}
+      }
+    }
+
+    if (authUser) {
+      setIsAuth(true);
+      // @ts-ignore - in case name exists instead of username
+      const userName = authUser.username || authUser.name || authUser.firstName || "";
+      setFormData(prev => ({
+        ...prev,
+        name: userName || prev.name,
+        email: authUser.email || prev.email,
+        phone: authUser.phone || prev.phone,
+      }));
+    }
+  }, [meUser]);
 
   const contactMutation = useContactForm();
 
@@ -167,7 +195,8 @@ export default function ContactSection() {
                       required
                       value={formData.name}
                       onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                      className="w-full px-5 py-3.5 bg-zinc-50/50 dark:bg-zinc-950/50 border border-zinc-200 dark:border-zinc-800 rounded-2xl text-zinc-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-[#4c55a4]/10 focus:border-[#4c55a4] transition-all hover:bg-white dark:hover:bg-zinc-900 shadow-sm"
+                      readOnly={isAuth && !!formData.name}
+                      className={`w-full px-5 py-3.5 bg-zinc-50/50 dark:bg-zinc-950/50 border border-zinc-200 dark:border-zinc-800 rounded-2xl text-zinc-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-[#4c55a4]/10 focus:border-[#4c55a4] transition-all hover:bg-white dark:hover:bg-zinc-900 shadow-sm ${isAuth && !!formData.name ? 'opacity-70 cursor-not-allowed' : ''}`}
                       placeholder={t("contact.placeholder_name")}
                     />
                   </div>
@@ -180,7 +209,8 @@ export default function ContactSection() {
                       required
                       value={formData.email}
                       onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                      className="w-full px-5 py-3.5 bg-zinc-50/50 dark:bg-zinc-950/50 border border-zinc-200 dark:border-zinc-800 rounded-2xl text-zinc-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-[#4c55a4]/10 focus:border-[#4c55a4] transition-all hover:bg-white dark:hover:bg-zinc-900 shadow-sm"
+                      readOnly={isAuth && !!formData.email}
+                      className={`w-full px-5 py-3.5 bg-zinc-50/50 dark:bg-zinc-950/50 border border-zinc-200 dark:border-zinc-800 rounded-2xl text-zinc-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-[#4c55a4]/10 focus:border-[#4c55a4] transition-all hover:bg-white dark:hover:bg-zinc-900 shadow-sm ${isAuth && !!formData.email ? 'opacity-70 cursor-not-allowed' : ''}`}
                       placeholder={t("contact.placeholder_email")}
                     />
                   </div>
@@ -195,7 +225,8 @@ export default function ContactSection() {
                       type="tel"
                       value={formData.phone}
                       onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                      className="w-full px-5 py-3.5 bg-zinc-50/50 dark:bg-zinc-950/50 border border-zinc-200 dark:border-zinc-800 rounded-2xl text-zinc-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-[#4c55a4]/10 focus:border-[#4c55a4] transition-all hover:bg-white dark:hover:bg-zinc-900 shadow-sm"
+                      readOnly={isAuth && !!formData.phone}
+                      className={`w-full px-5 py-3.5 bg-zinc-50/50 dark:bg-zinc-950/50 border border-zinc-200 dark:border-zinc-800 rounded-2xl text-zinc-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-[#4c55a4]/10 focus:border-[#4c55a4] transition-all hover:bg-white dark:hover:bg-zinc-900 shadow-sm ${isAuth && !!formData.phone ? 'opacity-70 cursor-not-allowed' : ''}`}
                       placeholder="052-123-4567"
                     />
                   </div>

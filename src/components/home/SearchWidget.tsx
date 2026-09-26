@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Search, MapPin, Calendar, BedDouble, Users, ArrowRightLeft, Home, Navigation, ChevronDown, Bath, Footprints, Lock, X, AlertCircle, Loader2 } from "lucide-react";
+import { Search, MapPin, Calendar, BedDouble, Users, ArrowRightLeft, Home, Navigation, ChevronDown, Bath, Footprints, Lock, X, AlertCircle, Loader2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import dynamic from "next/dynamic";
 import ApartmentCard from "@/components/search/ApartmentCard";
@@ -46,6 +46,7 @@ export interface SearchWidgetProps {
   initialType?: "rent" | "swap";
   hideResults?: boolean;
   onFilterChange?: (filters: SearchFilters) => void;
+  initialFilters?: Partial<SearchFilters>;
 }
 
 export default function SearchWidget({ 
@@ -54,7 +55,8 @@ export default function SearchWidget({
   initialCity = "",
   initialType = "rent",
   hideResults = false,
-  onFilterChange
+  onFilterChange,
+  initialFilters = {}
 }: SearchWidgetProps) {
   const router = useRouter();
   const { t } = useLanguage();
@@ -65,26 +67,26 @@ export default function SearchWidget({
 
   const isBackendSwapEnabled = Boolean(prefData?.data?.isEnabled);
 
-  const [activeTab, setActiveTab] = useState<"rent" | "swap">(initialType || "rent");
+  const [activeTab, setActiveTab] = useState<"rent" | "swap">(initialFilters.activeTab || initialType || "rent");
   const [localSwapTurnedOn, setLocalSwapTurnedOn] = useState(false);
   const [showSwipeModal, setShowSwipeModal] = useState(false);
   const [isTurningOnSwap, setIsTurningOnSwap] = useState(false);
-  const [hasSearchedSwap, setHasSearchedSwap] = useState(isSearchPage && initialType === "swap");
-  const [hasSearchedRent, setHasSearchedRent] = useState(isSearchPage && initialType !== "swap");
+  const [hasSearchedSwap, setHasSearchedSwap] = useState(isSearchPage && (initialFilters.activeTab || initialType) === "swap");
+  const [hasSearchedRent, setHasSearchedRent] = useState(isSearchPage && (initialFilters.activeTab || initialType) !== "swap");
   const [showMap, setShowMap] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [validationError, setValidationError] = useState("");
   
-  const [city, setCity] = useState(initialCity || "");
-  const [neighborhood, setNeighborhood] = useState("");
-  const [walkingTime, setWalkingTime] = useState("");
-  const [weekend, setWeekend] = useState("");
-  const [rooms, setRooms] = useState("");
-  const [minPrice, setMinPrice] = useState("");
-  const [maxPrice, setMaxPrice] = useState("");
+  const [city, setCity] = useState(initialFilters.city || initialCity || "");
+  const [neighborhood, setNeighborhood] = useState(initialFilters.neighborhood || "");
+  const [walkingTime, setWalkingTime] = useState(initialFilters.walkingTime || "");
+  const [weekend, setWeekend] = useState(initialFilters.weekend || "");
+  const [rooms, setRooms] = useState(initialFilters.rooms || "");
+  const [minPrice, setMinPrice] = useState(initialFilters.minPrice || "");
+  const [maxPrice, setMaxPrice] = useState(initialFilters.maxPrice || "");
   const [beds, setBeds] = useState("");
-  const [guests, setGuests] = useState("");
-  const [destinationAddress, setDestinationAddress] = useState("");
+  const [guests, setGuests] = useState(initialFilters.guests || "");
+  const [destinationAddress, setDestinationAddress] = useState(initialFilters.destinationAddress || "");
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
 
@@ -203,6 +205,42 @@ export default function SearchWidget({
   ]);
 
   const isTargetDestinationSet = Boolean(destinationAddress.trim().length > 0);
+
+  const handlePerformSearch = (tab: "rent" | "swap") => {
+    const isAnyFieldSet = city || neighborhood || destinationAddress || weekend || (rooms && rooms !== "any") || (guests && guests !== "any") || minPrice || maxPrice;
+    if (!isAnyFieldSet) {
+      setValidationError("Please select at least one search criterion.");
+      return;
+    }
+    setValidationError("");
+
+    if (!isSearchPage) {
+      const params = new URLSearchParams();
+      params.set("type", tab);
+      if (city) params.set("city", city);
+      if (neighborhood && neighborhood !== "any") params.set("neighborhood", neighborhood);
+      if (rooms && rooms !== "any") params.set("rooms", rooms);
+      if (minPrice) params.set("minPrice", minPrice);
+      if (maxPrice) params.set("maxPrice", maxPrice);
+      if (guests && guests !== "any") params.set("guests", guests);
+      if (weekend) params.set("weekend", weekend);
+      if (destinationAddress) {
+        params.set("destinationAddress", destinationAddress);
+        params.set("walkingTime", walkingTime || "10");
+      }
+      router.push(`/search?${params.toString()}`);
+      return;
+    }
+
+    if (tab === "swap") {
+      setHasSearchedSwap(true);
+      onSearch?.(true);
+    } else {
+      setHasSearchedRent(true);
+      onSearch?.(false);
+    }
+  };
+
 
   return (
     <>
@@ -418,13 +456,7 @@ export default function SearchWidget({
               }}
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
-                  if (activeTab === "rent") {
-                    setHasSearchedRent(true);
-                    onSearch?.(false);
-                  } else {
-                    setHasSearchedSwap(true);
-                    onSearch?.(true);
-                  }
+                  handlePerformSearch(activeTab);
                 }
               }}
               className="w-full h-[48px] px-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#4c55a4] transition-all"
@@ -441,13 +473,7 @@ export default function SearchWidget({
               }}
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
-                  if (activeTab === "rent") {
-                    setHasSearchedRent(true);
-                    onSearch?.(false);
-                  } else {
-                    setHasSearchedSwap(true);
-                    onSearch?.(true);
-                  }
+                  handlePerformSearch(activeTab);
                 }
               }}
               className="w-full h-[48px] px-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#4c55a4] transition-all"
@@ -475,40 +501,46 @@ export default function SearchWidget({
         </div>
 
         {/* Search Button */}
-        <div className="lg:col-span-3">
+        <div className="lg:col-span-3 flex gap-2">
           {activeTab === "swap" ? (
             <button 
-              onClick={() => {
-                const isAnyFieldSet = city || neighborhood || destinationAddress || weekend || (rooms && rooms !== "any") || (guests && guests !== "any") || minPrice || maxPrice;
-                if (!isAnyFieldSet) {
-                  setValidationError("Please select at least one search criterion.");
-                  return;
-                }
-                setValidationError("");
-                setHasSearchedSwap(true);
-                onSearch?.(true);
-              }}
-              className="flex items-center justify-center gap-2 h-[48px] w-full bg-[#4c55a4] hover:bg-[#3d4484] text-white font-bold rounded-xl shadow-md transition-colors"
+              onClick={() => handlePerformSearch("swap")}
+              className="flex-1 flex items-center justify-center gap-2 h-[48px] w-full bg-[#4c55a4] hover:bg-[#3d4484] text-white font-bold rounded-xl shadow-md transition-colors"
             >
               <Search className="w-5 h-5 shrink-0" />
               <span>{t("search_widget.search_apartments")}</span>
             </button>
           ) : (
             <button 
-              onClick={() => {
-                const isAnyFieldSet = city || neighborhood || destinationAddress || weekend || (rooms && rooms !== "any") || (guests && guests !== "any") || minPrice || maxPrice;
-                if (!isAnyFieldSet) {
-                  setValidationError("Please select at least one search criterion.");
-                  return;
-                }
-                setValidationError("");
-                setHasSearchedRent(true);
-                onSearch?.(false);
-              }}
-              className="flex items-center justify-center gap-2 h-[48px] w-full bg-[#4c55a4] hover:bg-[#3d4484] text-white font-bold rounded-xl shadow-md transition-colors"
+              onClick={() => handlePerformSearch("rent")}
+              className="flex-1 flex items-center justify-center gap-2 h-[48px] w-full bg-[#4c55a4] hover:bg-[#3d4484] text-white font-bold rounded-xl shadow-md transition-colors"
             >
               <Search className="w-5 h-5 shrink-0" />
               <span>{t("search_widget.search_apartments")}</span>
+            </button>
+          )}
+
+          {((activeTab === "swap" && hasSearchedSwap) || (activeTab === "rent" && hasSearchedRent)) && (
+            <button
+              onClick={() => {
+                setCity("");
+                setNeighborhood("");
+                setWalkingTime("");
+                setWeekend("");
+                setRooms("");
+                setMinPrice("");
+                setMaxPrice("");
+                setBeds("");
+                setGuests("");
+                setDestinationAddress("");
+                setHasSearchedRent(false);
+                setHasSearchedSwap(false);
+                onSearch?.(activeTab === "swap");
+              }}
+              className="flex items-center justify-center w-[48px] h-[48px] bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:hover:bg-red-900/40 text-red-500 rounded-xl shadow-sm border border-red-100 dark:border-red-900/40 transition-colors shrink-0"
+              title="Clear search"
+            >
+              <Trash2 className="w-5 h-5" />
             </button>
           )}
         {validationError && (
@@ -658,35 +690,13 @@ export default function SearchWidget({
                   {t("swap_modal.cancel")}
                 </button>
                 <button 
-                  disabled={isTurningOnSwap}
-                  onClick={async () => {
-                    setIsTurningOnSwap(true);
-                    try {
-                      if (myAptData?.id) {
-                        await savePreferenceMutation.mutateAsync({
-                          apartmentId: myAptData.id,
-                          isEnabled: true,
-                        });
-                      }
-                      setLocalSwapTurnedOn(true);
-                      setShowSwipeModal(false);
-                      setActiveTab("swap");
-                      if (isSearchPage) setHasSearchedSwap(true);
-                      onSearch?.(isSearchPage ? true : hasSearchedSwap);
-                      toast.success("Apartment swap mode enabled!");
-                    } catch (err: any) {
-                      console.error("Failed to enable swap:", err);
-                      setLocalSwapTurnedOn(true);
-                      setShowSwipeModal(false);
-                      setActiveTab("swap");
-                    } finally {
-                      setIsTurningOnSwap(false);
-                    }
+                  onClick={() => {
+                    setShowSwipeModal(false);
+                    router.push("/user-dashboard/swap");
                   }}
-                  className="flex-1 py-3 bg-[#4c55a4] hover:bg-[#3d4484] text-white rounded-xl font-medium transition-all shadow-md shadow-[#4c55a4]/20 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                  className="flex-1 py-3 bg-[#4c55a4] hover:bg-[#3d4484] text-white rounded-xl font-medium transition-all shadow-md shadow-[#4c55a4]/20 flex items-center justify-center gap-2 cursor-pointer"
                 >
-                  {isTurningOnSwap && <Loader2 className="w-4 h-4 animate-spin" />}
-                  {t("swap_modal.turn_on")}
+                  Go to Dashboard
                 </button>
               </div>
             </div>

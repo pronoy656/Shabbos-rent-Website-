@@ -101,7 +101,7 @@ export default function AdminLayout({
     try {
       await logout();
     } catch {}
-    router.replace("/login");
+    router.replace("/");
   };
 
   const navigation = [

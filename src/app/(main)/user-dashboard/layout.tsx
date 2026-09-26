@@ -65,7 +65,7 @@ export default function UserDashboardLayout({
     try {
       await logout();
     } catch {}
-    router.replace("/login");
+    router.replace("/");
   };
 
   const navItems = [

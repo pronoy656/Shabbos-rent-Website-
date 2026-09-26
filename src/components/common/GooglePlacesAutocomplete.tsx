@@ -270,6 +270,16 @@ const VERIFIED_ISRAEL_PLACES: PlaceSuggestion[] = [
   },
 ];
 
+const ISRAEL_NEIGHBORHOODS: Record<string, string[]> = {
+  Jerusalem: ["Rehavia", "City Center", "Geula", "Mea Shearim", "Talbiya", "Baka", "German Colony", "Old City", "Jewish Quarter", "Bayit Vegan", "Har Nof", "Givat Shaul", "Katamon", "Ramat Eshkol", "Sanhedria", "Shmuel HaNavi"],
+  "Tel Aviv": ["City Center", "Lev HaIr", "Old North", "Neve Tzedek", "Florentin", "Kerem HaTeimanim", "Ramat Aviv", "Sarona", "Montefiore", "Tel Aviv Port"],
+  Tzfat: ["Old City", "Artists Colony", "Canaan", "South Hills", "Kiryat Chabad", "Meor Chaim"],
+  "Bnei Brak": ["City Center", "Zichron Meir", "Pardes Katz", "Kiryat Herzog", "Ramat Elhanan", "Ramat Aharon", "Shikun Hey"],
+  "Beit Shemesh": ["Ramat Beit Shemesh A", "Ramat Beit Shemesh B", "Ramat Beit Shemesh C", "Ramat Beit Shemesh D", "Old Beit Shemesh", "Sheinfeld", "Nofei Aviv"],
+  Netanya: ["City Center", "Kiryat Sanz", "Agamim", "Ir Yamim", "Poleg", "Nat 600", "North Beach"],
+  Haifa: ["Hadar", "Central Carmel", "Bat Galim", "Kiryat Shmuel", "Neve Shaanan", "French Carmel"],
+};
+
 function parseGoogleAddressComponents(components: any[], fallbackMainText?: string) {
   let streetNumber = "";
   let route = "";
@@ -343,7 +353,11 @@ export default function GooglePlacesAutocomplete({
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isCityDropdownOpen, setIsCityDropdownOpen] = useState(false);
+  const [isNeighborhoodDropdownOpen, setIsNeighborhoodDropdownOpen] = useState(false);
+  const [neighborhoodSuggestions, setNeighborhoodSuggestions] = useState<string[]>([]);
+  
   const containerRef = useRef<HTMLDivElement>(null);
+  const neighborhoodContainerRef = useRef<HTMLDivElement>(null);
   const autocompleteServiceRef = useRef<any>(null);
   const geocoderRef = useRef<any>(null);
 
@@ -388,6 +402,9 @@ export default function GooglePlacesAutocomplete({
         setIsOpen(false);
         setIsCityDropdownOpen(false);
       }
+      if (neighborhoodContainerRef.current && !neighborhoodContainerRef.current.contains(e.target as Node)) {
+        setIsNeighborhoodDropdownOpen(false);
+      }
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
@@ -426,13 +443,13 @@ export default function GooglePlacesAutocomplete({
               const secondaryText = pred.structured_formatting?.secondary_text || pred.description;
               const extractedCoords = getCoordinatesForAddress(pred.description);
 
-              let predCity = filterCity || "Jerusalem";
-              if (secondaryText.includes("Tel Aviv")) predCity = "Tel Aviv";
-              else if (secondaryText.includes("Tzfat") || secondaryText.includes("Safed")) predCity = "Tzfat";
-              else if (secondaryText.includes("Bnei Brak")) predCity = "Bnei Brak";
-              else if (secondaryText.includes("Beit Shemesh")) predCity = "Beit Shemesh";
-              else if (secondaryText.includes("Netanya")) predCity = "Netanya";
-              else if (secondaryText.includes("Haifa")) predCity = "Haifa";
+              let predCity = "";
+              const parts = secondaryText.split(",").map((s: string) => s.trim());
+              if (parts.length >= 2 && parts[parts.length - 1] === "Israel") {
+                  predCity = parts[parts.length - 2];
+              } else if (parts.length > 0) {
+                  predCity = parts[0];
+              }
 
               return {
                 id: pred.place_id || `g-${Date.now()}-${Math.random()}`,
@@ -440,8 +457,8 @@ export default function GooglePlacesAutocomplete({
                 mainText,
                 secondaryText,
                 city: predCity,
-                neighborhood: mainText,
-                streetNumber: mainText.replace(/[^0-9]/g, "") || "1",
+                neighborhood: "",
+                streetNumber: mainText.replace(/[^0-9]/g, "") || "",
                 fullAddress: pred.description,
                 lat: Number(extractedCoords.lat.toFixed(4)),
                 lng: Number(extractedCoords.lng.toFixed(4)),
@@ -512,8 +529,8 @@ export default function GooglePlacesAutocomplete({
           
           const parsed = parseGoogleAddressComponents(results[0].address_components, place.mainText);
           const resolvedStreet = parsed.streetAddress || place.mainText;
-          const resolvedCity = parsed.city || place.city || "Jerusalem";
-          const resolvedNeighborhood = parsed.neighborhood || place.neighborhood || "";
+          const resolvedCity = parsed.city || place.city || "";
+          const resolvedNeighborhood = parsed.neighborhood || "";
 
           const updatedPlace: PlaceSuggestion = {
             ...place,
@@ -555,6 +572,37 @@ export default function GooglePlacesAutocomplete({
     if (onNeighborhoodChange) onNeighborhoodChange(place.neighborhood);
     setIsOpen(false);
   };
+
+  const fetchNeighborhoodSuggestions = useCallback((searchStr: string, currentCity: string) => {
+    const activeCity = currentCity && currentCity !== "Any" ? currentCity : "Jerusalem";
+    if (!searchStr.trim()) {
+      const cityList = ISRAEL_NEIGHBORHOODS[activeCity] || ISRAEL_NEIGHBORHOODS["Jerusalem"] || [];
+      setNeighborhoodSuggestions(cityList.slice(0, 5));
+      return;
+    }
+    if (autocompleteServiceRef.current) {
+      const input = currentCity ? `${searchStr}, ${currentCity}` : searchStr;
+      autocompleteServiceRef.current.getPlacePredictions(
+        {
+          input,
+          componentRestrictions: { country: "il" },
+          types: ["(regions)"],
+        },
+        (predictions: any[], status: any) => {
+          if (status === "OK" && predictions && predictions.length > 0) {
+            const results = predictions.map(p => p.structured_formatting?.main_text || p.description.split(",")[0]);
+            setNeighborhoodSuggestions(Array.from(new Set(results)).slice(0, 5));
+          } else {
+            const cityList = ISRAEL_NEIGHBORHOODS[activeCity] || [];
+            setNeighborhoodSuggestions(cityList.filter(n => n.toLowerCase().includes(searchStr.toLowerCase())).slice(0, 5));
+          }
+        }
+      );
+    } else {
+      const cityList = ISRAEL_NEIGHBORHOODS[activeCity] || [];
+      setNeighborhoodSuggestions(cityList.filter(n => n.toLowerCase().includes(searchStr.toLowerCase())).slice(0, 5));
+    }
+  }, []);
 
   const handleCitySelect = (selectedCity: string) => {
     setCityQuery(selectedCity);
@@ -713,8 +761,8 @@ export default function GooglePlacesAutocomplete({
           )}
         </div>
 
-        {/* Neighborhood field (Locked or auto-populated) */}
-        <div>
+        {/* Neighborhood field */}
+        <div ref={neighborhoodContainerRef} className={`relative ${isNeighborhoodDropdownOpen ? 'z-50' : 'z-10'}`}>
           <label className="block text-sm font-bold text-zinc-800 dark:text-zinc-200 mb-2">
             Neighborhood <span className="text-red-500">*</span>
           </label>
@@ -724,13 +772,48 @@ export default function GooglePlacesAutocomplete({
               type="text"
               value={neighborhoodQuery}
               onChange={(e) => {
-                setNeighborhoodQuery(e.target.value);
-                if (onNeighborhoodChange) onNeighborhoodChange(e.target.value);
+                const val = e.target.value;
+                setNeighborhoodQuery(val);
+                if (onNeighborhoodChange) onNeighborhoodChange(val);
+                setIsNeighborhoodDropdownOpen(true);
+                fetchNeighborhoodSuggestions(val, cityQuery);
+              }}
+              onFocus={() => {
+                setIsNeighborhoodDropdownOpen(true);
+                fetchNeighborhoodSuggestions(neighborhoodQuery, cityQuery);
               }}
               placeholder={cityQuery ? `e.g. City Center, Rehavia, etc.` : "Select address or city first..."}
               className="w-full pl-12 pr-4 py-3.5 bg-zinc-50/80 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-2xl text-[15px] text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:bg-white dark:focus:bg-zinc-900 focus:ring-4 focus:ring-[#4c55a4]/10 focus:border-[#4c55a4] outline-none transition-all duration-200"
             />
           </div>
+
+          {/* Neighborhood Suggestions Popover */}
+          {isNeighborhoodDropdownOpen && neighborhoodSuggestions.length > 0 && (
+            <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-2xl z-[150] overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+              <div className="p-2 border-b border-zinc-100 dark:border-zinc-800 text-xs font-bold text-zinc-400 uppercase tracking-wider px-3 py-2">
+                Suggested Neighborhoods
+              </div>
+              <div className="p-1.5 max-h-48 overflow-y-auto">
+                {neighborhoodSuggestions.map((n) => (
+                  <button
+                    type="button"
+                    key={n}
+                    onClick={() => {
+                      setNeighborhoodQuery(n);
+                      if (onNeighborhoodChange) onNeighborhoodChange(n);
+                      setIsNeighborhoodDropdownOpen(false);
+                    }}
+                    className="w-full text-left px-3.5 py-2.5 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors flex items-center justify-between text-sm font-semibold text-zinc-800 dark:text-zinc-200 cursor-pointer"
+                  >
+                    <span className="flex items-center gap-2">
+                      <Navigation className="w-4 h-4 text-[#4c55a4]" />
+                      {n}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
 

@@ -46,8 +46,7 @@ export default function MobileMenuDrawer({
 
   const currentUser = meUser || localUser;
   const displayName = currentUser?.username || t("nav.user_account") || "My Account";
-  const displayEmail =
-    currentUser?.email || (userRole === "admin" ? "admin@shabbosrent.com" : "user@shabbosrent.com");
+  const displayEmail = currentUser?.email || currentUser?.phone || "";
 
   if (!isOpen) return null;
 

@@ -42,6 +42,10 @@ export default function WeekendsPage() {
   // Delete Confirmation State
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
+  const PAGE_SIZE = 25;
+
   // Extract items from API response
   const weekendList = calendarData?.data || [];
 
@@ -52,6 +56,18 @@ export default function WeekendsPage() {
       return titleMatch || dateMatch;
     })
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+  const totalPages = Math.max(1, Math.ceil(filteredWeekends.length / PAGE_SIZE));
+  const paginatedWeekends = filteredWeekends.slice(
+    (currentPage - 1) * PAGE_SIZE,
+    currentPage * PAGE_SIZE
+  );
+
+  // Reset to page 1 when search changes
+  const handleSearchChange = (value: string) => {
+    setSearchTerm(value);
+    setCurrentPage(1);
+  };
 
   // Open Create Modal
   const handleOpenCreate = () => {
@@ -106,13 +122,30 @@ export default function WeekendsPage() {
       }
       setIsModalOpen(false);
     } catch (err: unknown) {
-      const errorMsg =
+      const rawMsg =
         err && typeof err === "object" && "response" in err
           ? (err as { response?: { data?: { message?: string } } }).response?.data?.message
           : err instanceof Error
           ? err.message
           : "Failed to save weekend date.";
-      toast.error(errorMsg || "Failed to save weekend date.");
+
+      // If it looks like a duplicate-date error, enrich with the actual date
+      const isDuplicateError =
+        rawMsg &&
+        (rawMsg.toLowerCase().includes("already exists") ||
+          rawMsg.toLowerCase().includes("duplicate"));
+
+      let displayMsg = rawMsg || "Failed to save weekend date.";
+      if (isDuplicateError && formData.date) {
+        const formatted = new Date(formData.date).toLocaleDateString("en-GB", {
+          day: "2-digit",
+          month: "short",
+          year: "numeric",
+        });
+        displayMsg = `Weekend calendar for ${formatted} already exists.`;
+      }
+
+      toast.error(displayMsg);
     }
   };
 
@@ -182,7 +215,7 @@ export default function WeekendsPage() {
             type="text"
             placeholder="Search by Shabbat name or date..."
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={(e) => handleSearchChange(e.target.value)}
             className="w-full pl-10 pr-4 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-sm text-zinc-900 dark:text-white placeholder:text-zinc-400 outline-none focus:border-[#4c55a4] transition-colors"
           />
         </div>
@@ -230,8 +263,9 @@ export default function WeekendsPage() {
             )}
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
+          <>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm">
               <thead className="bg-zinc-50/75 dark:bg-zinc-800/40 text-zinc-900 dark:text-white font-bold border-b border-zinc-200 dark:border-zinc-800">
                 <tr>
                   <th className="px-6 py-4">Created At</th>
@@ -241,7 +275,7 @@ export default function WeekendsPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
-                {filteredWeekends.map((item) => (
+                {paginatedWeekends.map((item) => (
                   <tr
                     key={item.id}
                     className="hover:bg-zinc-50/50 dark:hover:bg-zinc-800/20 transition-colors"
@@ -278,11 +312,82 @@ export default function WeekendsPage() {
                         </button>
                       </div>
                     </td>
-                  </tr>
+                </tr>
                 ))}
               </tbody>
             </table>
-          </div>
+            </div>
+
+
+          {/* Pagination Controls */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between px-6 py-4 border-t border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-800/20">
+              <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                Showing{" "}
+                <span className="font-bold text-zinc-900 dark:text-white">
+                  {(currentPage - 1) * PAGE_SIZE + 1}–{Math.min(currentPage * PAGE_SIZE, filteredWeekends.length)}
+                </span>{" "}
+                of{" "}
+                <span className="font-bold text-zinc-900 dark:text-white">{filteredWeekends.length}</span>{" "}
+                weekends
+              </p>
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => setCurrentPage(1)}
+                  disabled={currentPage === 1}
+                  className="px-2.5 py-1.5 text-xs font-bold rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                >
+                  «
+                </button>
+                <button
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  className="px-2.5 py-1.5 text-xs font-bold rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                >
+                  ‹
+                </button>
+                {Array.from({ length: totalPages }, (_, i) => i + 1)
+                  .filter((p) => p === 1 || p === totalPages || Math.abs(p - currentPage) <= 2)
+                  .reduce<(number | "...")[]>((acc, p, idx, arr) => {
+                    if (idx > 0 && (p as number) - (arr[idx - 1] as number) > 1) acc.push("...");
+                    acc.push(p);
+                    return acc;
+                  }, [])
+                  .map((p, idx) =>
+                    p === "..." ? (
+                      <span key={`ellipsis-${idx}`} className="px-2 text-xs text-zinc-400">…</span>
+                    ) : (
+                      <button
+                        key={p}
+                        onClick={() => setCurrentPage(p as number)}
+                        className={`px-2.5 py-1.5 text-xs font-bold rounded-lg border transition-colors ${
+                          currentPage === p
+                            ? "border-[#4c55a4] bg-[#4c55a4] text-white"
+                            : "border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-700"
+                        }`}
+                      >
+                        {p}
+                      </button>
+                    )
+                  )}
+                <button
+                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                  className="px-2.5 py-1.5 text-xs font-bold rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                >
+                  ›
+                </button>
+                <button
+                  onClick={() => setCurrentPage(totalPages)}
+                  disabled={currentPage === totalPages}
+                  className="px-2.5 py-1.5 text-xs font-bold rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                >
+                  »
+                </button>
+              </div>
+            </div>
+          )}
+          </>
         )}
       </div>
 

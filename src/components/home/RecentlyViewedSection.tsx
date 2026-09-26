@@ -92,8 +92,9 @@ export default function RecentlyViewedSection() {
   }, [recentData, localCleared]);
 
   const hasViewHistory = apiItems.length > 0;
-
   if (!isMounted) return null;
+  if (!isLoggedIn) return null;
+  if (!isLoading && !hasViewHistory) return null;
 
   return (
     <section className="py-16 bg-white dark:bg-zinc-950 font-sans border-t border-zinc-100 dark:border-zinc-900">

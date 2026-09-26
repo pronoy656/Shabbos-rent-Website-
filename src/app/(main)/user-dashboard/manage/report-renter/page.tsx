@@ -169,17 +169,6 @@ export default function ReportRenterPage() {
               </div>
             </div>
 
-            <div className="bg-gradient-to-r from-emerald-500 to-emerald-600 p-4 rounded-2xl shadow-md text-white flex items-center gap-4 shrink-0 min-w-[240px]">
-              <div className="bg-white/20 p-2.5 rounded-xl backdrop-blur-sm">
-                <Banknote className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <p className="text-xs text-emerald-100 font-bold uppercase tracking-wider mb-0.5">
-                  Total Earnings (Mock)
-                </p>
-                <h4 className="text-2xl font-black leading-none">₪12,500</h4>
-              </div>
-            </div>
           </div>
         </div>
 

@@ -302,13 +302,13 @@ export default function ApartmentSwapPage() {
               const mainText = pred.structured_formatting?.main_text || pred.description.split(",")[0];
               const secondaryText = pred.structured_formatting?.secondary_text || pred.description;
 
-              let predCity = cityFilter && cityFilter !== "Any" ? cityFilter : "Jerusalem";
-              if (secondaryText.includes("Tel Aviv")) predCity = "Tel Aviv";
-              else if (secondaryText.includes("Tzfat") || secondaryText.includes("Safed")) predCity = "Tzfat";
-              else if (secondaryText.includes("Bnei Brak")) predCity = "Bnei Brak";
-              else if (secondaryText.includes("Beit Shemesh")) predCity = "Beit Shemesh";
-              else if (secondaryText.includes("Netanya")) predCity = "Netanya";
-              else if (secondaryText.includes("Haifa")) predCity = "Haifa";
+              let predCity = "";
+              const parts = secondaryText.split(",").map((s: string) => s.trim());
+              if (parts.length >= 2 && parts[parts.length - 1] === "Israel") {
+                  predCity = parts[parts.length - 2];
+              } else if (parts.length > 0) {
+                  predCity = parts[0];
+              }
 
               return {
                 id: pred.place_id || `swap-g-${Date.now()}-${Math.random()}`,
@@ -316,7 +316,7 @@ export default function ApartmentSwapPage() {
                 mainText,
                 secondaryText,
                 city: predCity,
-                neighborhood: mainText,
+                neighborhood: "",
                 fullAddress: pred.description,
               };
             });
@@ -364,8 +364,8 @@ export default function ApartmentSwapPage() {
       geocoderRef.current.geocode(geocodeReq, (results: any[], status: any) => {
         if (status === "OK" && results && results[0]) {
           const parsed = parseGoogleAddressComponents(results[0].address_components, place.mainText);
-          const resolvedCity = parsed.city || place.city || "Jerusalem";
-          const resolvedNeighborhood = parsed.neighborhood || place.neighborhood || "";
+          const resolvedCity = parsed.city || place.city || "";
+          const resolvedNeighborhood = parsed.neighborhood || "";
 
           setSwapPrefTarget(place.mainText);
           if (resolvedCity) setSwapPrefCity(resolvedCity);
@@ -391,13 +391,42 @@ export default function ApartmentSwapPage() {
     setIsTargetDropdownOpen(false);
   };
 
+  const fetchNeighborhoodSuggestions = useCallback((searchStr: string, currentCity: string) => {
+    const activeCity = currentCity && currentCity !== "Any" ? currentCity : "Jerusalem";
+    if (!searchStr.trim()) {
+      const cityList = ISRAEL_NEIGHBORHOODS[activeCity] || ISRAEL_NEIGHBORHOODS["Jerusalem"] || [];
+      setNeighborhoodSuggestions(cityList.slice(0, 6));
+      return;
+    }
+
+    if (autocompleteServiceRef.current) {
+      const input = currentCity && currentCity !== "Any" ? `${searchStr}, ${currentCity}` : searchStr;
+      autocompleteServiceRef.current.getPlacePredictions(
+        {
+          input,
+          componentRestrictions: { country: "il" },
+          types: ["(regions)"],
+        },
+        (predictions: any[], status: any) => {
+          if (status === "OK" && predictions && predictions.length > 0) {
+            const results = predictions.map(p => p.structured_formatting?.main_text || p.description.split(",")[0]);
+            setNeighborhoodSuggestions(Array.from(new Set(results)).slice(0, 6));
+          } else {
+            const cityList = ISRAEL_NEIGHBORHOODS[activeCity] || [];
+            setNeighborhoodSuggestions(cityList.filter(n => n.toLowerCase().includes(searchStr.toLowerCase())).slice(0, 6));
+          }
+        }
+      );
+    } else {
+      const cityList = ISRAEL_NEIGHBORHOODS[activeCity] || [];
+      setNeighborhoodSuggestions(cityList.filter(n => n.toLowerCase().includes(searchStr.toLowerCase())).slice(0, 6));
+    }
+  }, []);
+
   const handleNeighborhoodChange = (val: string) => {
     setSwapPrefNeighborhood(val);
-    const activeCity = swapPrefCity && swapPrefCity !== "Any" ? swapPrefCity : "Jerusalem";
-    const cityList = ISRAEL_NEIGHBORHOODS[activeCity] || ISRAEL_NEIGHBORHOODS["Jerusalem"];
-    const filtered = cityList.filter((n) => n.toLowerCase().includes(val.toLowerCase()));
-    setNeighborhoodSuggestions(filtered);
     setIsNeighborhoodDropdownOpen(true);
+    fetchNeighborhoodSuggestions(val, swapPrefCity);
   };
 
   // Sync preference data to form state and applied search
@@ -842,7 +871,7 @@ export default function ApartmentSwapPage() {
 
                       {/* Google Places Live Suggestions Popover */}
                       {isTargetDropdownOpen && (
-                        <div className="absolute top-full left-0 right-0 mt-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-2xl z-50 overflow-hidden max-h-60 overflow-y-auto animate-in fade-in zoom-in-95 duration-150">
+                        <div className="absolute top-full left-0 mt-1.5 w-[320px] sm:w-[400px] max-w-[90vw] bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-2xl z-[100] overflow-hidden max-h-72 overflow-y-auto animate-in fade-in zoom-in-95 duration-150">
                           <div className="p-2 border-b border-zinc-100 dark:border-zinc-800 text-[10px] font-bold uppercase tracking-wider text-zinc-400 px-3 flex items-center justify-between">
                             <span className="flex items-center gap-1">
                               <Sparkles className="w-3 h-3 text-[#4c55a4]" /> Google Maps Suggestions
@@ -936,10 +965,8 @@ export default function ApartmentSwapPage() {
                           value={swapPrefNeighborhood}
                           onChange={(e) => handleNeighborhoodChange(e.target.value)}
                           onFocus={() => {
-                            const activeCity = swapPrefCity && swapPrefCity !== "Any" ? swapPrefCity : "Jerusalem";
-                            const cityList = ISRAEL_NEIGHBORHOODS[activeCity] || ISRAEL_NEIGHBORHOODS["Jerusalem"];
-                            setNeighborhoodSuggestions(cityList);
                             setIsNeighborhoodDropdownOpen(true);
+                            fetchNeighborhoodSuggestions(swapPrefNeighborhood, swapPrefCity);
                           }}
                           placeholder="e.g. Rehavia, City Center..."
                           className="w-full pl-10 pr-4 h-[48px] bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-sm font-medium text-zinc-900 dark:text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#4c55a4] transition-all"
