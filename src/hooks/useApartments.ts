@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   getApartments,
   getMyApartment,
+  getMyApartments,
   getApartmentById,
   createApartment,
   updateApartment,
@@ -12,6 +13,8 @@ import {
   bulkSetApartmentAvailability,
   setApartmentSpecialPrice,
   toggleApartmentSpecialPrice,
+  getListedCities,
+  getListedNeighborhoods,
 } from "@/services/apartment.service";
 import type {
   ApartmentSearchParams,
@@ -21,9 +24,29 @@ import type {
 
 export const APARTMENTS_KEY = ["apartments"] as const;
 export const MY_APARTMENT_KEY = ["apartments", "my"] as const;
+export const CITIES_KEY = ["apartment-cities"] as const;
+export const neighborhoodsKey = (city?: string) =>
+  ["apartment-neighborhoods", city || "all"] as const;
 export const apartmentDetailKey = (id: string) => ["apartments", id] as const;
 export const apartmentAvailabilitiesKey = (apartmentId: string) =>
   ["apartment-availabilities", apartmentId] as const;
+
+/** Get list of cities that have active listings */
+export const useListedCities = () =>
+  useQuery({
+    queryKey: CITIES_KEY,
+    queryFn: getListedCities,
+    staleTime: 1000 * 60 * 5, // 5 minutes cache
+  });
+
+/** Get list of neighborhoods for a given city that have active listings */
+export const useListedNeighborhoods = (city?: string) =>
+  useQuery({
+    queryKey: neighborhoodsKey(city),
+    queryFn: () => getListedNeighborhoods(city),
+    enabled: Boolean(city && city.trim() && city.trim() !== "any"),
+    staleTime: 1000 * 60 * 5, // 5 minutes cache
+  });
 
 /** List & search apartments */
 export const useApartments = (params?: ApartmentSearchParams) =>
@@ -32,16 +55,28 @@ export const useApartments = (params?: ApartmentSearchParams) =>
     queryFn: () => getApartments(params),
   });
 
-/** Get current owner's apartment */
-export const useMyApartment = () =>
+/** Get current owner's list of all apartments */
+export const useMyApartments = () =>
   useQuery({
     queryKey: MY_APARTMENT_KEY,
-    queryFn: getMyApartment,
+    queryFn: getMyApartments,
     enabled:
       typeof window !== "undefined" &&
       Boolean(localStorage.getItem("auth_token") || localStorage.getItem("accessToken") || localStorage.getItem("userRole")),
     retry: 1,
   });
+
+/** Get current owner's primary apartment (supports multi-apartment lookup) */
+export const useMyApartment = () => {
+  const query = useMyApartments();
+  const list = query.data;
+  const firstApartment = Array.isArray(list) && list.length > 0 ? list[0] : null;
+  return {
+    ...query,
+    data: firstApartment,
+    apartmentsList: Array.isArray(list) ? list : [],
+  };
+};
 
 /** Get single apartment detail */
 export const useApartment = (id: string) =>

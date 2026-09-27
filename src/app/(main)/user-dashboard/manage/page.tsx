@@ -15,6 +15,8 @@ import {
   CalendarCheck,
   Star,
   ChevronRight,
+  ShieldCheck,
+  Sparkles,
 } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
 import { useMyApartment, useApartmentAvailabilities } from "@/hooks/useApartments";
@@ -27,10 +29,27 @@ import { Skeleton } from "@/components/ui/skeleton";
 export default function MyListingPage() {
   const { t } = useLanguage();
   const {
-    data: myApartment,
+    data: defaultApartment,
+    apartmentsList = [],
     isLoading: isMyApartmentLoading,
     refetch: refetchMyApartment,
   } = useMyApartment();
+
+  const [selectedApartmentId, setSelectedApartmentId] = useState<string>("");
+
+  const activeApartmentList =
+    Array.isArray(apartmentsList) && apartmentsList.length > 0
+      ? apartmentsList
+      : defaultApartment
+      ? [defaultApartment]
+      : [];
+
+  const myApartment =
+    activeApartmentList.find(
+      (a: any) => a.id === selectedApartmentId || a.propertyId === selectedApartmentId
+    ) ||
+    activeApartmentList[0] ||
+    defaultApartment;
 
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState<"create" | "edit">("edit");
@@ -184,16 +203,15 @@ export default function MyListingPage() {
     myApartment && (myApartment.id || (myApartment as any)._id || myApartment.title)
   );
 
-  // Auto-show welcome guide for users without an apartment
+  // Auto-show welcome guide for new owners / first-time visitors
   useEffect(() => {
-    if (!isMyApartmentLoading && !hasApartment) {
-      const hasSeen = sessionStorage.getItem("hasSeenWelcomeGuide");
+    if (!isMyApartmentLoading && typeof window !== "undefined") {
+      const hasSeen = localStorage.getItem("hasSeenWelcomeGuide_v1");
       if (!hasSeen) {
         setIsWelcomeGuideOpen(true);
-        sessionStorage.setItem("hasSeenWelcomeGuide", "true");
       }
     }
-  }, [isMyApartmentLoading, hasApartment]);
+  }, [isMyApartmentLoading]);
 
   if (!isMounted || isMyApartmentLoading) {
     return (
@@ -219,10 +237,39 @@ export default function MyListingPage() {
     );
   }
 
-  // Empty State if user hasn't added an apartment
-  if (!hasApartment) {
-    return (
-      <>
+  // Check if admin has approved this listing
+  const isAdminApproved = Boolean(
+    myApartment?.status === "CONFIRMED" ||
+    myApartment?.status === "APPROVED" ||
+    myApartment?.status === "ACTIVE" ||
+    (myApartment as any)?.isApproved === true
+  );
+
+  const isLocalActivated =
+    typeof window !== "undefined" &&
+    myApartment?.id &&
+    (localStorage.getItem(`apartment_activated_${myApartment.id}`) === "true" ||
+      localStorage.getItem("isFirstYearFreeActive") === "true");
+
+  const isPassPaidOrActivated = Boolean(
+    isLocalActivated ||
+    myApartment?.isListingActive ||
+    myApartment?.isActive ||
+    isAdminApproved ||
+    (typeof myApartment?.daysRemaining === "number" && myApartment.daysRemaining > 0)
+  );
+  const hasDates = availableShabbatList.length > 0;
+
+  const displayCover =
+    myApartment?.coverImage ||
+    (Array.isArray(myApartment?.images) && myApartment.images[0]) ||
+    (Array.isArray((myApartment as any)?.apartmentImages) &&
+      (myApartment as any).apartmentImages[0]?.url) ||
+    null;
+
+  return (
+    <>
+      {!hasApartment ? (
         <div className="bg-white dark:bg-zinc-900 rounded-3xl border border-zinc-200 dark:border-zinc-800 p-12 text-center shadow-sm max-w-2xl mx-auto my-6">
           <div className="w-16 h-16 bg-[#4c55a4]/10 text-[#4c55a4] dark:bg-indigo-950/40 dark:text-indigo-400 rounded-2xl flex items-center justify-center mx-auto mb-4">
             <Building2 className="w-8 h-8 stroke-[1.5]" />
@@ -233,57 +280,199 @@ export default function MyListingPage() {
           <p className="text-zinc-500 dark:text-zinc-400 max-w-md mx-auto mb-8 text-sm leading-relaxed">
             You haven&apos;t added your apartment yet. Create a listing to start managing Shabbat availability, receiving booking inquiries, and earning.
           </p>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3.5">
+            <button
+              type="button"
+              onClick={() => {
+                setModalMode("create");
+                setIsCreateModalOpen(true);
+              }}
+              className="px-8 py-3.5 bg-[#4c55a4] hover:bg-[#3d4484] text-white rounded-xl font-bold transition-all shadow-md shadow-[#4c55a4]/20 inline-flex items-center gap-2 cursor-pointer"
+            >
+              <PlusCircle className="w-5 h-5" />
+              Add Your Apartment
+            </button>
+            <button
+              type="button"
+              onClick={() => setIsWelcomeGuideOpen(true)}
+              className="px-6 py-3.5 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-200 rounded-xl font-bold transition-all inline-flex items-center gap-2 cursor-pointer border border-zinc-200/80 dark:border-zinc-700/60"
+            >
+              <Sparkles className="w-4 h-4 text-amber-500" />
+              How It Works & Earning Guide
+            </button>
+          </div>
+        </div>
+      ) : (
+        <>
+      {/* ⚠️ STEP 2 NOTICE: Pending 1-Year Pass Activation */}
+      {!isPassPaidOrActivated && (
+        <div className="bg-gradient-to-r from-amber-500/10 via-orange-500/10 to-amber-500/10 border-2 border-amber-400 dark:border-amber-600/60 rounded-3xl p-5 sm:p-6 mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm animate-in fade-in slide-in-from-top-2">
+          <div className="flex items-start sm:items-center gap-3.5">
+            <div className="p-3 bg-amber-500 text-white rounded-2xl shrink-0 shadow-md shadow-amber-500/20 mt-0.5 sm:mt-0">
+              <ShieldCheck className="w-6 h-6" />
+            </div>
+            <div>
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 text-[11px] font-bold rounded-full mb-1">
+                Action Required: Step 2 of 3
+              </div>
+              <h4 className="font-extrabold text-zinc-900 dark:text-white text-base">
+                1-Year Listing Pass Pending Activation
+              </h4>
+              <p className="text-xs sm:text-sm text-zinc-600 dark:text-zinc-400 mt-0.5 leading-relaxed">
+                Your listing details are saved as draft. Complete the activation step (Free Promo or ₪28) so renters can find your home.
+              </p>
+            </div>
+          </div>
+          <Link
+            href={`/apartment/${myApartment?.id}/activate`}
+            className="w-full sm:w-auto px-6 py-3 bg-[#4c55a4] hover:bg-[#3d4484] text-white font-black text-xs sm:text-sm rounded-xl transition-all shadow-md shadow-indigo-600/20 whitespace-nowrap flex items-center justify-center gap-2 cursor-pointer shrink-0"
+          >
+            <span>Activate Listing Now</span>
+            <ChevronRight className="w-4 h-4" />
+          </Link>
+        </div>
+      )}
+
+      {/* ⏳ NOTICE: Paid/Activated but Pending Admin Approval */}
+      {isPassPaidOrActivated && !isAdminApproved && (
+        <div className="bg-gradient-to-r from-amber-500/10 via-yellow-500/10 to-amber-500/10 border-2 border-amber-400 dark:border-amber-600/60 rounded-3xl p-5 sm:p-6 mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm animate-in fade-in slide-in-from-top-2">
+          <div className="flex items-start sm:items-center gap-3.5">
+            <div className="p-3 bg-amber-500 text-white rounded-2xl shrink-0 shadow-md shadow-amber-500/20 mt-0.5 sm:mt-0">
+              <ShieldCheck className="w-6 h-6" />
+            </div>
+            <div>
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 text-[11px] font-bold rounded-full mb-1">
+                Under Review
+              </div>
+              <h4 className="font-extrabold text-zinc-900 dark:text-white text-base">
+                Listing Pending Admin Approval
+              </h4>
+              <p className="text-xs sm:text-sm text-zinc-600 dark:text-zinc-400 mt-0.5 leading-relaxed">
+                Your listing and payment/activation are completed. Our admin team will review and approve your apartment shortly.
+              </p>
+            </div>
+          </div>
+          <span className="px-4 py-2 bg-amber-500 text-white font-bold text-xs rounded-xl shadow-sm self-start sm:self-auto shrink-0">
+            Pending Admin
+          </span>
+        </div>
+      )}
+
+      {/* 📅 STEP 3 NOTICE: Admin Approved but No Dates Selected Yet */}
+      {isAdminApproved && !hasDates && (
+        <div className="bg-gradient-to-r from-blue-500/10 via-indigo-500/10 to-blue-500/10 border-2 border-blue-400 dark:border-blue-600/60 rounded-3xl p-5 sm:p-6 mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm animate-in fade-in slide-in-from-top-2">
+          <div className="flex items-start sm:items-center gap-3.5">
+            <div className="p-3 bg-blue-600 text-white rounded-2xl shrink-0 shadow-md shadow-blue-600/20 mt-0.5 sm:mt-0">
+              <CalendarCheck className="w-6 h-6" />
+            </div>
+            <div>
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-blue-100 dark:bg-blue-950/60 text-blue-800 dark:text-blue-300 text-[11px] font-bold rounded-full mb-1">
+                Almost Live
+              </div>
+              <h4 className="font-extrabold text-zinc-900 dark:text-white text-base">
+                Make Your Apartment Live: Select Open Dates
+              </h4>
+              <p className="text-xs sm:text-sm text-zinc-600 dark:text-zinc-400 mt-0.5 leading-relaxed">
+                Your listing is approved! Mark which Shabbatot you are open to rent so your apartment appears on the public list.
+              </p>
+            </div>
+          </div>
+          <Link
+            href={`/user-dashboard/manage/calendar?apartmentId=${myApartment?.id}`}
+            className="w-full sm:w-auto px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-black text-xs sm:text-sm rounded-xl transition-all shadow-md shadow-blue-600/20 whitespace-nowrap flex items-center justify-center gap-2 cursor-pointer shrink-0"
+          >
+            <span>Set Available Dates</span>
+            <ChevronRight className="w-4 h-4" />
+          </Link>
+        </div>
+      )}
+
+      {/* Top Action & Navigation Bar */}
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
+        {/* 🏠 Multi-Apartment Switcher Tabs */}
+        {activeApartmentList.length > 1 ? (
+          <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-2 flex items-center gap-2 overflow-x-auto shadow-sm max-w-full">
+            <span className="text-xs font-bold text-zinc-400 uppercase tracking-wider shrink-0 pl-2">
+              Apartments ({activeApartmentList.length}):
+            </span>
+            <div className="flex items-center gap-1.5">
+              {activeApartmentList.map((apt: any) => {
+                const isSelected = apt.id === myApartment?.id;
+                const hasCover = Boolean(
+                  apt.coverImage ||
+                    (Array.isArray(apt.images) && apt.images.length > 0)
+                );
+                return (
+                  <button
+                    key={apt.id}
+                    type="button"
+                    onClick={() => setSelectedApartmentId(apt.id)}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shrink-0 cursor-pointer ${
+                      isSelected
+                        ? "bg-[#4c55a4] text-white shadow-md shadow-indigo-600/20"
+                        : "bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700"
+                    }`}
+                  >
+                    <Building2 className="w-3.5 h-3.5" />
+                    <span>{apt.propertyId || apt.id.slice(0, 8)}</span>
+                    <span className="font-normal opacity-80 truncate max-w-[100px]">
+                      {apt.title}
+                    </span>
+                    {hasCover ? (
+                      <span
+                        className="w-2 h-2 rounded-full bg-emerald-400"
+                        title="Images available"
+                      />
+                    ) : (
+                      <span className="text-[10px] text-amber-500 font-medium">
+                        (No Image)
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        ) : (
+          <div />
+        )}
+
+        {/* Quick Guide Button */}
+        <div className="flex items-center gap-2 ml-auto">
           <button
             type="button"
-            onClick={() => {
-              setModalMode("create");
-              setIsCreateModalOpen(true);
-            }}
-            className="px-8 py-3.5 bg-[#4c55a4] hover:bg-[#3d4484] text-white rounded-xl font-bold transition-all shadow-md shadow-[#4c55a4]/20 inline-flex items-center gap-2 cursor-pointer"
+            onClick={() => setIsWelcomeGuideOpen(true)}
+            className="flex items-center gap-2 px-4 py-2.5 bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/40 dark:hover:bg-blue-900/50 text-blue-600 dark:text-blue-400 font-bold rounded-xl text-xs sm:text-sm transition-all border border-blue-200/60 dark:border-blue-800/40 shadow-xs cursor-pointer"
           >
-            <PlusCircle className="w-5 h-5" />
-            Add Your Apartment
+            <Sparkles className="w-4 h-4 text-blue-500" />
+            <span>How to Manage & Earn</span>
           </button>
         </div>
+      </div>
 
-        <CreateListingModal
-          isOpen={isCreateModalOpen}
-          isEditMode={modalMode === "edit"}
-          initialApartment={undefined}
-          onClose={() => setIsCreateModalOpen(false)}
-          onSave={() => {
-            refetchMyApartment();
-          }}
-        />
-
-        <WelcomeGuideModal 
-          isOpen={isWelcomeGuideOpen}
-          onClose={() => setIsWelcomeGuideOpen(false)}
-          onAddApartment={() => {
-            setModalMode("create");
-            setIsCreateModalOpen(true);
-          }}
-        />
-      </>
-    );
-  }
-
-  // Real Apartment Listing
-  return (
-    <>
       <div className="bg-white dark:bg-zinc-900 rounded-3xl border border-zinc-200 dark:border-zinc-800 overflow-hidden shadow-sm h-fit w-full flex flex-col md:flex-row">
         {/* Apartment Cover Image */}
         <div className="relative h-56 md:h-auto md:w-2/5 lg:w-1/3 shrink-0 bg-zinc-100 dark:bg-zinc-800">
-          {myApartment?.coverImage ? (
+          {displayCover ? (
             <img
-              src={getImageUrl(myApartment.coverImage)}
+              src={getImageUrl(displayCover)}
               alt={myApartment?.title || "Apartment"}
               className="w-full h-full object-cover"
             />
           ) : (
-            <div className="w-full h-full min-h-[200px] flex flex-col items-center justify-center text-zinc-400 bg-zinc-100 dark:bg-zinc-800">
+            <div className="w-full h-full min-h-[220px] flex flex-col items-center justify-center text-zinc-400 bg-zinc-100 dark:bg-zinc-800 p-4 text-center">
               <Building2 className="w-12 h-12 stroke-[1.5] mb-2 text-zinc-300 dark:text-zinc-600" />
-              <span className="text-xs font-semibold">No Image Uploaded</span>
+              <span className="text-xs font-semibold mb-2">No Image Uploaded</span>
+              <button
+                type="button"
+                onClick={() => {
+                  setModalMode("edit");
+                  setIsCreateModalOpen(true);
+                }}
+                className="text-[11px] font-bold px-3 py-1.5 bg-indigo-50 dark:bg-indigo-950/60 text-[#4c55a4] dark:text-indigo-300 rounded-lg hover:bg-indigo-100 dark:hover:bg-indigo-900/60 transition cursor-pointer"
+              >
+                + Upload Images
+              </button>
             </div>
           )}
 
@@ -298,22 +487,18 @@ export default function MyListingPage() {
           <div className="absolute top-4 right-4">
             <span
               className={`px-3 py-1.5 backdrop-blur-md rounded-lg text-xs font-bold shadow-sm text-white ${
-                myApartment?.status === "CONFIRMED" ||
-                myApartment?.status === "APPROVED" ||
-                myApartment?.status === "ACTIVE" ||
-                (myApartment as any)?.isApproved ||
-                myApartment?.isListingActive
-                  ? "bg-green-500/90"
-                  : "bg-amber-500/90"
+                !isPassPaidOrActivated
+                  ? "bg-amber-500/90"
+                  : !isAdminApproved
+                  ? "bg-amber-500/90"
+                  : "bg-green-600/90"
               }`}
             >
-              {myApartment?.status === "CONFIRMED" ||
-              myApartment?.status === "APPROVED" ||
-              myApartment?.status === "ACTIVE" ||
-              (myApartment as any)?.isApproved ||
-              myApartment?.isListingActive
-                ? "Approved"
-                : "Pending Approval"}
+              {!isPassPaidOrActivated
+                ? "Pending Activation"
+                : !isAdminApproved
+                ? "Pending Admin"
+                : "Active & Live"}
             </span>
           </div>
         </div>
@@ -461,11 +646,7 @@ export default function MyListingPage() {
             <button
               type="button"
               onClick={() => {
-                const defaultImg = myApartment?.coverImage
-                  ? getImageUrl(myApartment.coverImage)
-                  : myApartment?.images?.[0]
-                  ? getImageUrl(myApartment.images[0])
-                  : "";
+                const defaultImg = displayCover ? getImageUrl(displayCover) : "";
                 setModalActiveImage(defaultImg);
                 setIsViewDetailsModalOpen(true);
               }}
@@ -477,6 +658,8 @@ export default function MyListingPage() {
           </div>
         </div>
       </div>
+        </>
+      )}
 
       {/* Edit Listing Modal */}
       <CreateListingModal
@@ -582,6 +765,21 @@ export default function MyListingPage() {
           </div>
         </div>
       )}
+
+      {/* 📖 Welcome & Earning Guide Modal (Step 1: Benefits -> Step 2: Management & Phone/WhatsApp Guide) */}
+      <WelcomeGuideModal
+        isOpen={isWelcomeGuideOpen}
+        onClose={() => {
+          setIsWelcomeGuideOpen(false);
+          if (typeof window !== "undefined") {
+            localStorage.setItem("hasSeenWelcomeGuide_v1", "true");
+          }
+        }}
+        onAddApartment={() => {
+          setModalMode("create");
+          setIsCreateModalOpen(true);
+        }}
+      />
     </>
   );
 }

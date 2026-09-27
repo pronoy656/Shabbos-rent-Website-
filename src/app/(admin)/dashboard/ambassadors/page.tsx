@@ -24,7 +24,6 @@ import {
 } from '@/services/payoutService';
 import { Ambassador, Attribution, Commission, Payout, CommissionModel } from '@/types/ambassador';
 import { formatPhoneNumber } from '@/utils/phoneUtils';
-import DevSimulatorBar from '@/components/ambassador/DevSimulatorBar';
 import {
   Users,
   UserCheck,
@@ -37,6 +36,7 @@ import {
   RotateCcw,
   RefreshCw,
   Search,
+  Sparkles,
 } from 'lucide-react';
 
 export default function AdminAmbassadorsPage() {
@@ -169,13 +169,22 @@ export default function AdminAmbassadorsPage() {
           </p>
         </div>
 
-        <button
-          onClick={loadAdminData}
-          className="px-4 py-2.5 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 font-bold rounded-xl text-xs flex items-center gap-2 transition-all self-start md:self-auto"
-        >
-          <RefreshCw className="w-3.5 h-3.5" />
-          Refresh Data
-        </button>
+        <div className="flex items-center gap-2.5 self-start md:self-auto flex-wrap">
+          <Link
+            href="/dev-simulator"
+            className="px-4 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold rounded-xl text-xs flex items-center gap-2 transition-all shadow-md shadow-indigo-600/20"
+          >
+            <Sparkles className="w-3.5 h-3.5 text-amber-300 animate-pulse" />
+            Developer Simulator
+          </Link>
+          <button
+            onClick={loadAdminData}
+            className="px-4 py-2.5 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 font-bold rounded-xl text-xs flex items-center gap-2 transition-all"
+          >
+            <RefreshCw className="w-3.5 h-3.5" />
+            Refresh Data
+          </button>
+        </div>
       </div>
 
       {/* Overview Stat Cards */}
@@ -747,8 +756,6 @@ export default function AdminAmbassadorsPage() {
           )}
         </div>
       )}
-
-      <DevSimulatorBar onDataChange={loadAdminData} />
     </div>
   );
 }

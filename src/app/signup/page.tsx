@@ -11,7 +11,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { registerAmbassador } from "@/services/ambassadorAuthService";
-import DevSimulatorBar from "@/components/ambassador/DevSimulatorBar";
 import { PhoneInput } from "@/components/common/PhoneInput";
 import { useActiveMarketingPlatforms } from "@/hooks/useMarketingPlatform";
 import { useRegister } from "@/hooks/useAuth";
@@ -1055,8 +1054,6 @@ function SignupFormContent() {
           </p>
         </div>
       </div>
-
-      <DevSimulatorBar />
     </div>
   );
 }

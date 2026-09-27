@@ -9,7 +9,7 @@ import dynamic from "next/dynamic";
 import ApartmentCard from "@/components/search/ApartmentCard";
 import { ApartmentData } from "@/types";
 import { ApartmentSearchParams } from "@/types/apartment.types";
-import { useApartments, useMyApartment } from "@/hooks/useApartments";
+import { useApartments, useMyApartment, useListedCities, useListedNeighborhoods } from "@/hooks/useApartments";
 import { useLanguage } from "@/context/LanguageContext";
 import { useSwapPreference, useSaveSwapPreference } from "@/hooks/useSwap";
 import { useWeekendCalendars } from "@/hooks/useWeekendCalendar";
@@ -67,6 +67,12 @@ export default function SearchWidget({
 
   const isBackendSwapEnabled = Boolean(prefData?.data?.isEnabled);
 
+  const [city, setCity] = useState(initialFilters.city || initialCity || "");
+  const [neighborhood, setNeighborhood] = useState(initialFilters.neighborhood || "");
+
+  const { data: listedCities = [], isLoading: isCitiesLoading } = useListedCities();
+  const { data: listedNeighborhoods = [], isLoading: isNeighborhoodsLoading } = useListedNeighborhoods(city);
+
   const [activeTab, setActiveTab] = useState<"rent" | "swap">(initialFilters.activeTab || initialType || "rent");
   const [localSwapTurnedOn, setLocalSwapTurnedOn] = useState(false);
   const [showSwipeModal, setShowSwipeModal] = useState(false);
@@ -77,8 +83,6 @@ export default function SearchWidget({
   const [currentPage, setCurrentPage] = useState(1);
   const [validationError, setValidationError] = useState("");
   
-  const [city, setCity] = useState(initialFilters.city || initialCity || "");
-  const [neighborhood, setNeighborhood] = useState(initialFilters.neighborhood || "");
   const [walkingTime, setWalkingTime] = useState(initialFilters.walkingTime || "");
   const [weekend, setWeekend] = useState(initialFilters.weekend || "");
   const [rooms, setRooms] = useState(initialFilters.rooms || "");
@@ -91,6 +95,39 @@ export default function SearchWidget({
   const [showSuggestions, setShowSuggestions] = useState(false);
 
   const isEffectiveSwapEnabled = isBackendSwapEnabled || localSwapTurnedOn;
+
+  const cityOptions = useMemo(() => {
+    const opts = [{ value: "", label: t("search_widget.select_city") || "Select a City" }];
+    if (Array.isArray(listedCities) && listedCities.length > 0) {
+      listedCities.forEach((c) => {
+        if (c && typeof c === "string") {
+          opts.push({ value: c, label: c });
+        }
+      });
+    }
+    return opts;
+  }, [listedCities, t]);
+
+  const neighborhoodOptions = useMemo(() => {
+    if (!city || city.trim() === "" || city === "any") {
+      return [{ value: "", label: t("search_widget.select_city_first") || "Select a city first" }];
+    }
+    if (isNeighborhoodsLoading) {
+      return [{ value: "", label: "Loading neighborhoods..." }];
+    }
+    if (!Array.isArray(listedNeighborhoods) || listedNeighborhoods.length === 0) {
+      return [{ value: "", label: t("search_widget.all_neighborhoods") || "All Neighborhoods" }];
+    }
+    return [
+      { value: "", label: t("search_widget.all_neighborhoods") || "All Neighborhoods" },
+      ...listedNeighborhoods.map((n) => ({ value: n, label: n })),
+    ];
+  }, [city, isNeighborhoodsLoading, listedNeighborhoods, t]);
+
+  const handleCityChange = (newCity: string) => {
+    setCity(newCity);
+    setNeighborhood("");
+  };
 
   const weekendOptions = useMemo(() => {
     const rawList = Array.isArray(weekendCalendarsData?.data) ? weekendCalendarsData.data : [];
@@ -304,27 +341,16 @@ export default function SearchWidget({
           <CustomSelect
             icon={MapPin}
             value={city}
-            onChange={setCity}
-            placeholder={t("search_widget.select_city") || "Select a City"}
-            disabled={isTargetDestinationSet}
-            options={[
-              { value: "", label: "Select a City" },
-              { value: "jerusalem", label: t("search_widget.jerusalem") || "Jerusalem" },
-              { value: "tel-aviv", label: t("search_widget.tel_aviv") || "Tel Aviv" },
-              { value: "tzfat", label: t("search_widget.tzfat") || "Tzfat" },
-              { value: "bnei-brak", label: "Bnei Brak" },
-              { value: "beit-shemesh", label: "Beit Shemesh" },
-              { value: "modiin-illit", label: "Modiin Illit" },
-              { value: "haifa", label: "Haifa" },
-              { value: "netanya", label: "Netanya" },
-              { value: "ashdod", label: "Ashdod" },
-            ]}
+            onChange={handleCityChange}
+            placeholder={isCitiesLoading ? "Loading cities..." : (t("search_widget.select_city") || "Select a City")}
+            disabled={isTargetDestinationSet || isCitiesLoading}
+            options={cityOptions}
           />
         </div>
 
         {/* Neighborhood */}
         <div className={`lg:col-span-3 space-y-1.5 transition-all duration-300 ${
-          isTargetDestinationSet ? "opacity-40 pointer-events-none select-none cursor-not-allowed" : "opacity-100"
+          isTargetDestinationSet || !city ? "opacity-60" : "opacity-100"
         }`}>
           <label className="text-xs font-bold text-zinc-900 dark:text-white flex items-center justify-between">
             <span>{t("search_widget.neighborhood")}</span>
@@ -338,13 +364,15 @@ export default function SearchWidget({
             icon={Navigation}
             value={neighborhood}
             onChange={setNeighborhood}
-            placeholder={t("search_widget.select_neighborhood")}
-            disabled={isTargetDestinationSet}
-            options={[
-              { value: "rehavia", label: t("search_widget.rehavia") },
-              { value: "geula", label: t("search_widget.geula") },
-              { value: "bakat", label: t("search_widget.baka") },
-            ]}
+            placeholder={
+              !city
+                ? (t("search_widget.select_city_first") || "Select a city first")
+                : isNeighborhoodsLoading
+                ? "Loading neighborhoods..."
+                : (t("search_widget.select_neighborhood") || "Select Neighborhood")
+            }
+            disabled={isTargetDestinationSet || !city || isNeighborhoodsLoading}
+            options={neighborhoodOptions}
           />
         </div>
 

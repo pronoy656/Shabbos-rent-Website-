@@ -90,6 +90,8 @@
     "select_city": "בחר עיר",
     "neighborhood": "שכונה",
     "select_neighborhood": "בחר שכונה",
+    "select_city_first": "בחר עיר תחילה",
+    "all_neighborhoods": "כל השכונות",
     "walking_time": "זמן הליכה",
     "select_walking_time": "בחר זמן הליכה",
     "weekend": "סוף שבוע",

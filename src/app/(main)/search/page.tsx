@@ -51,7 +51,7 @@ function SearchContent() {
 
   // Read initial query params from URL
   const initialSearchTerm = searchParams.get("searchTerm") || searchParams.get("q") || "";
-  const initialCity = searchParams.get("city") || "";
+  const initialCity = normalizeCityParam(searchParams.get("city") || "");
   const initialNeighborhood = searchParams.get("neighborhood") || "";
   const initialType = searchParams.get("type") === "swap" ? "swap" : "rent";
   const initialPropertyType = searchParams.get("propertyType") || "";

@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { Gift, User, Camera, Mail, Lock, CheckCircle2 } from "lucide-react";
 import UserAvatar from "@/components/common/UserAvatar";
 import { useMe } from "@/hooks/useAuth";
+import { YearlyFeeSaleToggle } from "@/components/admin/YearlyFeeSaleToggle";
 
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState<"profile" | "promotion">("profile");
@@ -276,33 +277,8 @@ export default function SettingsPage() {
       )}
 
       {activeTab === "promotion" && (
-        <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-          <div className="rounded-2xl border border-zinc-200 bg-white p-6 md:p-8 shadow-sm dark:border-zinc-800 dark:bg-zinc-900 max-w-2xl">
-            <h2 className="text-xl font-bold text-zinc-900 dark:text-white mb-6 flex items-center gap-2">
-              <Gift className="w-5 h-5 text-indigo-500" /> Promotions & Offers
-            </h2>
-            
-            <div className="flex items-center justify-between p-4 border border-zinc-100 dark:border-zinc-800 rounded-xl">
-              <div>
-                <h3 className="font-bold text-zinc-900 dark:text-white">First Year Free Promotion</h3>
-                <p className="text-sm text-zinc-500 mt-1">
-                  If enabled, new owners will get their first year subscription (normally ₪28) for free.
-                </p>
-              </div>
-              <button
-                onClick={toggleFirstYearFree}
-                className={`relative inline-flex h-7 w-12 shrink-0 cursor-pointer items-center rounded-full transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 ${
-                  isFirstYearFreeActive ? "bg-indigo-600" : "bg-zinc-200 dark:bg-zinc-700"
-                }`}
-              >
-                <span
-                  className={`inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                    isFirstYearFreeActive ? "translate-x-6" : "translate-x-1"
-                  }`}
-                />
-              </button>
-            </div>
-          </div>
+        <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-3xl space-y-6">
+          <YearlyFeeSaleToggle />
         </div>
       )}
     </div>

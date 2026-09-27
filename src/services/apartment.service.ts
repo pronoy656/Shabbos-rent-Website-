@@ -42,21 +42,45 @@ export const getApartments = async (
   return res.data;
 };
 
-/** GET /apartments/my-apartment — Get current logged-in owner's apartment */
-export const getMyApartment = async (): Promise<ApartmentItem | null> => {
+/** GET /apartment/cities — Get unique list of cities that have active listings */
+export const getListedCities = async (): Promise<string[]> => {
+  const res = await api.get<any>(`${BASE_APARTMENTS}/cities`);
+  const data = res.data?.data;
+  return Array.isArray(data) ? data : [];
+};
+
+/** GET /apartment/neighborhoods — Get unique list of neighborhoods for a given city with active listings */
+export const getListedNeighborhoods = async (city?: string): Promise<string[]> => {
+  const params: Record<string, string> = {};
+  if (city && city.trim()) {
+    params.city = city.trim();
+  }
+  const res = await api.get<any>(`${BASE_APARTMENTS}/neighborhoods`, { params });
+  const data = res.data?.data;
+  return Array.isArray(data) ? data : [];
+};
+
+/** GET /apartments/my-apartment — Get list of all logged-in owner's apartments */
+export const getMyApartments = async (): Promise<ApartmentItem[]> => {
   try {
     const res = await api.get<any>(`${BASE_APARTMENTS}/my-apartment`);
     const data = res.data?.data;
     if (Array.isArray(data)) {
-      return data.length > 0 ? (data[0] as ApartmentItem) : null;
+      return data as ApartmentItem[];
     }
-    return (data as ApartmentItem) || null;
+    return data ? [data as ApartmentItem] : [];
   } catch (err: any) {
     if (err?.response?.status === 404 || err?.response?.data?.message?.includes("not listed")) {
-      return null;
+      return [];
     }
     throw err;
   }
+};
+
+/** GET /apartments/my-apartment — Get current logged-in owner's primary apartment */
+export const getMyApartment = async (): Promise<ApartmentItem | null> => {
+  const list = await getMyApartments();
+  return list.length > 0 ? list[0] : null;
 };
 
 /** GET /apartments/:id — Get single apartment details by ID or propertyId */

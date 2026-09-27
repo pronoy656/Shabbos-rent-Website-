@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import {
   Info, MapPin, Phone, Building, Sparkles, Image as ImageIcon,
-  UploadCloud, AlignLeft, Check, Plus, X, Search, DollarSign, ChevronDown, PartyPopper, Star, Clock, Wand2, Calendar, CheckCircle2, AlertCircle
+  UploadCloud, AlignLeft, Check, Plus, X, Search, DollarSign, ChevronDown, PartyPopper, Star, Clock, Wand2, Calendar, CheckCircle2, AlertCircle, ArrowRight
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { PhoneInput } from '@/components/common/PhoneInput';
@@ -103,6 +103,7 @@ export default function CreateListingModal({
   const [galleryPreviews, setGalleryPreviews] = useState<string[]>([]);
 
   const [modalStep, setModalStep] = useState<"form" | "success" | "payment" | "approval">("form");
+  const [createdApartmentData, setCreatedApartmentData] = useState<{ id: string; propertyId?: string; title: string } | null>(null);
   const [isFirstYearFreeActive, setIsFirstYearFreeActive] = useState(false);
   const [description, setDescription] = useState("");
   const [isEnhancing, setIsEnhancing] = useState(false);
@@ -349,9 +350,15 @@ export default function CreateListingModal({
         if (onSave) onSave(res?.id || initialApartment.id);
         onClose();
       } else {
-        const res = await createMutation.mutateAsync(formData);
+        const res: any = await createMutation.mutateAsync(formData);
         toast.success("Apartment listing created successfully! 🎉");
-        if (onSave) onSave(res?.id || "");
+        const apartmentId = res?.id || res?.data?.id || (res?.apartment && res?.apartment?.id) || "";
+        const propId = res?.propertyId || res?.data?.propertyId || (res?.apartment && res?.apartment?.propertyId) || "";
+        setCreatedApartmentData({
+          id: apartmentId,
+          propertyId: propId,
+          title: listingTitle.trim(),
+        });
         setModalStep("success");
       }
     } catch (err: any) {
@@ -416,17 +423,30 @@ export default function CreateListingModal({
                 </div>
                 <div className="absolute -inset-2 bg-green-500/20 rounded-full"></div>
               </div>
-              <h2 className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-[#4c55a4] via-purple-500 to-pink-500 mb-4 drop-shadow-sm leading-tight">
+              <h2 className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-[#4c55a4] via-purple-500 to-pink-500 mb-3 drop-shadow-sm leading-tight">
                 Woohoo! Apartment<br />Submitted Successfully!
               </h2>
-              <p className="text-lg text-zinc-600 dark:text-zinc-300 max-w-lg mb-8 font-medium">
-                Your apartment is in! It is waiting for approval and will be live within an hour or two.
+              {createdApartmentData?.propertyId && (
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 text-xs font-mono font-bold rounded-xl mb-3 border border-zinc-200 dark:border-zinc-700">
+                  <Building className="w-3.5 h-3.5 text-indigo-500" />
+                  Property ID: {createdApartmentData.propertyId}
+                </div>
+              )}
+              <p className="text-base sm:text-lg text-zinc-600 dark:text-zinc-300 max-w-lg mb-8 font-medium">
+                Your apartment is saved! Next step: Activate your 1-year listing pass to start receiving guest inquiries.
               </p>
               <button
-                onClick={() => setModalStep("payment")}
-                className="w-full sm:w-auto px-16 py-4 bg-[#4c55a4] hover:bg-[#3d4484] text-white text-[16px] font-bold rounded-full shadow-lg transition-colors"
+                onClick={() => {
+                  const targetId = createdApartmentData?.id;
+                  handleFinalClose();
+                  if (targetId) {
+                    router.push(`/apartment/${targetId}/activate`);
+                  }
+                }}
+                className="w-full sm:w-auto px-10 py-4 bg-[#4c55a4] hover:bg-[#3d4484] text-white text-[16px] font-bold rounded-full shadow-lg transition-colors flex items-center justify-center gap-2 cursor-pointer"
               >
-                OK, Awesome!
+                <span>Proceed to Activation</span>
+                <ArrowRight className="w-5 h-5" />
               </button>
             </div>
           </div>

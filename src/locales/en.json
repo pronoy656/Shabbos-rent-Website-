@@ -90,6 +90,8 @@
     "select_city": "Select City",
     "neighborhood": "Neighborhood",
     "select_neighborhood": "Select Neighborhood",
+    "select_city_first": "Select a city first",
+    "all_neighborhoods": "All Neighborhoods",
     "walking_time": "Walking Time",
     "select_walking_time": "Select Walking Time",
     "weekend": "Weekend",

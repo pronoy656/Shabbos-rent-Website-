@@ -4,7 +4,6 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { loginAmbassador } from '@/services/ambassadorAuthService';
-import DevSimulatorBar from '@/components/ambassador/DevSimulatorBar';
 import { Clock, AlertTriangle, ArrowRight, LogIn, Lock } from 'lucide-react';
 
 export default function AmbassadorLoginPage() {
@@ -72,17 +71,8 @@ export default function AmbassadorLoginPage() {
               Application Under Review
             </h2>
             <p className="text-zinc-600 dark:text-zinc-400 text-sm leading-relaxed mb-6">
-              Your Ambassador account application is currently <span className="font-bold text-amber-600 dark:text-amber-400">Pending Admin Approval</span>. Access to the active dashboard will be unlocked once approved.
+              Your Ambassador account application is currently <span className="font-bold text-amber-600 dark:text-amber-400">Pending Admin Approval</span>. Access to the active dashboard will be unlocked once approved by an administrator.
             </p>
-            <div className="bg-amber-50 dark:bg-amber-950/40 rounded-2xl p-4 text-left text-xs text-amber-800 dark:text-amber-300 mb-6 border border-amber-200 dark:border-amber-800/40">
-              <p className="font-semibold mb-1 flex items-center gap-1.5">
-                <AlertTriangle className="w-4 h-4 text-amber-600" />
-                <span>Testing Tip for Developer Review:</span>
-              </p>
-              <p className="leading-relaxed">
-                Use the <strong className="underline">Developer Simulator Bar</strong> at the bottom of the screen to switch to <strong className="underline">Admin Panel</strong> and approve this application instantly!
-              </p>
-            </div>
             <button
               onClick={() => setPendingStatus(false)}
               className="w-full py-3 px-4 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-800 dark:text-zinc-200 font-bold rounded-xl transition-all text-sm"
@@ -190,8 +180,6 @@ export default function AmbassadorLoginPage() {
           </div>
         )}
       </div>
-
-      <DevSimulatorBar />
     </div>
   );
 }

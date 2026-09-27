@@ -5,7 +5,6 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { registerAmbassador } from '@/services/ambassadorAuthService';
 import { useLanguage } from '@/context/LanguageContext';
-import DevSimulatorBar from '@/components/ambassador/DevSimulatorBar';
 import { UserCheck, ShieldCheck, Clock, CheckCircle2, ArrowRight, Sparkles, Eye, EyeOff } from 'lucide-react';
 import { PhoneInput } from '@/components/common/PhoneInput';
 
@@ -264,8 +263,6 @@ export default function AmbassadorRegisterPage() {
           </div>
         )}
       </div>
-
-      <DevSimulatorBar />
     </div>
   );
 }

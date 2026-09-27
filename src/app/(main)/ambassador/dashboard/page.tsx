@@ -30,7 +30,6 @@ import {
 import { Ambassador, Attribution, Commission, Payout, CommissionModel } from '@/types/ambassador';
 import { PhoneInput } from '@/components/common/PhoneInput';
 import { formatPhoneNumber } from '@/utils/phoneUtils';
-import DevSimulatorBar from '@/components/ambassador/DevSimulatorBar';
 import {
   Building2,
   DollarSign,
@@ -1058,8 +1057,6 @@ export default function AmbassadorDashboardPage() {
           </div>
         )}
       </main>
-
-      <DevSimulatorBar onDataChange={loadData} />
     </div>
   );
 }
